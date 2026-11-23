@@ -1,0 +1,18 @@
+[Unit]
+Description=Restore the newest dump into a scratch database and report what came back
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Must own the checkout and the docker group. Set it before installing.
+User=CHANGE_ME
+# DEPLOY_DIR, BACKUP_DIR and RCLONE_REMOTE come from the same file the backup
+# unit uses: the drill restores what the backup wrote.
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-/etc/dee-idleclans/backup.env
+ExecStart=/bin/sh -c 'if [ -z "$DEPLOY_DIR" ]; then echo "DEPLOY_DIR is unset: set it in /etc/dee-idleclans/backup.env" >&2; exit 78; fi; if [ ! -x "$DEPLOY_DIR/scripts/restore-drill.sh" ]; then echo "DEPLOY_DIR=$DEPLOY_DIR has no scripts/restore-drill.sh" >&2; exit 78; fi; exec "$DEPLOY_DIR/scripts/restore-drill.sh"'
+# A restore of a ~20 MB dump takes seconds; the window is for a slow disk, not
+# for a hung run to sit there all day.
+TimeoutStartSec=1800

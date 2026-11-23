@@ -16,6 +16,7 @@ DB_USER=${DB_USER:-idleclans}
 DB_NAME=${DB_NAME:-idleclans_drill}
 BACKUP_DIR=${BACKUP_DIR:-$HOME/backups/idleclans}
 KEEP_DRILL=${KEEP_DRILL:-0}
+mkdir -p "$BACKUP_DIR"
 
 log() { printf '%s %s\n' "$(date -Is)" "$*"; }
 
@@ -77,4 +78,7 @@ else
 fi
 
 [ "$fail" = "0" ] || exit 1
+# watchdog.sh reads this stamp: a drill that stops happening is a gap, not a
+# false alarm, so a passing run has to leave a mark.
+date -Is > "$BACKUP_DIR/.last-drill"
 log "restore drill passed"

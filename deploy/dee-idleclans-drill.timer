@@ -1,0 +1,12 @@
+[Unit]
+Description=Monthly restore drill: prove the backup by restoring it
+
+[Timer]
+# First of the month, 04:00 local. A machine that was off keeps the tick
+# (Persistent=true), so a missed month runs at the next boot rather than vanishing.
+OnCalendar=*-*-1 04:00:00
+Persistent=true
+Unit=dee-idleclans-drill.service
+
+[Install]
+WantedBy=timers.target
