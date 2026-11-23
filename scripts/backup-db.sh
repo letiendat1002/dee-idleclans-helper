@@ -79,3 +79,15 @@ if [ -n "${RCLONE_REMOTE:-}" ]; then
 fi
 
 echo "$(date -Is) ok $(du -h "$OUT" | cut -f1) $OUT"
+
+# Dead-man's switch. Every other check in this repository runs on this machine,
+# so none of them can report that the machine stopped running: an external
+# checker notices the absence of a ping, which is the one signal a dead host can
+# still send. Unset means no ping, so the script works without an account.
+if [ -n "${HEALTHCHECK_URL:-}" ]; then
+  if curl -fsS -m 10 --retry 2 -o /dev/null "$HEALTHCHECK_URL"; then
+    echo "$(date -Is) healthcheck pinged"
+  else
+    echo "$(date -Is) WARN healthcheck ping failed"
+  fi
+fi

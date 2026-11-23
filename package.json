@@ -1,6 +1,6 @@
 {
   "name": "dee-idleclans-helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dee IdleClans Helper — Idle Clans market facts for Discord.",
   "main": "dist/index.js",
   "scripts": {
@@ -39,7 +39,7 @@
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.1.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^5.1.1"
   }
 }

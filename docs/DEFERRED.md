@@ -1,6 +1,6 @@
 # Deferred work — ledger và trigger để quay lại
 
-Cập nhật 2026-11-22. Đây là **nơi duy nhất** liệt kê những việc đã cố ý hoãn, để một phase sau
+Cập nhật 2026-11-23. Đây là **nơi duy nhất** liệt kê những việc đã cố ý hoãn, để một phase sau
 không phải dựng lại lý do từ đầu. Không có việc nào ở đây là "quên": mỗi mục ghi rõ vì sao hoãn,
 điều kiện mở, cách chạy, và một prompt dán-là-chạy ở §5.
 
@@ -11,8 +11,7 @@ Quy ước: khi một mục xong, xoá nó khỏi file này và thêm một dòn
 
 | # | Việc | Vì sao hoãn | Mở khi |
 |---|---|---|---|
-| B1 | Merge `develop` → `production` (bootstrap release) | `production` mới có initial commit; đây là release đầu, không phải deploy thường | bất cứ lúc nào; là điều kiện mở của B3, G1, G2 |
-| B2 | `deploy.timer` đã bật, chờ lần release đầu | **2026-11-22: timer enabled + checkout deploy riêng ngoài workspace (clone riêng, `.env` mode 600, origin GitHub)**; tick 5 phút fetch `origin/production`, ghi `nothing to deploy: production has no application at c457bf8c`, exit 0 — không dump, không build, không chạm stack đang chạy (`dee-idleclans-helper` vẫn Up 5 h, ảnh cũ). `deploy.sh` thêm 2 guard: từ chối nhánh không có `package.json` (nếu không sẽ upload ~4,6 GB dump/ngày rồi chết ở `npm ci`) và từ chối checkout thiếu `.env` | lần deploy thật đầu tiên xảy ra tự động ở tick sau B1 (merge `develop` → `production`); đọc `journalctl -u dee-idleclans-deploy -n 30` ngay sau đó |
+| B2 | ~~`deploy.timer` bật chờ release đầu~~ — **đóng 2026-11-23** | timer tự deploy `9b502dc` lúc 11:08 ngay sau khi publish, trước khi có tag: đúng cái ADR-2 loại bỏ | đã `disable --now`; release chạy tay theo `CONVENTIONS.md` §8.3. Không bật lại |
 | B3 | Discord/Horde: tạo category bot (announcements, feedback) | chờ B1 và quyết định cấu trúc server | sau B1 |
 | B4 | Donation rails: handle Ko-fi (VietQR **đã chốt bỏ** 2026-11-21) | owner loại kênh nội địa vì tệp người dùng là quốc tế; `LEGAL_DONATION_VN.md` §6 đã ghi lại | owner gửi handle ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` + link ở `/help` footer và README. Đánh đổi đã chấp nhận: người chơi VN không còn đường nội địa (PayPal VN không giao dịch nội địa từ 2016) |
 | B5 | Bật GitHub Sponsors (hồ sơ + thuế + ngân hàng) | cần KYC; nên public repo trước để hồ sơ "open source" dễ duyệt | sau khi repo public; nút Sponsor đã có trong `.github/FUNDING.yml` |
@@ -25,7 +24,7 @@ ngay trong lần release kế tiếp. Không tạo mục riêng cho nó ở đâ
 
 | # | Gap | Trạng thái 2026-11-17 | Cách đóng |
 |---|---|---|---|
-| G1 | `deploy.sh` mới chạy phần đầu, chưa từng deploy | **2026-11-22: timer đã chạy thật 2 lượt (20:51 và 20:56), cả hai dừng ở guard `nothing to deploy` vì `production` chỉ có initial commit.** Phần chưa từng chạy: backup → checkout → build → health gate → schema gate → rollback | lần deploy thật đầu tiên tự xảy ra ở tick sau B1; đọc log và ghi kết quả vào the private release checklist §4 |
+| G1 | ~~`deploy.sh` chưa từng deploy thật~~ — **đóng 2026-11-23** | hai lần chạy thật: 11:09 (timer, `9b502dc`) và 12:28 (tay, `d853c69`); health + schema + smoke Discord đều qua; backup trước deploy chạy; nhánh rollback vẫn chưa kích hoạt lần nào | đóng; lần đầu rollback xảy ra thì ghi vào đây |
 | G2 | 2 nhánh live của control | **đã chạy xong 2026-11-17**: bucket 5/phút trả `Slow down. Try again in 37s.`; deny `Send Messages` trả `I need Send Messages in this channel to post there.` | đóng; chi tiết `DISCORD-TESTING.md` §6 |
 | G3 | 6 invocation **hợp lệ** trong 1 phút (bucket) | **đóng 2026-11-21**: probe trong container gọi limiter 6 lần — 5 pass, lần 6 trả `Slow down` kèm log `[RATE]`; cùng nhánh được phủ trong `RateLimiter.test.ts` | — |
 | G4 | CI ≠ docker image (alpine/Dockerfile drift) | **đóng 2026-11-21**: image tự compile từ `src` (multi-stage), không còn đường ship `dist` cũ của host | smoke sau G1 vẫn nên chạy `docker compose build bot` |
@@ -57,6 +56,10 @@ ngay trong lần release kế tiếp. Không tạo mục riêng cho nó ở đâ
 | D15 | `price_snapshots` giữ **30 ngày** (`RETENTION_DAYS=30`, housekeeping chạy lúc boot + mỗi 24 h) rồi prune, nhưng **không archive** | thấp | steady state ≈ 30 × 120k ≈ 3,6 M dòng ≈ **570 MB** (hôm nay 196 MB / 10 ngày); dump hourly đang 16 MB gz và sẽ lớn dần. Chọn một: (a) chấp nhận 570 MB, (b) archive ngày cũ sang B2 rồi prune, (c) hạ retention còn 14 ngày — 24h card chỉ cần 1. Đo lại khi DB vượt 1 GB hoặc dump vượt 50 MB. Lưu ý: prune chỉ xoá ngày **đã có** dòng trong `price_daily`, nên không bao giờ mất dữ liệu chưa rollup |
 | D16 | **Collector tách khỏi Discord bot** (poller + rollup + housekeeping chạy 24/7) | **Bước 1 xong 2026-11-22** — `src/collector.ts` + service `collector`, cả hai healthy, chứng minh thật: stop bot 150 s, `price_snapshots` +632 dòng, 450/450 test | **Bước 2 = dời stack production lên host server riêng** (owner có sẵn, không thuê VPS): clone repo, restore dump, hai service bot+collector, cài lại 3 timer, rclone B2. Chỉ bước này đóng G8; chi tiết lệnh trong `docs/ENVIRONMENTS.md` §7 + `docs/DEPLOYMENT.md` |
 | ~~D17~~ | ~~Mẫu giá ngoài domain bị vẽ dính mép~~ | **đóng 2026-11-22** | Chọn (a): mẫu nằm **hoàn toàn** ngoài domain không vẽ nữa (đường đứt tại đó, caption giữ số mẫu bị cắt), mẫu lấn một phần vẫn vẽ + clamp, dot "giá mới nhất" mất khi chính nó ngoài thang. Chestnut log 24h kiểm lại: 93 mẫu dưới `100g` không còn vẽ thành đường phẳng ở `100g`. Luật ghi ở `CHART.md` §Reading the line + `UI-DESIGN.md` |
+| D11 | ~~Reboot không tự lên~~ — **đóng một nửa 2026-11-23** | — | Đã `systemctl --user enable docker-desktop.service` (symlink vào `graphical-session.target.wants`, tức lên **sau khi đăng nhập**, không phải headless) và chứng minh: `systemctl --user restart docker-desktop.service` → 4/4 container tự trở lại healthy sau **29 s** nhờ `restart: unless-stopped`. Phần headless còn lại ở D13 |
+| D13 | Chỉ tự lên **không cần đăng nhập** thì cần native Docker engine | trung bình | Stack đang ở VM của Docker Desktop; unit của Desktop là user unit gắn `graphical-session.target`. Muốn bot sống lại ngay sau reboot mà không ai login thì phải chuyển stack sang native engine (`docker.service` đã enabled, context `default`): dump → `docker context use default` → `up -d --wait` → restore vào volume mới → verify. Làm cùng lúc move host (Phase D) |
+| D14 | Ops script chạy từ **dev tree**, deploy chạy từ `/opt` | thấp, dễ gây bất ngờ | `dee-idleclans-watchdog.service` có `DEPLOY_DIR=<workspace>/dee-idleclans-helper` nên `git switch` ở cây dev đổi luôn script mà watchdog chạy. Hoặc trỏ unit vào `/opt` (khớp deploy, đổi code chỉ có hiệu lực từ release kế tiếp) hoặc chấp nhận và đừng đổi nhánh khi timer đang chạy. Hiện chọn cách hai |
+| D12 | Restore drill chưa có lịch | thấp | `scripts/restore-drill.sh` đã chạy thật 2026-11-23 (1009 items / 1 464 072 snapshot / 10 migration); chạy tay mỗi tháng hoặc thêm timer thứ tư |
 
 Đã đóng trong đợt 2026-11-17 (giữ lại để không mở lại): v1 tables (migration 010, cả hai DB),
 `dist` cũ ship nhầm (build xoá `dist` trước), 4 bản copy permission check → `canPost`, pool thiếu
