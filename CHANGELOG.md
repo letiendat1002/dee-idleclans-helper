@@ -40,6 +40,10 @@ Nothing yet.
 
 ### Changed
 
+- **The watchdog checks the off-site copy too.** A fresh local dump plus a failing
+  upload used to look healthy; `watchdog.sh` now reads the newest object under
+  `RCLONE_REMOTE/daily` and alerts past 30 hours, on top of the 26-hour local
+  check. Both share one DM path and one 12-hour cooldown.
 - **`deploy.sh` asks Discord before recording a release.** After the health and
   schema gates it calls `GET /users/@me`, so a revoked or rotated token fails the
   deploy and triggers the rollback instead of surfacing on the next command.
