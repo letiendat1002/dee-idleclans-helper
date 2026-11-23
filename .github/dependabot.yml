@@ -1,12 +1,23 @@
 version: 2
+
+# Work lands on develop, so updates have to land there too: a pull request against
+# the default branch would put an unreleased bump straight into production.
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # The runtime is Node 22 (Dockerfile, engines, CI). Types must match the
+      # runtime, so a major bump here would let the compiler accept APIs the
+      # image cannot run.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
