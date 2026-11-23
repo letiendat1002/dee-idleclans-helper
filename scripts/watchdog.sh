@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Restart the bot when Docker reports it unhealthy.
+# Restart the bot when Docker reports it unhealthy, and shout when a backup
+# stops arriving.
 #
 # `restart: unless-stopped` covers a process that exits, not one that wedges: a
 # bot whose event loop stalls keeps running and stays unhealthy forever, and only
@@ -14,7 +15,6 @@ SERVICES=${SERVICES:-"bot collector"}
 
 cd "$REPO_DIR"
 
-# shellcheck disable=SC2086  # space separated list, word splitting is the point
 for service in $SERVICES; do
   container=$(docker compose ps -q "$service")
   if [ -z "$container" ]; then
@@ -29,39 +29,82 @@ for service in $SERVICES; do
   fi
 done
 
-# Backup freshness. If cron dies nothing else notices: the local dumps and the
-# B2 copy both stop updating, and the first sign would be a restore that is a
-# month short. A stale dump is reported once per 12h, by DM when an alert target
-# is configured.
 BACKUP_DIR=${BACKUP_DIR:-$HOME/backups/idleclans}
 MAX_AGE_H=${MAX_AGE_H:-26}
+MAX_AGE_H_REMOTE=${MAX_AGE_H_REMOTE:-30}
 ALERT_ENV=${ALERT_ENV:-$HOME/.config/idleclans/watchdog-alert.env}
+ALERT_STAMP=${ALERT_STAMP:-$BACKUP_DIR/.alert-stamp}
+# One DM per 12h across every condition: a flare-up must not become a stream.
+ALERT_COOLDOWN_S=${ALERT_COOLDOWN_S:-43200}
 
+# Send one DM to the configured user, or say why it was not sent. Never fails
+# the run: a broken alert channel must not stop the restart loop above.
+send_alert() {
+  local text=$1 token dm
+  # shellcheck disable=SC1090
+  [ -r "$ALERT_ENV" ] && . "$ALERT_ENV"
+  if [ -z "${ALERT_DISCORD_USER:-}" ] || [ ! -f "$REPO_DIR/.env" ]; then
+    echo "$(date -Is) WARN no alert target configured, not sent: $text"
+    return 0
+  fi
+  if [ -f "$ALERT_STAMP" ] &&
+     [ $(( $(date +%s) - $(stat -c %Y "$ALERT_STAMP") )) -lt "$ALERT_COOLDOWN_S" ]; then
+    echo "$(date -Is) alert held back (one per ${ALERT_COOLDOWN_S}s): $text"
+    return 0
+  fi
+
+  token=$(grep -m1 '^DISCORD_TOKEN=' "$REPO_DIR/.env" | cut -d= -f2-)
+  dm=$(curl -sS -m 10 -H "Authorization: Bot $token" -H 'Content-Type: application/json' \
+    -d "{\"recipient_id\":\"$ALERT_DISCORD_USER\"}" \
+    https://discord.com/api/v10/users/@me/channels | sed -n 's/.*"id": *"\([0-9]*\)".*/\1/p')
+  if [ -z "$dm" ]; then
+    echo "$(date -Is) WARN could not open a DM channel for $ALERT_DISCORD_USER"
+    return 0
+  fi
+
+  if curl -sS -m 10 -o /dev/null -H "Authorization: Bot $token" -H 'Content-Type: application/json' \
+      -d "{\"content\":\"$text\"}" "https://discord.com/api/v10/channels/$dm/messages"; then
+    touch "$ALERT_STAMP"
+    echo "$(date -Is) alert sent to $ALERT_DISCORD_USER: $text"
+  else
+    echo "$(date -Is) WARN alert POST failed"
+  fi
+}
+
+# Local dumps. If cron dies nothing else notices: the local dumps and the B2 copy
+# both stop updating, and the first sign would be a restore that is a month short.
 # shellcheck disable=SC2012  # dump names are generated, not user input
 newest=$(ls -1t "$BACKUP_DIR"/idleclans-*.sql.gz 2>/dev/null | head -1 || true)
 age_h=99999
 if [ -n "$newest" ]; then
   age_h=$(( ($(date +%s) - $(stat -c %Y "$newest")) / 3600 ))
 fi
-
 if [ "$age_h" -gt "$MAX_AGE_H" ]; then
   echo "$(date -Is) WARN newest backup is ${age_h}h old (limit ${MAX_AGE_H}h): ${newest:-none}"
-  # shellcheck disable=SC1090
-  [ -r "$ALERT_ENV" ] && . "$ALERT_ENV"
-  stamp="$BACKUP_DIR/.alert-stamp"
-  if [ -n "${ALERT_DISCORD_USER:-}" ] && [ -f "$REPO_DIR/.env" ] &&
-     { [ ! -f "$stamp" ] || [ $(( $(date +%s) - $(stat -c %Y "$stamp") )) -gt 43200 ]; }; then
-    token=$(grep -m1 '^DISCORD_TOKEN=' "$REPO_DIR/.env" | cut -d= -f2-)
-    dm=$(curl -sS -m 10 -H "Authorization: Bot $token" -H 'Content-Type: application/json' \
-      -d "{\"recipient_id\":\"$ALERT_DISCORD_USER\"}" \
-      https://discord.com/api/v10/users/@me/channels | sed -n 's/.*"id": *"\([0-9]*\)".*/\1/p')
-    if [ -n "$dm" ]; then
-      curl -sS -m 10 -o /dev/null -H "Authorization: Bot $token" -H 'Content-Type: application/json' \
-        -d "{\"content\":\"BACKUP STALE on $(hostname): newest dump is ${age_h}h old (limit ${MAX_AGE_H}h).\"}" \
-        "https://discord.com/api/v10/channels/$dm/messages" && touch "$stamp"
-      echo "$(date -Is) stale-backup alert sent to $ALERT_DISCORD_USER"
+  send_alert "BACKUP STALE on $(hostname): newest dump is ${age_h}h old (limit ${MAX_AGE_H}h)."
+fi
+
+# Off-site copy. A fresh local dump plus a failing upload looks like a healthy
+# backup right up to the moment the disk dies, so freshness is checked on the
+# remote independently of the local file.
+if [ -n "${RCLONE_REMOTE:-}" ]; then
+  if command -v rclone >/dev/null 2>&1; then
+    remote_newest=$(rclone lsjson "$RCLONE_REMOTE/daily" 2>/dev/null \
+      | tr ',' '\n' | sed -n 's/.*"ModTime":"\([^"]*\)".*/\1/p' | sort | tail -1 || true)
+    if [ -z "$remote_newest" ]; then
+      echo "$(date -Is) WARN nothing under $RCLONE_REMOTE/daily"
+      send_alert "OFF-SITE BACKUP EMPTY on $(hostname): nothing under $RCLONE_REMOTE/daily."
     else
-      echo "$(date -Is) WARN could not open a DM channel for $ALERT_DISCORD_USER"
+      remote_age_h=99999
+      if remote_epoch=$(date -d "$remote_newest" +%s 2>/dev/null); then
+        remote_age_h=$(( ($(date +%s) - remote_epoch) / 3600 ))
+      fi
+      if [ "$remote_age_h" -gt "$MAX_AGE_H_REMOTE" ]; then
+        echo "$(date -Is) WARN newest remote dump is ${remote_age_h}h old (limit ${MAX_AGE_H_REMOTE}h): $remote_newest"
+        send_alert "OFF-SITE BACKUP STALE on $(hostname): newest remote dump is ${remote_age_h}h old (limit ${MAX_AGE_H_REMOTE}h)."
+      fi
     fi
+  else
+    echo "$(date -Is) WARN RCLONE_REMOTE is set but rclone is missing; off-site freshness not checked"
   fi
 fi
