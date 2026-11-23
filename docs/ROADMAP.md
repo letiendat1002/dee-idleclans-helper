@@ -19,7 +19,7 @@ Last updated: 2026-11-22.
 | D6 | Price history is **irreplaceable**: the upstream only serves a short window, so the DB is the long-term record. Two guarantees hold it up: a raw row is deleted only after its UTC day is in `price_daily`, and both sides (ask and bid) are archived, since a side not archived is gone for good | this file, track T7 |
 | D7 | Monetization: **free 100%, donations without perks**. No premium tier, no rate-limit top-up, no paid feature; a donation may not unlock anything, because that turns it into a paid capability (Discord requires selling those through Premium Apps, which does not pay out to VN) and turns the money into business income | `docs/legal/LEGAL_DONATION_VN.md` |
 | D8 | Code is **MIT and public**; GitHub Sponsors is one of the two donation rails | `LICENSE`, `README.md` §License, `.github/FUNDING.yml` |
-| D9 | **Chưa release.** Nhánh `production` và mọi push/merge vào đó bị khoá cho tới khi owner nói rõ; agent chỉ commit trên `develop` và không dời stack, không bật `deploy.timer`, không đụng host server. Việc nào đã ghi là phase sau, không được yêu cầu tường minh thì **không làm** | this file, `DEFERRED.md` D16, ledger |
+| D9 | **Released and hosted** (2026-11-23): `v1.0.0`–`v1.0.2` tagged, `production` merged forward, and the stack runs 24/7 on the host server. The deploy timer stays disabled and a release is still the owner's call, made through `CONVENTIONS.md` §8.3; anything a doc marks as a later phase needs the owner's word in that turn | this file, `DEFERRED.md` D16, private ledger |
 
 ## 1. Tracks
 
