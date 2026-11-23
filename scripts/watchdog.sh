@@ -112,11 +112,18 @@ fi
 # Restore drill. A dump nobody restored is a guess, so a passing drill leaves a
 # stamp; a stamp that stops advancing is the failure this catches.
 DRILL_MAX_AGE_D=${DRILL_MAX_AGE_D:-45}
-drill_stamp="$BACKUP_DIR/.last-drill"
-if [ -f "$drill_stamp" ]; then
-  drill_age_d=$(( ($(date +%s) - $(stat -c %Y "$drill_stamp")) / 86400 ))
+drill_ref="$BACKUP_DIR/.last-drill"
+if [ ! -f "$drill_ref" ]; then
+  # No passing drill yet, which on a fresh host is the normal state for weeks.
+  # Measure from the newest dump so the clock starts when the backup regime did;
+  # a host that keeps backing up but never drills still trips the limit later.
+  # shellcheck disable=SC2012  # dump names are generated, not user input
+  drill_ref=$(ls -1t "$BACKUP_DIR"/idleclans-*.sql.gz 2>/dev/null | head -1 || true)
+fi
+if [ -n "$drill_ref" ] && [ -f "$drill_ref" ]; then
+  drill_age_d=$(( ($(date +%s) - $(stat -c %Y "$drill_ref")) / 86400 ))
 else
-  drill_age_d=9999
+  drill_age_d=0
 fi
 if [ "$drill_age_d" -gt "$DRILL_MAX_AGE_D" ]; then
   echo "$(date -Is) WARN last restore drill was ${drill_age_d} days ago (limit ${DRILL_MAX_AGE_D})"

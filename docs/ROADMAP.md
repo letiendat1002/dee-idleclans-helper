@@ -282,6 +282,15 @@ container now carry the same strings.
   private B2 bucket daily at 04:00, 30 days of dailies kept remotely, restore verified from the
   remote copies.
 
+## 2026-11-23 — the host can now be noticed dead, and the backup is proven on a schedule
+
+- A successful backup pings `HEALTHCHECK_URL`; the absence of pings is the one signal a dead host
+  can still send, so an external checker covers what the watchdog structurally cannot.
+- `dee-idleclans-drill.timer` restores the newest dump on the first of each month, stamps
+  `$BACKUP_DIR/.last-drill`, and the watchdog DMs when the stamp is older than 45 days.
+- Ops units read `/opt` instead of the dev tree (D14), so switching branches no longer changes the
+  code that watches production.
+
 Still open:
 
 - Days the bot was down have no rows at all (2026-11-13 is one). The upstream serves no history
