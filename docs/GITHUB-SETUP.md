@@ -69,8 +69,10 @@ put an unreleased bump straight into the branch the host deploys.
 ```bash
 SLUG=letiendat1002/dee-idleclans-helper
 
+# `gh repo edit` has no flag for turning the wiki or projects off in every gh
+# release, so those go through the API with the security settings.
 gh repo edit "$SLUG" --default-branch production --enable-issues \
-  --disable-wiki --disable-projects --enable-squash-merge --delete-branch-on-merge
+  --enable-squash-merge --delete-branch-on-merge
 
 gh api -X PATCH "repos/$SLUG" --input - <<'JSON'
 { "has_wiki": false, "has_projects": false, "has_discussions": false, "allow_auto_merge": true,
@@ -78,6 +80,12 @@ gh api -X PATCH "repos/$SLUG" --input - <<'JSON'
     "secret_scanning": { "status": "enabled" },
     "secret_scanning_push_protection": { "status": "enabled" } } }
 JSON
+
+gh api -X PUT "repos/$SLUG/actions/permissions" --input - <<'JSON'
+{ "enabled": true, "allowed_actions": "all", "sha_pinning_required": true }
+JSON
+gh api -X PUT "repos/$SLUG/actions/permissions/workflow" \
+  -f default_workflow_permissions=read >/dev/null
 
 for b in develop production; do
   gh api -X PUT "repos/$SLUG/branches/$b/protection" --input - <<'JSON'
