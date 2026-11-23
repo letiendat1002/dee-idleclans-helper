@@ -34,17 +34,29 @@ Postgres and Redis in Docker if you do not have them locally.
 
 ## Branches and commits
 
-`develop` is where work lands; `production` is what the host runs. A release is a
-merge from `develop` into `production`, nothing else.
+`develop` is where work lands; `production` is what the host runs.
 
 ```
-git switch -c fix/graph-flat-series
+git switch -c fix/graph-flat-series      # feat/ fix/ docs/ chore/ refactor/ test/
 # work
-git commit -m "Draw a flat series as a line, not as nothing"
+git commit -m "fix: draw a flat series as a line, not as nothing"
 ```
 
-Commit messages are imperative, one line, no trailer. Every user-visible change
-gets an `[Unreleased]` entry in `CHANGELOG.md` in the same commit.
+Commit messages are `type: subject` — one line, imperative, no body and no
+trailer. Land the branch through a pull request merged with a **merge commit**;
+squash and rebase-merge are disabled, so the branch structure stays in the
+history and one branch should stay single-purpose.
+
+Every user-visible change gets an `[Unreleased]` entry in `CHANGELOG.md` in the
+same commit.
+
+## Release
+
+`production` is what the host runs, and nothing reaches it by accident: the deploy
+timer is disabled and a release is a deliberate five-step sequence — PR
+`develop` → `production`, manual deploy on the host, check `.deployed-sha` and the
+journal, tag `vX.Y.Z`, then PR `production` → `develop` to merge back. The full
+procedure, including what each gate proves, is `docs/CONVENTIONS.md` §8.3.
 
 ## What CI checks
 

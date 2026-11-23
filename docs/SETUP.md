@@ -97,7 +97,8 @@ Trong Discord: gõ `/help`, `/price` (chọn "Teak log"), `/graph item` (chọn 
 > **v2 đã hoàn tất.** `/profit` đã bị gỡ (so giá ask với trung bình giao dịch và bỏ qua thanh khoản).
 > Thay bằng `/price`, `/graph item`, `/watch`, `/unwatch`, `/watchlist`, `/digest`.
 > `/profile` đã bị gỡ ngày 2026-11-14 (owner request: bot chỉ lo thị trường; hồ sơ người chơi đã có trên site Idle Clans).
-> Thiết kế: `docs/superpowers/specs/2026-11-11-dee-idleclans-helper-v2-design.md`.
+> Thiết kế chi tiết là artifact private (spec v2) trong notes folder cạnh clone; bản public của
+> contract là `docs/CONVENTIONS.md` + `docs/ARCHITECTURE.md`.
 
 ## 6. Lưu ý bảo mật
 
