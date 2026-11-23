@@ -30,7 +30,7 @@
   "homepage": "https://github.com/letiendat1002/dee-idleclans-helper#readme",
   "dependencies": {
     "discord.js": "^14.28.1",
-    "dotenv": "^16.6.1",
+    "dotenv": "^18.0.10",
     "ioredis": "^5.11.1",
     "pg": "^8.23.1"
   },
