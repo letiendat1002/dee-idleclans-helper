@@ -157,8 +157,14 @@ rebase-merge are disabled), and a release is the five-step procedure in §8.3 �
 
 **Releases are manual and deliberate.** `dee-idleclans-deploy.timer` stays **disabled**; a deploy
 runs only when the owner asks for a release, and then only through the §8.3 sequence. Never enable
-that timer, never move the stack to a host server, and never start a later phase a doc marks as
+that timer, never move production back onto a laptop, and never start a later phase a doc marks as
 future work unless the owner asks for it in that turn.
+
+**Production runs on the always-on host server**, installed on 2026-11-23: the bot and collector
+there serve the real guild, the laptop keeps only the dev stack and an outside watcher that
+reports a dead host over Telegram. Tracked files name no host path (the scan workflow rejects
+absolute host paths); exact paths, units and the rollback laptop stack live in the private
+`docs-private/DEPLOYMENT.md`.
 
 ## Workflow
 
