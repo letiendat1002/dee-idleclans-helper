@@ -12,6 +12,36 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 Nothing yet.
 
+## [1.0.1] - 2026-11-23
+
+### Added
+
+- **A dead-man's switch for the whole host.** The watchdog cannot report its own
+  death, so a successful backup now pings `HEALTHCHECK_URL` when it is set (a
+  healthchecks.io-style URL); no ping for longer than the grace period is what
+  tells the owner the machine, not just a container, went away. Unset means no
+  ping is sent, so the script keeps working on a host with no external checker.
+- **A monthly restore drill.** `deploy/dee-idleclans-drill.{service,timer}` runs
+  `scripts/restore-drill.sh` on the first of the month, and a passing drill writes
+  `$BACKUP_DIR/.last-drill`. `watchdog.sh` alerts when that stamp is older than 45
+  days, so a drill that stops running is noticed instead of assumed.
+
+### Changed
+
+- **The watchdog checks the off-site copy too.** A fresh local dump plus a failing
+  upload used to look healthy; `watchdog.sh` now reads the newest object under
+  `RCLONE_REMOTE/daily` and alerts past 30 hours, on top of the 26-hour local
+  check. Both share one DM path and one 12-hour cooldown.
+- **TypeScript 7.0.2** (the native compiler) replaces 5.9.3. The emitted `.js` is
+  byte-identical to the 5.9.3 build across all 36 files; only `.d.ts` quoting and
+  source maps differ.
+
+### Fixed
+
+- The `1.0.0` changelog section had collected entries that landed after the
+  release, and carried two `### Changed` headings. Both are corrected here; the
+  `v1.0.0` tag now matches its own section again.
+
 ## [1.0.0] - 2026-11-23
 
 ### Added
@@ -40,10 +70,6 @@ Nothing yet.
 
 ### Changed
 
-- **The watchdog checks the off-site copy too.** A fresh local dump plus a failing
-  upload used to look healthy; `watchdog.sh` now reads the newest object under
-  `RCLONE_REMOTE/daily` and alerts past 30 hours, on top of the 26-hour local
-  check. Both share one DM path and one 12-hour cooldown.
 - **`deploy.sh` asks Discord before recording a release.** After the health and
   schema gates it calls `GET /users/@me`, so a revoked or rotated token fails the
   deploy and triggers the rollback instead of surfacing on the next command.
@@ -65,8 +91,6 @@ Nothing yet.
 - A bucket with no trades is a gap, not a zero, and a bucket outside the visible
   price band is not painted against the edge.
 - The daily rollup is idempotent: a restart writes no duplicate rows.
-
-### Changed
 
 - Runtime dependencies refreshed: `dotenv` 16 → 18, `ioredis` 5 → 6 (RESP3 on
   Redis 7), `vitest` and its coverage provider 5.1.0 → 5.1.1; CI actions moved to
