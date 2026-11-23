@@ -443,8 +443,8 @@ also listed in `DEFERRED.md` follows that file:
 - Backups run from `dee-idleclans-backup.timer` (hourly tick, one dump per UTC day,
   `Persistent=true`) and `dee-idleclans-watchdog.timer` restarts a dead container. Both are
   installed and active since 2026-11-22; user cron is no longer part of the path.
-- The deploy check runs from its own checkout outside the workspace (`/opt/dee-idleclans-helper`),
-  not from this working tree: `deploy.sh` detaches its checkout, so pointing it at the dev tree
+- The deploy check runs from its own checkout on the host, outside the workspace, not from this
+  working tree: `deploy.sh` detaches its checkout, so pointing it at the dev tree
   would move `develop`. `dee-idleclans-deploy.timer` is **disabled**: on 2026-11-23 it deployed a
   freshly published commit on its own, which is not what a timer should decide. Releases are manual
   (`. /8.3`).
