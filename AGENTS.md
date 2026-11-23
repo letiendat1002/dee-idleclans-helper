@@ -32,6 +32,7 @@ new agent never has to guess a filename.
 | `docs/UI-DESIGN.md` | touching an embed, chart or DM | **design system of record**: embed anatomy, colours, icons, chart rules, interaction |
 | `docs/CHART.md` | a chart element looks wrong or unreadable | what each series and caption means, the data tiers behind it, why coverage reads "6 of the last 30 days priced", why the line is stepped, and the decision log (bid line dropped, window pinned, no candles) |
 | `docs/ENVIRONMENTS.md` | production vs dev, token rotation, running a second stack | two Discord applications, guild mapping, `STACK_PREFIX` + `IMAGE_TAG`, dev database, command propagation |
+| `docs/GITHUB-SETUP.md` | changing a repo setting, a workflow, or a dependency policy | visibility, branch protection, secret scanning, Dependabot targets and why majors are read first |
 | `docs/DEFERRED.md` | deciding whether something can wait | the parked ledger: owner blockers, verification gaps, tech debt, resume triggers |
 | `docs/SETUP.md` | first run on a new machine | token, database, migrations |
 | `docs/DISCORD-TESTING.md` | verifying on the real surface | MCP driver, intents, command walkthrough |

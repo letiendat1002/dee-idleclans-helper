@@ -44,6 +44,12 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
   price band is not painted against the edge.
 - The daily rollup is idempotent: a restart writes no duplicate rows.
 
+### Changed
+
+- Runtime dependencies refreshed: `dotenv` 16 → 18, `ioredis` 5 → 6 (RESP3 on
+  Redis 7), `vitest` and its coverage provider 5.1.0 → 5.1.1; CI actions moved to
+  `checkout` v7 and `setup-node` v7, still pinned by commit SHA.
+
 ### Security
 
 - Every push is scanned by gitleaks and GitHub push protection; the tree is

@@ -1,7 +1,7 @@
 {
   "name": "dee-idleclans-helper",
   "version": "1.0.0",
-  "description": "Dee IdleClans Helper \u2014 Idle Clans market facts for Discord.",
+  "description": "Dee IdleClans Helper — Idle Clans market facts for Discord.",
   "main": "dist/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc && node scripts/copy-migrations.mjs",
@@ -30,16 +30,16 @@
   "homepage": "https://github.com/letiendat1002/dee-idleclans-helper#readme",
   "dependencies": {
     "discord.js": "^14.28.1",
-    "dotenv": "^16.6.1",
-    "ioredis": "^5.11.1",
+    "dotenv": "^18.0.10",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",
-    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
