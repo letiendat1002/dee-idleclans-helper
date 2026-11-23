@@ -10,6 +10,10 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.0.0] - 2026-11-23
+
 ### Added
 
 - **`scripts/restore-drill.sh`** restores the newest dump into a scratch database,
@@ -70,7 +74,4 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
   checked for operator paths in CI.
 - The bot token lives in `.env` (mode 600) and is never committed.
 
-## [1.0.0] — unreleased
-
-First public release. The section above moves here, with the date of the deploy
-that passed the health gate, when the tag is created.
+First public release.
