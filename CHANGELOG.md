@@ -12,6 +12,17 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 Nothing yet.
 
+## [1.0.2] - 2026-11-23
+
+### Fixed
+
+- **A fresh host is no longer "overdue" for a restore drill on day one.** With no
+  `.last-drill` stamp the watchdog reported `9999 days`, which on the next
+  install (or after a stamp is deleted) would have sent a DM that says nothing
+  true. The clock now starts at the newest dump, so a host that backs up but
+  never drills still trips the 45-day limit, while a host that has simply not
+  drilled yet stays quiet.
+
 ## [1.0.1] - 2026-11-23
 
 ### Added
