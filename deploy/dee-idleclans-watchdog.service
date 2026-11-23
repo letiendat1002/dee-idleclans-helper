@@ -1,0 +1,12 @@
+[Unit]
+Description=Restart Dee IdleClans Helper when it is unhealthy
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Must own the checkout and the docker group. Set it before installing.
+User=CHANGE_ME
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+# Same indirection as the deploy unit: DEPLOY_DIR comes from the environment file.
+EnvironmentFile=-/etc/dee-idleclans/watchdog.env
+ExecStart=/bin/sh -c 'if [ -z "$DEPLOY_DIR" ]; then echo "DEPLOY_DIR is unset: set it in /etc/dee-idleclans/watchdog.env" >&2; exit 78; fi; if [ ! -x "$DEPLOY_DIR/scripts/watchdog.sh" ]; then echo "DEPLOY_DIR=$DEPLOY_DIR has no scripts/watchdog.sh: set it in /etc/dee-idleclans/watchdog.env" >&2; exit 78; fi; exec "$DEPLOY_DIR/scripts/watchdog.sh"'

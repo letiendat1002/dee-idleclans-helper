@@ -1,0 +1,18 @@
+[Unit]
+Description=Deploy Dee IdleClans Helper from origin/production
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Must own the checkout and the docker group. Set it before installing.
+User=CHANGE_ME
+Environment=BRANCH=production
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+# The host sets DEPLOY_DIR once in /etc/dee-idleclans/deploy.env. No default here:
+# a wrong default is how the unit silently pointed at a checkout that never existed.
+EnvironmentFile=-/etc/dee-idleclans/deploy.env
+# systemd does not expand variables in ExecStart, so the shell does it. A missing
+# checkout surfaces as a named error instead of exit 127.
+ExecStart=/bin/sh -c 'if [ -z "$DEPLOY_DIR" ]; then echo "DEPLOY_DIR is unset: set it in /etc/dee-idleclans/deploy.env" >&2; exit 78; fi; if [ ! -x "$DEPLOY_DIR/scripts/deploy.sh" ]; then echo "DEPLOY_DIR=$DEPLOY_DIR has no scripts/deploy.sh: set it in /etc/dee-idleclans/deploy.env" >&2; exit 78; fi; exec "$DEPLOY_DIR/scripts/deploy.sh"'
+TimeoutStartSec=900

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+#
+# Dump the bot database and keep the newest dumps.
+#
+# Runs on the host through `docker exec`, so it needs no database port and no
+# credentials in the environment: the container already holds both. The dump is
+# written to a temporary name and moved into place only after gzip verifies it,
+# so a failed dump can never pass for a good one.
+set -euo pipefail
+
+CONTAINER=${CONTAINER:-dee-idleclans-helper-postgres}
+DB=${DB:-idleclans}
+DB_USER=${DB_USER:-idleclans}
+BACKUP_DIR=${BACKUP_DIR:-$HOME/backups/idleclans}
+KEEP=${KEEP:-7}
+
+STAMP=$(date +%F)
+OUT="$BACKUP_DIR/idleclans-$STAMP.sql.gz"
+TMP="$OUT.part"
+
+mkdir -p "$BACKUP_DIR"
+trap 'rm -f "$TMP"' EXIT
+
+# An hourly schedule with this guard turns "run at 04:00" into "run at the first
+# tick of the day the machine is awake": the host is a laptop, and cron does not
+# run a missed job after a suspend. The first run of the day writes the file,
+# later runs reuse it and still do the cheap work below (archive, remote purge).
+FRESH=0
+if [ "${SKIP_IF_PRESENT:-0}" = "1" ] && [ -f "$OUT" ]; then
+  echo "$(date -Is) $STAMP dump exists, skipping the dump"
+else
+  docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB" --no-owner --no-privileges \
+    | gzip > "$TMP"
+  gzip -t "$TMP"
+  mv "$TMP" "$OUT"
+  trap - EXIT
+  FRESH=1
+
+  ls -1t "$BACKUP_DIR"/idleclans-*.sql.gz | tail -n +$((KEEP + 1)) | xargs -r rm -f
+fi
+
+# The rolling window is days; the price archive is meant to outlive it for years.
+# One table-only dump per month is kept and never deleted, so a bad restore or a
+# runaway delete cannot take the history with it.
+# shortcut: the local copies sit on the same disk as the database, so they
+# survive those two and not a dead disk. RCLONE_REMOTE closes that gap; with it
+# unset the script is local-only (docs/DEPLOYMENT.md 8.6).
+MONTH=$(date +%Y-%m)
+ARCHIVE="$BACKUP_DIR/price_daily-$MONTH.sql.gz"
+if [ ! -f "$ARCHIVE" ]; then
+  docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB" -t price_daily \
+    --no-owner --no-privileges | gzip > "$ARCHIVE.part"
+  gzip -t "$ARCHIVE.part" && mv "$ARCHIVE.part" "$ARCHIVE"
+  echo "$(date -Is) archive $(du -h "$ARCHIVE" | cut -f1) $ARCHIVE"
+fi
+
+
+# Optional off-host copy. Nothing is installed or configured here: set
+# RCLONE_REMOTE (e.g. b2:<bucket>) and the monthly archive plus the
+# newest daily dump are copied there. Unset means local only, which survives a bad
+# restore and not a dead disk -- see docs/DEPLOYMENT.md 8.6 for the one-time setup.
+if [ -n "${RCLONE_REMOTE:-}" ]; then
+  if command -v rclone >/dev/null 2>&1; then
+    rclone copy "$ARCHIVE" "$RCLONE_REMOTE" --log-level ERROR
+    # Only a dump made in this run is sent: a skip must not re-upload 8.5 MB.
+    if [ "$FRESH" = "1" ]; then
+      rclone copy "$OUT" "$RCLONE_REMOTE/daily" --log-level ERROR
+    fi
+    rclone delete "$RCLONE_REMOTE/daily" --min-age 30d --include "idleclans-*.sql.gz" --log-level ERROR
+    echo "$(date -Is) uploaded to $RCLONE_REMOTE"
+  else
+    echo "$(date -Is) WARN RCLONE_REMOTE is set but rclone is not installed; local only"
+  fi
+fi
+
+echo "$(date -Is) ok $(du -h "$OUT" | cut -f1) $OUT"

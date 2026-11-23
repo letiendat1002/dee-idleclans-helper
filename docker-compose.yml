@@ -1,0 +1,139 @@
+# STACK_PREFIX keeps a second stack (dev) off the production one: container,
+# network and volume names take the prefix. Default = production names.
+# IMAGE_TAG does the same for the image: deploy.sh tags a release with its commit
+# (`sha-abc1234`), dev uses its own tag, and the fallback is `local`. Two stacks
+# on one tag means whichever builds last decides what a restart of the other runs.
+services:
+  bot:
+    build: .
+    image: dee-idleclans-helper:${IMAGE_TAG:-local}
+    container_name: ${STACK_PREFIX:-dee-idleclans-helper}
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      # Inside the container 127.0.0.1 is the bot itself: use the service names.
+      - DATABASE_URL=postgresql://idleclans:${POSTGRES_PASSWORD:-idleclans}@postgres:5432/${POSTGRES_DB:-idleclans}
+      - REDIS_URL=redis://redis:6379
+      # This network has no IPv6 route (ENETUNREACH), and a resolver that answers
+      # AAAA first made the chart renderer time out; prefer the IPv4 answer.
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+      # The collector owns the poller heartbeat; the bot stamps its own file so
+      # this healthcheck cannot pass on the collector's liveness.
+      - HEARTBEAT_FILE=/tmp/dee-bot-alive
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # The bot runs no web server: it stamps /tmp/dee-bot-alive every minute and
+      # this reads its age. Older than 5 minutes means the event loop stalled
+      # even though the process is still up.
+      test:
+        - CMD-SHELL
+        - test $$(( $$(date +%s) - $$(stat -c %Y /tmp/dee-bot-alive 2>/dev/null || echo 0) )) -lt 300
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    memswap_limit: 0
+    networks:
+      - dee-net
+
+  collector:
+    # Same image as the bot, different entry point: this process does not need
+    # Discord, so a gateway outage or a bot restart no longer stops collection.
+    image: dee-idleclans-helper:${IMAGE_TAG:-local}
+    container_name: ${STACK_PREFIX:-dee-idleclans-helper}-collector
+    restart: unless-stopped
+    command: ["node", "dist/collector.js"]
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      - DATABASE_URL=postgresql://idleclans:${POSTGRES_PASSWORD:-idleclans}@postgres:5432/${POSTGRES_DB:-idleclans}
+      - REDIS_URL=redis://redis:6379
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+      - HEARTBEAT_FILE=/tmp/dee-heartbeat
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Stamped when a poll cycle finishes, whatever its outcome: an upstream
+      # outage must not look like a wedged poller.
+      test:
+        - CMD-SHELL
+        - test $$(( $$(date +%s) - $$(stat -c %Y /tmp/dee-heartbeat 2>/dev/null || echo 0) )) -lt 600
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 384m
+    memswap_limit: 0
+    networks:
+      - dee-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${STACK_PREFIX:-dee-idleclans-helper}-redis
+    restart: unless-stopped
+    # Every key here is derived (catalogue index, rate-limit windows), so evict
+    # the coldest under pressure instead of letting the cgroup kill Redis.
+    # `maxmemory-reservation` is not a Redis directive (the server-setup
+    # advisory lists it, but Redis 7.4 refuses to start with it).
+    command: redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    memswap_limit: 0
+    volumes:
+      - redis_data:/data
+    networks:
+      - dee-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${STACK_PREFIX:-dee-idleclans-helper}-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-idleclans}
+      - POSTGRES_USER=idleclans
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-idleclans}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idleclans -d idleclans"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    mem_limit: 4g
+    memswap_limit: 0
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dee-net
+
+networks:
+  dee-net:
+    name: ${STACK_PREFIX:-dee-idleclans-helper}-network
+    driver: bridge
+
+volumes:
+  redis_data:
+    name: ${STACK_PREFIX:-dee-idleclans-helper}-redis-data
+  postgres_data:
+    name: ${STACK_PREFIX:-dee-idleclans-helper}-postgres-data

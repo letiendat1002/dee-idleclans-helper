@@ -1,0 +1,17 @@
+[Unit]
+Description=Dump the bot database and copy it off-site
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Must own the checkout and the docker group. Set it before installing.
+User=CHANGE_ME
+# DEPLOY_DIR, BACKUP_DIR and RCLONE_REMOTE live in /etc/dee-idleclans/backup.env;
+# the scripts have working defaults for the last two when it is absent.
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=SKIP_IF_PRESENT=1
+EnvironmentFile=-/etc/dee-idleclans/backup.env
+ExecStart=/bin/sh -c 'if [ -z "$DEPLOY_DIR" ]; then echo "DEPLOY_DIR is unset: set it in /etc/dee-idleclans/backup.env" >&2; exit 78; fi; if [ ! -x "$DEPLOY_DIR/scripts/backup-db.sh" ]; then echo "DEPLOY_DIR=$DEPLOY_DIR has no scripts/backup-db.sh: set it in /etc/dee-idleclans/backup.env" >&2; exit 78; fi; exec "$DEPLOY_DIR/scripts/backup-db.sh"'
+TimeoutStartSec=600

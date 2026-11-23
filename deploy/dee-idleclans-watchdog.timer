@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch the Dee IdleClans Helper health status every two minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=dee-idleclans-watchdog.service
+
+[Install]
+WantedBy=timers.target

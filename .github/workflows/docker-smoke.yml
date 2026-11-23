@@ -1,0 +1,29 @@
+name: docker smoke
+
+# The image is built on the host by deploy.sh, so a broken Dockerfile would only
+# surface at release. Build it here when something that feeds it changes.
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - package.json
+      - package-lock.json
+      - docker-compose.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build the image without pushing it
+        run: docker build -t dee-idleclans-helper:smoke .

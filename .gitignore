@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets — NEVER commit. Bot token lives here.
+.env
+.env.dev
+.env.local
+.env.*.local
+
+# Working plan files — shared via ticket description, not via git
+docs/superpowers/
+
+# SDD workspace — local scratch (ledger, briefs, review packages)
+.superpowers/
+
+# Runtime logs
+*.log
+bot.log
+
+# Release record written by scripts/deploy.sh
+.deployed-sha
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# graphify knowledge graph (rebuild with /graphify, never commit 1.5 MB)
+graphify-out/

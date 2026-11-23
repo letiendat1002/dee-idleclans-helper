@@ -1,0 +1,10 @@
+[Unit]
+Description=Check origin/production for a new release every five minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+Unit=dee-idleclans-deploy.service
+
+[Install]
+WantedBy=timers.target

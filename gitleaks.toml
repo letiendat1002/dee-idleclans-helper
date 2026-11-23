@@ -1,0 +1,48 @@
+# Secret scanning for this repository. Extends the upstream rule set with the
+# credential shapes this project actually uses, so a leak is caught by the tool
+# that knows the format instead of by a reviewer's memory.
+
+title = "dee-idleclans-helper"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "discord-bot-token"
+description = "Discord bot token (three dot-separated base64url segments)"
+regex = '''[MN][A-Za-z0-9]{23,}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}'''
+keywords = ["mtu", "mta", "mti", "mte", "mts", "mtc"]
+
+[[rules]]
+id = "discord-token-prefix"
+description = "Discord bot token truncated in prose (prefix plus ellipsis)"
+regex = '''MT[UEM][A-Za-z0-9]{4,}[.…]{1,3}'''
+keywords = ["mtu", "mta", "mti", "mte", "mts"]
+
+[[rules]]
+id = "backblaze-key-id"
+description = "Backblaze B2 application key id"
+regex = '''K00[0-9a-zA-Z]{20,}'''
+keywords = ["k00"]
+
+[[rules]]
+id = "backblaze-app-key"
+description = "Backblaze B2 application key (31 base64url chars after a key id)"
+regex = '''(?i)application_key\s*[=:]\s*['"]?[A-Za-z0-9]{31}'''
+keywords = ["application_key"]
+
+[allowlist]
+description = "Generated trees, third-party output, and the local files git ignores"
+paths = [
+  '''node_modules/''',
+  '''dist/''',
+  '''graphify-out/''',
+  '''package-lock\.json''',
+  # Ignored by git and absent from a checkout; listed so a local run matches CI
+  # instead of reporting the operator's own .env.
+  '''^\.env$''',
+  '''^\.env\..*''',
+  '''bot\.log''',
+  '''\.impeccable/''',
+  '''\.superpowers/''',
+]

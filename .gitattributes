@@ -1,0 +1,4 @@
+# Shell scripts and ESM helpers carry POSIX shebangs, so they check out with LF
+# on every platform.
+*.sh text eol=lf
+*.mjs text eol=lf

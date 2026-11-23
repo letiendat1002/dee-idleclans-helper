@@ -1,0 +1,84 @@
+name: tests
+
+# The gate for every branch we push: the same commands the host runs before a
+# release, plus the operator-path guard, on hosted runners.
+#
+# The suite is not all unit tests: `WatchlistService.test.ts` is an integration
+# test against a real schema, so Postgres and Redis come up as services and the
+# migrations run before `npm test`.
+on:
+  push:
+    branches: [develop, production]
+  pull_request:
+  workflow_dispatch:
+
+# A push to a PR branch cancels the run its previous push started: the earlier
+# commit is no longer what would be merged. Pushes to develop and production keep
+# every run, so each merge keeps its own result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: idleclans
+          POSTGRES_PASSWORD: idleclans
+          POSTGRES_DB: idleclans
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U idleclans"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://idleclans:idleclans@localhost:5432/idleclans
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          # the Dockerfile's line: vitest 4 needs Map.groupBy (Node 21+)
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Before the database work: a leaked credential or an operator path must
+      # fail fast, not after two minutes of tests.
+      - name: No credential or operator path in the tree
+        run: bash scripts/scan-secrets.sh
+
+      - run: npm run migrate
+
+      # The integration test picks the lowest catalogue item; a migrated schema
+      # has none. Teak log is the fixture item used everywhere else.
+      - name: Seed one catalogue item
+        env:
+          PGPASSWORD: idleclans
+        run: psql -h localhost -U idleclans -d idleclans -c "INSERT INTO items (item_id, name, tradeable) VALUES (8, 'Teak log', true) ON CONFLICT (item_id) DO NOTHING"
+
+      - run: npm run typecheck
+      - run: npm test
