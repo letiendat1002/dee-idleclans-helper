@@ -30,6 +30,22 @@ enforcement is on, so the rules apply to the maintainer too.
 | Force push / branch deletion | blocked |
 | Conversation resolution | required |
 
+## Release tags
+
+`v*` tags carry a ruleset (`release tags are deliberate`) that blocks creating, moving or deleting
+one. A repository admin can bypass it — that is the point: a tag is now a deliberate act, not an
+accident from a typo in `git push --tags`. `version-guard` then checks that the tag, the version in
+`package.json` and the `CHANGELOG.md` heading agree.
+
+```bash
+gh api -X POST "repos/$SLUG/rulesets" --input - <<'JSON'
+{ "name": "release tags are deliberate", "target": "tag", "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+  "bypass_actors": [ { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" } ],
+  "rules": [ { "type": "creation" }, { "type": "update" }, { "type": "deletion" } ] }
+JSON
+```
+
 `version-guard` and `docker smoke` are deliberately **not** required: the first
 only runs on tags and on PRs touching the version, the second only when the image
 inputs change. Requiring a check that does not run on every PR blocks the PR
