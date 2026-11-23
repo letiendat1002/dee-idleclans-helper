@@ -13,7 +13,7 @@ something a maintainer can check or restore.
 | Issues | on | the only support channel besides Discord |
 | Wiki, projects, discussions | off | unused surfaces go stale and appear in search |
 | Topics | `discord-bot`, `idleclans`, `market-data`, `postgresql`, `typescript` | discovery |
-| Merge | squash only, linear history, delete branch on merge | one commit per change, no merge bubbles |
+| Merge | merge commit **policy**, rebase-merge off, delete branch on merge, `required_linear_history` off | history keeps how a change was reached (ADR-1). GitHub will not let squash be disabled while merge commits are enabled, so the squash button exists; the rule not to use it lives in `docs/CONVENTIONS.md` §8.1 |
 | Auto-merge | on | Dependabot patches can land without a click once checks pass |
 
 ## Branch protection
@@ -26,7 +26,7 @@ enforcement is on, so the rules apply to the maintainer too.
 | Required checks | `check` (tests) and `scan` (gitleaks), strict — the branch must be up to date |
 | Pull request | required, **0 approvals** — a single maintainer cannot approve their own PR |
 | Enforce for admins | on |
-| Linear history | on |
+| Linear history | **off** — merge commits are the chosen strategy, and a linear requirement rejects them |
 | Force push / branch deletion | blocked |
 | Conversation resolution | required |
 
@@ -72,7 +72,13 @@ SLUG=letiendat1002/dee-idleclans-helper
 # `gh repo edit` has no flag for turning the wiki or projects off in every gh
 # release, so those go through the API with the security settings.
 gh repo edit "$SLUG" --default-branch production --enable-issues \
-  --enable-squash-merge --delete-branch-on-merge
+  --enable-merge-commit --delete-branch-on-merge
+# Rebase-merge off, merge commit on. GitHub refuses to disable squash while merge
+# commits are enabled ("you need to allow either squash or rebase"), so squash
+# stays available as a button and is ruled out by convention instead (ADR-1).
+gh api -X PATCH "repos/$SLUG" --input - <<'JSON'
+{ "allow_squash_merge": true, "allow_rebase_merge": false, "allow_merge_commit": true }
+JSON
 
 gh api -X PATCH "repos/$SLUG" --input - <<'JSON'
 { "has_wiki": false, "has_projects": false, "has_discussions": false, "allow_auto_merge": true,
@@ -92,7 +98,7 @@ for b in develop production; do
 { "required_status_checks": { "strict": true, "contexts": ["check", "scan"] },
   "enforce_admins": true,
   "required_pull_request_reviews": { "required_approving_review_count": 0, "dismiss_stale_reviews": true },
-  "restrictions": null, "required_linear_history": true,
+  "restrictions": null, "required_linear_history": false,
   "allow_force_pushes": false, "allow_deletions": false,
   "required_conversation_resolution": true }
 JSON
