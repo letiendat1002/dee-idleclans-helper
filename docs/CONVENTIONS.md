@@ -12,15 +12,19 @@ Read `AGENTS.md` (repo root) first — it is the short map to this document.
 
 | # | Document | Binding on |
 |---|---|---|
-| 1 | `docs/CONVENTIONS.md` (this file) | how to build here |
-| 2 | `docs/superpowers/specs/2026-11-11-dee-idleclans-helper-v2-design.md` | **behaviour** — a corrected item is marked `[corrected]` |
-| 3 | `docs/superpowers/plans/2026-11-11-dee-idleclans-helper-v2.md` | the task list and the argument behind it |
-| 4 | `.superpowers/sdd/2026-11-11-dee-idleclans-helper-v2/progress.md` | rulings, task states, deferred debt |
+| 1 | `docs/CONVENTIONS.md` (this file) | **how to build here** — style, invariants, code, tests, git |
+| 2 | `docs/ARCHITECTURE.md` | flows, topology, tables, budgets — which file owns which job |
+| 3 | `docs/ROADMAP.md` | scope: decisions D1–D6 and the track list |
+| 4 | task memory (`tasks/<slug>/`, **outside** this repo) | where the current task stands, what was ruled |
 
-When two of them disagree, this file wins on style, the spec wins on behaviour, and the ledger
-records the decision as a ruling. A conflict is never resolved silently: write the ruling down.
+When two disagree, this file wins on style, `ARCHITECTURE.md` wins on how a flow is wired,
+`ROADMAP.md` wins on scope, and the task memory wins on "where were we". A conflict is never
+resolved silently: write it as a deviation record (§12) in the same change.
 
-`docs/superpowers/` and `.superpowers/` are gitignored. They travel with the ticket, not with git.
+The v2 design spec, the build plan and the session ledger are **private** ticket artifacts. They
+are not in this repository; the maintainer reads them from the private notes folder beside the
+clone. A public doc that needs one of them names what it needs instead of linking a path that
+does not resolve here.
 
 ---
 
@@ -373,24 +377,65 @@ the architecture audit; do not restate them from memory.
 
 ## 8. Git conventions
 
-- **This repo overrides the global commit rule.** The agent commits proactively at the end of each
-  finished unit of work: one commit per coherent change, imperative message, no per-commit
-  permission prompt. The global `~/.config/opencode/AGENTS.md` keeps "không commit tự động" as the
-  default for other projects; the override applies here only.
-- Hard bounds: `develop` only (no force-push, no history rewrite of pushed commits), never commit
-  `.env` or tokens, `npm run typecheck && npm test` green before the commit, and **a push is not a
-  deploy** — deployment runs `scripts/deploy.sh`.
-- Feature work that spans sessions still gets a checkpoint report at each unit, so a review can
-  land on a single commit rather than a range.
+### 8.1 Branch, commit, merge
+
+- **Branch** from `develop`, named `<type>/<short-desc>`; allowed types are `feat`, `fix`, `docs`,
+  `chore`, `refactor`, `test`. One branch per coherent change, not per file.
+- **Commit** message is `type: subject` — one line, imperative subject, no body, no trailer, no
+  `Co-Authored-By`. The subject says what the code now does, not which file moved.
+  Example: `fix: stop drawing a flat series as a gap`.
+- **A pull request** is how anything lands on `develop` or `production`. Protection requires the
+  `check` and `scan` workflows, so a direct push is not an option even for the owner.
+- **Merge with a merge commit** (`gh pr merge --merge`). Squash and rebase-merge are disabled on
+  purpose: the branch structure is the record of how a change was argued. Consequence: branch tips
+  land in the history, so keep a branch to one purpose and delete it after the merge.
+- **Never** force-push, never rewrite a pushed commit, never commit `.env` or a token.
+- Feature work that spans sessions gets a task folder (§8.2), so a later session resumes from a
+  file instead of from chat.
+
+### 8.2 Task memory
+
+Work that spans more than one sitting keeps a folder **outside** this repository, at
+`<private notes>/tasks/<slug>/`, with two files:
+
+| File | Holds |
+|---|---|
+| `IMPLEMENTATION_PLAN.md` | the task table with commit hashes, scope, files, verify steps, risk register |
+| `CONTEXT_FOR_COMPACT.md` | objective, environment, gotchas, locked decisions, build/verify recipes, test status, remaining work, blockers |
+
+`CONTEXT_FOR_COMPACT.md` is written **before** a compaction, not after. Anything that must survive
+a session boundary goes there; a fact that only exists in the conversation is lost.
+
+### 8.3 Release
+
+`production` is what the host runs. A release is exactly five steps:
+
+1. PR `develop` → `production`, merge commit. CI must be green on the branch tip.
+2. Deploy: `sudo systemctl start dee-idleclans-deploy.service` on the host. The deploy timer is
+   **disabled**; releases are deliberate, never a side effect of a push.
+3. Check the journal and `.deployed-sha`; the schema gate, the Discord smoke and the health gate
+   must all pass, otherwise the script rolls back on its own.
+4. Tag the deployed commit `vX.Y.Z` and push the tag; `version-guard` checks the tag,
+   `package.json` and `CHANGELOG.md` agree before it is accepted.
+5. PR `production` → `develop` (merge-back), so the next branch starts from the released code.
+
+`CHANGELOG.md` gets its `[Unreleased]` entries in the PRs that make the change; the version section
+is renamed and dated in the release PR, not afterwards.
+
+### 8.4 Commit rule override
+
+**This repo overrides the global commit rule.** The global `~/.config/opencode/AGENTS.md` keeps
+"không commit tự động" as the default for other projects; here the agent commits at the end of each
+finished unit of work — one commit per coherent change, no per-commit permission prompt. A push is
+not a deploy: releases follow §8.3.
 
 ---
 
 ## 9. Known debt
 
 Deferred findings live in `docs/DEFERRED.md` (owner blockers, verification gaps, tech debt,
-marketing) and in the ticket ledger
-(`.superpowers/sdd/2026-11-11-dee-idleclans-helper-v2/progress.md`). Current state, re-checked
-2026-11-22 after the deploy work — anything also listed in `DEFERRED.md` follows that file:
+marketing). Current state, re-checked 2026-11-23 after the public-repo and release work — anything
+also listed in `DEFERRED.md` follows that file:
 
 - The graphify index is derived and its community labels are partly hub-named (43 saved labels for
   76 communities) because no LLM backend key is configured on this machine. `graphify label .
@@ -398,10 +443,11 @@ marketing) and in the ticket ledger
 - Backups run from `dee-idleclans-backup.timer` (hourly tick, one dump per UTC day,
   `Persistent=true`) and `dee-idleclans-watchdog.timer` restarts a dead container. Both are
   installed and active since 2026-11-22; user cron is no longer part of the path.
-- The deploy check runs from its own checkout outside the workspace through
-  `dee-idleclans-deploy.timer` (5 minutes), not from this working tree: `deploy.sh` detaches its
-  checkout, so pointing it at the dev tree would move `develop`. The timer is enabled and, until
-  the release branch carries an application, every tick ends with `nothing to deploy`.
+- The deploy check runs from its own checkout on the host, outside the workspace, not from this
+  working tree: `deploy.sh` detaches its checkout, so pointing it at the dev tree
+  would move `develop`. `dee-idleclans-deploy.timer` is **disabled**: on 2026-11-23 it deployed a
+  freshly published commit on its own, which is not what a timer should decide. Releases are manual
+  (`. /8.3`).
 - `develop`'s gate is `.github/workflows/tests.yml` on a hosted runner with Postgres and Redis
   services. It reproduces the suite, but it is not the host's docker stack: a failure that needs
   the container image (Dockerfile drift, alpine differences) will only show at deploy time.
@@ -444,5 +490,34 @@ These are not negotiable and they are not a style choice:
 
 `docs/DISCORD-TESTING.md` — how to run the bot, how to drive each command in the test guild
 (`<dev-guild-id>`, channel `general` = `<dev-channel-id>`), and what each response must
-contain. The agent-side runbook with the MCP driver and the intent pitfalls is
-`.superpowers/sdd/2026-11-11-dee-idleclans-helper-v2/DISCORD-TESTING.md`.
+contain. The agent-side runbook (MCP driver, intent pitfalls) is a private ticket artifact, read from the
+notes folder beside the clone; `docs/DISCORD-TESTING.md` is the public half.
+
+---
+
+## 12. Deviation records (ADR)
+
+A deviation from this document is allowed, but it is written down here with the reason and the
+consequence. Format: `ADR-<n> · <date> · <decision>` then **Why** and **Consequence**, three lines
+maximum. An unrecorded deviation is a bug in the process, not a shortcut.
+
+**ADR-1 · 2026-11-23 · Merge commits, not squash.**
+Why: the owner reads history as the argument behind a change, and a squashed commit hides how the
+change was reached. Consequence: branch tips land in `production` and `required_linear_history` is
+off. GitHub will not let squash be disabled while merge commits are enabled, so the button exists
+— §8.1 says which one to press, and rebase-merge is off outright.
+
+**ADR-2 · 2026-11-23 · Releases are manual, the deploy timer stays off.**
+Why: on 2026-11-23 the timer deployed a commit minutes after it was published, before any tag
+existed. A push must never be a deploy. Consequence: `systemctl start dee-idleclans-deploy.service`
+is a release step (`. /8.3`), and nothing else triggers a deploy.
+
+**ADR-3 · 2026-11-23 · One production environment plus a dev stack, no `pre`/`uat`.**
+Why: there is one operator and one public bot; a staging tier would need a second application, a
+second database and a second token rotation path for no added safety. Consequence: a risky change
+is validated on the dev stack with the dev application, not with a pre-release tier.
+
+**ADR-4 · 2026-11-23 · Public repository, private operations notes.**
+Why: the code is useful to other server owners; runbooks, legal notes, vendor specs and marketing
+assets are not. Consequence: public docs never link a private path (`§1`), and
+`scripts/scan-secrets.sh` blocks an operator path or token from reaching a commit.

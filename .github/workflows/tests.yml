@@ -64,6 +64,11 @@ jobs:
           node-version: '22'
           cache: npm
 
+      # `deploy.sh` runs on the host against the live stack, so a shell bug is a
+      # release bug. Cheap enough to lint every script before the install.
+      - name: Shell scripts pass shellcheck
+        run: docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable scripts/*.sh
+
       - run: npm ci
 
       # Before the database work: a leaked credential or an operator path must

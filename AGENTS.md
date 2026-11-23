@@ -77,17 +77,19 @@ Refresh recipe (verified 2026-11-17 at 940 nodes / 2116 edges / 76 communities):
 
 ## Source-of-truth order
 
-1. `docs/CONVENTIONS.md` — the binding convention for *how* to build here.
-2. `docs/superpowers/specs/2026-11-11-dee-idleclans-helper-v2-design.md` — the design, binding
-   on **behaviour**. A corrected item is marked `[corrected]`.
-3. `docs/superpowers/plans/2026-11-11-dee-idleclans-helper-v2.md` — the task list, the argument.
-4. `.superpowers/sdd/2026-11-11-dee-idleclans-helper-v2/progress.md` — the **ledger**: the
-   recovery map with every ruling, the task states and the deferred-debt list. Read it before
-   touching anything; it survives compaction when a session does not.
-5. `.superpowers/sdd/2026-11-11-dee-idleclans-helper-v2/DISCORD-TESTING.md` — the agent-side
-   Discord live-testing runbook (MCP driver, intent pitfalls, how to drive slash commands).
+1. `docs/CONVENTIONS.md` — the binding convention for *how* to build here (§8 git, §12 deviations).
+2. `docs/ARCHITECTURE.md` — how a flow is wired: topology, boot order, tables, budgets.
+3. `docs/ROADMAP.md` — scope: decisions D1–D6 and the track list.
+4. **Task memory**, outside this repository at `<private notes>/tasks/<slug>/`:
+   `IMPLEMENTATION_PLAN.md` (task table with commit hashes) and `CONTEXT_FOR_COMPACT.md`
+   (the resumable context — objective, gotchas, locked decisions, verify recipe, blockers). Read
+   the `CONTEXT_FOR_COMPACT.md` of the active task before touching anything; it survives compaction
+   when a session does not. Write it **before** a compaction, never after.
+5. `<private notes>/CONVENTION.md` — which document wins, and the reload prompt after a compaction.
 
-`docs/superpowers/` and `.superpowers/` are gitignored — they travel with the ticket, not with git.
+The v2 design spec, the build plan and the session ledger are **private** ticket artifacts; they
+live in the notes folder beside the clone, not in this repository. When a doc needs one, it says
+what it needs rather than linking a path that does not resolve here.
 
 ## The five rules that break the product if violated
 
@@ -111,6 +113,17 @@ Refresh recipe (verified 2026-11-17 at 940 nodes / 2116 edges / 76 communities):
 5. **A blocked DM is never made public.** Mark `delivered = false`, surface it in `/alerts`, and
    never post a public fallback.
 
+## Hard rules beyond code style
+
+1. **No write SQL against a live database from an agent shell.** `SELECT` only on dev and prod;
+   schema changes go through `src/db/migrations/` and `npm run migrate`.
+2. **No rewrite of pushed history.** No force-push, no amend of a pushed commit, no rebase of a
+   shared branch. Fix forward with a new commit.
+3. **No generated artifacts in git.** `dist/`, `node_modules/`, `graphify-out/`, `*.log` and every
+   `.env*` stay ignored; a committed build output is a bug, not a convenience.
+4. **Push and release are separate decisions.** Pushing a branch is normal work; merging into
+   `production`, deploying, tagging and enabling a timer each need the owner's word in that turn.
+
 ## Hard code rules
 
 - Comments in **English only**; `/** */` docblock for anything describing a function, method,
@@ -133,14 +146,19 @@ Refresh recipe (verified 2026-11-17 at 940 nodes / 2116 edges / 76 communities):
 of work — one commit per coherent change, message in the repo's imperative style. No permission
 prompt per commit.
 
-Bounded by four things: commit on `develop` only (never force-push, never rewrite pushed
-history), never commit secrets or `.env`, run `npm run typecheck && npm test` before committing,
-and a push does **not** deploy — deployment goes through `scripts/deploy.sh`.
+Bounded by four things: never force-push or rewrite pushed history, never commit secrets or
+`.env`, run `npm run typecheck && npm test` before committing, and a push does **not** deploy —
+deployment goes through `scripts/deploy.sh`.
 
-**No release is scheduled** (`docs/ROADMAP.md` §0 D9). Until the owner says otherwise: do not
-push, do not merge into `production`, do not run `deploy.sh`, do not enable `deploy.timer`, and do
-not move the stack to a host server. Anything a doc marks as a later phase stays untouched unless
-the owner asks for it in that turn.
+Format and flow are in `docs/CONVENTIONS.md` §8: branch `<type>/<short-desc>` off `develop`,
+commit `type: subject` on one line, land it through a PR merged with a **merge commit** (squash and
+rebase-merge are disabled), and a release is the five-step procedure in §8.3 — PR into
+`production`, manual deploy, tag, merge-back.
+
+**Releases are manual and deliberate.** `dee-idleclans-deploy.timer` stays **disabled**; a deploy
+runs only when the owner asks for a release, and then only through the §8.3 sequence. Never enable
+that timer, never move the stack to a host server, and never start a later phase a doc marks as
+future work unless the owner asks for it in that turn.
 
 ## Workflow
 

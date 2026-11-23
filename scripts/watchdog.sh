@@ -14,6 +14,7 @@ SERVICES=${SERVICES:-"bot collector"}
 
 cd "$REPO_DIR"
 
+# shellcheck disable=SC2086  # space separated list, word splitting is the point
 for service in $SERVICES; do
   container=$(docker compose ps -q "$service")
   if [ -z "$container" ]; then
@@ -36,6 +37,7 @@ BACKUP_DIR=${BACKUP_DIR:-$HOME/backups/idleclans}
 MAX_AGE_H=${MAX_AGE_H:-26}
 ALERT_ENV=${ALERT_ENV:-$HOME/.config/idleclans/watchdog-alert.env}
 
+# shellcheck disable=SC2012  # dump names are generated, not user input
 newest=$(ls -1t "$BACKUP_DIR"/idleclans-*.sql.gz 2>/dev/null | head -1 || true)
 age_h=99999
 if [ -n "$newest" ]; then
