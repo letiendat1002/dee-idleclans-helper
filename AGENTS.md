@@ -42,8 +42,9 @@ new agent never has to guess a filename.
 | `docs/MARKETING-COPY.md` | the top.gg or portal listing | surfaces, limits, recommended strings, evidence |
 
 Deploy, release, operations, legal, competitor research, the vendor API spec and the
-marketing assets are **not in this repository**: they live in the maintainer's private notes
-(`docs-private/`, `assets/`, `evidence/` beside the clone). A doc that needs one of them names
+marketing assets are **not in this repository**: they live in the maintainer's private notes,
+now versioned at the private repo `dee-idleclans-private` (`docs-private/`, `tasks/`, `ops/`, `assets/`,
+`evidence/`). A doc that needs one of them names
 what it needs instead of linking a path that does not exist here.
 
 **A skill's body is not memory.** A skill loads as a tool result, so a compaction drops it while
@@ -123,6 +124,10 @@ what it needs rather than linking a path that does not resolve here.
    `.env*` stay ignored; a committed build output is a bug, not a convenience.
 4. **Push and release are separate decisions.** Pushing a branch is normal work; merging into
    `production`, deploying, tagging and enabling a timer each need the owner's word in that turn.
+   **Default end state of any change: merged into `develop`, nothing else.** A slice of work does not
+   earn its own release — batch it. Release only when the owner says "release"/"deploy"/"ship" in
+   that turn, or explicitly approves a release the agent proposed; approval of the *change* is not
+   approval of the release.
 
 ## Hard code rules
 

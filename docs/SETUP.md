@@ -89,7 +89,7 @@ Log kỳ vọng:
 ```
 [INFO] [BOT] Logged in as DIH#7997
 [INFO] [BOT] Synced guild: DeeLY's test server (<dev-guild-id>)
-[INFO] [REGISTER] Registered 9 commands globally
+[INFO] [REGISTER] Registered 8 commands globally
 ```
 
 Trong Discord: gõ `/help`, `/price` (chọn "Teak log"), `/graph item` (chọn "Teak log"), `/watch` (chọn "Titanium bar" rồi đặt ngưỡng).

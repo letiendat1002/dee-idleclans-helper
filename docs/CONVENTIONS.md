@@ -220,6 +220,11 @@ Rules that follow:
   visibility. Discord owns that axis; a copy of it is a second source of truth that drifts the
   first time an admin edits the Integrations page. The bot token cannot write command permissions
   at all -- Discord requires a Bearer token and Manage Guild + Manage Roles for that.
+- **The command handler does not re-check the permission.** Discord has already decided who may
+  run a command: the Integrations override first, the registration default after it. A
+  `memberPermissions` check inside the handler is a second source of truth that cannot see those
+  overrides, so it refuses exactly the roles a server admin allowed. Decided 2026-11-24 for
+  `/digest` and `/vault`; any future config command follows the same rule.
 - **Do keep the capability check.** Discord enforces permissions per request (403 / `50013`
   "You lack permissions to perform that action", `50001` missing access, `40043` interaction
   failed to send) and channel overwrites can be changed after install, so an install-time grant
@@ -407,6 +412,11 @@ Work that spans more than one sitting keeps a folder **outside** this repository
 a session boundary goes there; a fact that only exists in the conversation is lost.
 
 ### 8.3 Release
+
+**A release is a decision, not a step.** A change lands on `develop` and stops there. Several
+changes accumulate; a release happens when the owner asks for one in that turn, or approves one the
+agent proposed — never because a fix looks small. Approving a change is not approving its release.
+When in doubt, ask "release now, or keep it on `develop`?" and wait.
 
 `production` is what the host runs. A release is exactly five steps:
 

@@ -25,7 +25,7 @@ A healthy start logs, in order: `Redis connected`, `Logged in as DIH Dev#5813`, 
 summary (`Skipping …` for every applied file), `Synced guild: DeeLY's test server`, then
 
 ```
-[REGISTER] Registered 9 commands globally
+[REGISTER] Registered 8 commands globally
 [REGISTER] Cleared the guild-scoped commands of guild <dev-guild-id>
 ```
 
@@ -214,8 +214,11 @@ empty state is a muted embed that points at `/watch`.
 
 ### `/digest #channel` — ephemeral
 
-Needs `Manage Channels` on the invoker (the bot itself only has SEND_MESSAGES and cannot create a
-channel). It upserts `guild_settings` with `digest_channel_id` and `digest_enabled = true`. The
+Who may run it is decided by Discord: `ManageGuild` is the default and a role override in
+Server Settings → Integrations replaces it (Horde allows the `Guildmaster [Idle Clans]` role). The
+handler does not re-check the permission, so test both sides: a member the server allowed
+succeeds, a member it did not allow never sees the command. It writes one row into `digest_channels` — the single-channel columns of `guild_settings`
+were dropped in migration 011. The
 digest job then posts on its own schedule and logs
 `[DIGEST] market digest posted {"guildId":…,"channelId":…,"items":N}`; the post carries
 `flags: 4096` so it does not ping.
@@ -347,7 +350,7 @@ to be public (`Post to channel`, the `@mention` showcase).
 | `/unwatch` | item `Pine log` | `Alert removed — Pine log`, `No DM will fire for this item.`; `watchlists` went 1 → 0 |
 | `/digest list` | no options | `Every 60 minutes · 1 channel subscribed.`, `#digest — last digest 10:53 UTC` |
 | `/vault list` | no options | `0 of 5 channels subscribed · 0 clans.`, `No channel follows a clan vault yet.` |
-| `/help` | no options | all eight commands grouped Market / Server / Clan vault, `Manage Server needed · one channel per server`, `5 uses per minute (except /help) · digest and vault post publicly` |
+| `/help` | no options | all eight commands grouped Market / Server / Clan vault, `Access is set in Server Settings > Integrations · one channel per server`, `5 uses per minute (except /help) · digest and vault post publicly` |
 | `@mention` | `@DIH pine log` | public showcase `Idle Clans market intel`, `Free · every answer comes from the same 2-minute snapshot.`, `Add to server` / `Community server` links — a pitch, not an item answer, which is the designed behaviour |
 
 ### 7.3 Findings from this pass

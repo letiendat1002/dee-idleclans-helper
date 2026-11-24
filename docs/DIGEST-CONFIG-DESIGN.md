@@ -4,6 +4,14 @@
 **Phạm vi:** cấu hình digest (nhiều channel / guild, interval), mô hình quyền, dọn dẹp channel bị xoá.
 **Chốt sau review:** giới hạn hạ xuống **1 channel / guild** (`MAX_CHANNELS_PER_GUILD = 1`) — schema vẫn nhiều dòng để sau này mở lại, nhưng mỗi channel thêm là thêm bề mặt bị lạm dụng và thêm lượng gửi. Phần phân tích nhiều channel bên dưới giữ nguyên làm nguồn.
 
+> **Cập nhật 2026-11-24 — §1.3 và §5.2 hết hiệu lực.** Kiểm tra
+> `memberPermissions.has(ManageGuild)` lúc chạy đã bị bỏ khỏi `/digest` và `/vault`.
+> `memberPermissions` là bitmask quyền guild, **không** thấy override trong
+> Server Settings → Integrations, nên nó từ chối đúng những member mà admin đã cho phép
+> (Horde: role `Guildmaster [Idle Clans]`). Quyền vào lệnh giờ do Discord quyết 100%
+> (`CONVENTIONS.md` §5.1); `setDefaultMemberPermissions(ManageGuild)` giữ lại làm mặc định
+> lúc đăng ký.
+
 ## 1. Kết luận trước
 
 1. **Nhiều channel / guild** là đúng hướng; schema `guild_settings.digest_channel_id` (1 channel) phải tách thành bảng `digest_channels` — một dòng mỗi `(guild_id, channel_id)`.
@@ -63,18 +71,15 @@
 | `/digest add` | `channel` (bắt buộc) | subscribe channel; idempotent |
 | `/digest remove` | `channel` (bắt buộc, autocomplete từ subscription hiện có) | unsubscribe |
 | `/digest list` | — | bảng các channel đang nhận + interval + lần gửi cuối; ephemeral |
-| `/digest interval` | `hours` (0–24, bắt buộc) + `minutes` (0 / 15 / 30 / 45) | đổi nhịp của guild; phủ mọi mốc 15 phút từ 15 phút tới 24 giờ |
+| `/digest interval` | `hours` (0–24, bắt buộc) + `minutes` (15 / 30 / 45, không bắt buộc — bỏ trống là tròn giờ) | đổi nhịp của guild; phủ mọi mốc 15 phút từ 15 phút tới 24 giờ |
 
 Tất cả: `setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)` + `setContexts(InteractionContextType.Guild)`.
 Giữ rate limit 5/phút/user như hiện tại.
 
-### 5.2 Kiểm tra quyền lúc chạy
+### 5.2 Kiểm tra quyền lúc chạy — đã bỏ (2026-11-24)
 
-```ts
-if (!interaction.inCachedGuild()) return;                      // không có guild → không cấu hình
-const canConfig = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ?? false;
-if (!canConfig) { ephemeral: "Cần Manage Server." ; return; }
-```
+Không còn khối `canManage` trong handler. Chỉ giữ `inCachedGuild()` (không có guild thì không có
+gì để cấu hình). Ai được chạy lệnh do Discord quyết ở Integrations; bot không đọc lại.
 
 Không tự sửa command permissions bằng bot token (Discord chặn, cần Bearer token) — bỏ hẳn ý định đó.
 

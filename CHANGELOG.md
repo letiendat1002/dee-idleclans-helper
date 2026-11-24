@@ -10,7 +10,16 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
-Nothing yet.
+## [1.2.0] - 2026-11-24
+
+### Changed
+
+- `/digest` and `/vault` no longer re-check `Manage Server` inside the handler. Discord owns
+  command access (`Server Settings > Integrations`), so a role the server allows — such as
+  `Guildmaster [Idle Clans]` in Horde — is no longer refused after passing that gate. `/help`
+  now points at that screen instead of naming the permission.
+- `/digest interval` drops the redundant `0 minutes` choice: `minutes` is optional,
+  so leaving it blank already means a whole number of hours.
 
 ## [1.1.0] - 2026-11-24
 

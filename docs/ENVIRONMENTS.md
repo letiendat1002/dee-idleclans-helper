@@ -10,13 +10,16 @@ application, nên app dev không bao giờ nhận lệnh ở guild của app pro
 |---|---|---|
 | Application | Dee IdleClans Helper `1569644838012325968` | DIH Dev `1573952148209795072` |
 | Bot user | `DIH#7997` | `DIH Dev#5813` |
-| Guild | Clint's Polygon Abilities `1283509005477609562` | Test server riêng `<dev-guild-id>` |
+| Guild | **Horde** `1150269874514440294` — vào 2026-11-24, chạy category `DEE IDLECLANS HELPER` (xem §2) | Test server riêng `<dev-guild-id>` |
 | Env file | `.env` | `.env.dev` |
 | Stack | host server, 24/7 | laptop, `STACK_PREFIX=dih-dev` |
 | Database | `idleclans` | `idleclans_dev` |
 
-Lịch sử: ngày 2026-11-22 DIH bị gỡ khỏi server test, DIH Dev được mời vào thay. Từ đó production
-và dev không còn chung guild nào.
+Lịch sử: ngày 2026-11-22 DIH bị gỡ khỏi server test, DIH Dev được mời vào thay. Ngày 2026-11-24 DIH
+rời nốt `Clint's Polygon Abilities` bằng `DELETE /users/@me/guilds/<id>` sau khi live-test xong, rồi
+được mời lại vào **Horde** cùng ngày để chạy category `DEE IDLECLANS HELPER`. Cấu hình server (channel
+id, role, ma trận quyền) là tài liệu private của owner, không nằm trong repo này; `docs/DISCORD-TESTING.md`
+là chỗ kiểm hành vi, và `docs/GUIDE.md` §2 là chỗ nói người dùng thấy gì.
 
 ## 2. Quy tắc
 
