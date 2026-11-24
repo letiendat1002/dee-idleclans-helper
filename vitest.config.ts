@@ -15,6 +15,14 @@ export default defineConfig({
       reporter: ['text', 'text-summary'],
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/index.ts', 'src/db/migrate.ts'],
+      // A floor, not a target: set a little under today's numbers so a change that
+      // drops coverage has to be deliberate instead of silent.
+      thresholds: {
+        statements: 84,
+        branches: 71,
+        functions: 85,
+        lines: 85,
+      },
     },
   },
 });

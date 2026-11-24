@@ -30,8 +30,8 @@ for service in $SERVICES; do
 done
 
 BACKUP_DIR=${BACKUP_DIR:-$HOME/backups/idleclans}
-MAX_AGE_H=${MAX_AGE_H:-26}
-MAX_AGE_H_REMOTE=${MAX_AGE_H_REMOTE:-30}
+MAX_AGE_H=${MAX_AGE_H:-3}
+MAX_AGE_H_REMOTE=${MAX_AGE_H_REMOTE:-3}
 ALERT_ENV=${ALERT_ENV:-$HOME/.config/idleclans/watchdog-alert.env}
 ALERT_STAMP=${ALERT_STAMP:-$BACKUP_DIR/.alert-stamp}
 # One DM per 12h across every condition: a flare-up must not become a stream.

@@ -1,10 +1,10 @@
 [Unit]
-Description=Hourly tick that keeps one database dump per day
+Description=Hourly database dump
 
 [Timer]
 OnCalendar=hourly
-# The script names its dump after the UTC day, so an hourly tick is a daily file:
-# Persistent=true runs the missed tick right after boot instead of losing the day.
+# Every tick rewrites the day's file, so the dump is never more than an hour old.
+# Persistent=true runs the missed tick right after boot instead of losing the hour.
 Persistent=true
 Unit=dee-idleclans-backup.service
 

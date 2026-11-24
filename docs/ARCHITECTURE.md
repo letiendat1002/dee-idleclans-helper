@@ -37,9 +37,11 @@ smallest correct arrangement.
 Everything is `restart: unless-stopped`; Docker is the supervisor, there is no
 systemd unit and no process manager inside the container.
 
-One thing does leave the host: cron at 04:00 runs `scripts/backup-db.sh`, which
-dumps the database and copies the newest dump plus the monthly `price_daily`
-archive to a private Backblaze B2 bucket through `rclone`. That is the only
+One thing does leave the host: an hourly systemd timer runs `scripts/backup-db.sh`,
+which dumps the database and copies the newest dump plus the monthly `price_daily`
+archive to a private Backblaze B2 bucket through `rclone`. The dump file is named
+after the UTC day and rewritten on every tick, so the newest backup is never more
+than an hour old and the bucket keeps one object per day. That is the only
 outbound dependency besides Discord, the API and the chart renderer, and the only
 copy of the data that survives a dead disk.
 

@@ -268,9 +268,10 @@ describe('/price share', () => {
 
     await handle(interaction);
 
-    const rows = (editReply.mock.calls.at(-1)?.[0] as unknown as { components?: Array<{ toJSON(): { components: Array<{ custom_id: string }> } }> })
-      .components;
-    expect(rows?.[0].toJSON().components[0].custom_id).toBe('price:share:46');
+    type CardRow = { toJSON(): { components: Array<{ custom_id: string }> } };
+    const lastReply = editReply.mock.calls.at(-1)?.[0] as unknown as { components?: CardRow[] } | undefined;
+    const shared = lastReply?.components?.[0]?.toJSON();
+    expect(shared?.components[0]?.custom_id).toBe('price:share:46');
   });
 
   it('puts no share button on a card that quotes nothing', async () => {
