@@ -17,7 +17,7 @@ import { rateLimiter } from '../utils/RateLimiter.js';
 import { DeeError, formatUnexpectedError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { safeReply } from '../ui/reply.js';
-import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
+import { COLORS, brandAuthor } from '../ui/theme.js';
 
 const logger = createLogger('UNWATCH');
 

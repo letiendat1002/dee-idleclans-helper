@@ -7,6 +7,11 @@ observed, not imagined.
 Test server: guild `<dev-guild-id>` ("DeeLY's test server"), channel `general` =
 `<dev-channel-id>`. The guild id comes from `DISCORD_GUILD_ID` in `.env`.
 
+The test guild belongs to the **dev** bot only. The production bot left it on
+2026-11-24: the digest, vault and watch tables are keyed by guild with no bot
+column, so two bots in one guild share the same subscriptions and both post.
+
+
 ## 1. Build, migrate, run
 
 ```bash
@@ -16,7 +21,7 @@ npm run build          # tsc → dist/
 setsid nohup node dist/index.js > bot.log 2>&1 < /dev/null &   # survives the tool shell
 ```
 
-A healthy start logs, in order: `Redis connected`, `Logged in as DIH#7997`, the migration
+A healthy start logs, in order: `Redis connected`, `Logged in as DIH Dev#5813`, the migration
 summary (`Skipping …` for every applied file), `Synced guild: DeeLY's test server`, then
 
 ```

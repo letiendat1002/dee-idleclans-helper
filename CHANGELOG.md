@@ -12,6 +12,34 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 Nothing yet.
 
+## [1.0.3] - 2026-11-24
+
+### Changed
+
+- **Backups now run hourly with a one-hour recovery point.** The hourly timer used
+  to dump once per UTC day and re-upload the same file on later ticks, so a crash
+  late in the day lost up to 23 hours of watchlists, digest and vault settings. The
+  dump is now rewritten on every tick; the bucket still keeps one object per day,
+  and the watchdog's staleness limit drops from 26 h to 3 h (local and off-site).
+- The test guild is dev-only: the production bot left it, because the digest,
+  vault and watch tables are keyed by guild and two bots in one guild post twice.
+
+### Removed
+
+- `guild_settings.digest_channel_id` and `digest_enabled`, legacy single-channel
+  columns nothing has read since migration 005 moved subscriptions to
+  `digest_channels` (migration 011).
+- Twelve lint findings: dead imports in `src/index.ts`, `unwatch.ts` and
+  `watch.ts`, plus four test-file nits.
+
+### Added
+
+- `npm run lint` (oxlint, warnings are errors) and a CI step for it. Prettier is
+  not adopted: the tree is not formatted with it today and a full reformat would
+  bury the real diff.
+- Coverage thresholds (statements 84, branches 71, functions 85, lines 85) and a
+  CI `npm run coverage` step, so coverage cannot drop silently.
+
 ## [1.0.2] - 2026-11-23
 
 ### Fixed

@@ -15,7 +15,7 @@ const HISTORY: number[] = [
  * The skewed mean (105) inflates the deviation while the current ask stays
  * inside the range, so the position gate has to suppress the signal.
  */
-const SKEWED_HISTORY: number[] = [...new Array<number>(19).fill(100), 200];
+const SKEWED_HISTORY: number[] = [...Array.from({ length: 19 }, () => 100), 200];
 
 /**
  * The expected signal of case (f).
@@ -79,7 +79,7 @@ describe('detectSignals', () => {
   it('(e) ignores a flat history whose low equals its high', () => {
     // A deviating current ask passes the 8% gate, so this case reaches the
     // `lo === hi` guard instead of stopping at the deviation gate.
-    const flat = new Array<number>(SIGNAL_CONFIG.minHistoryPoints).fill(100);
+    const flat = Array.from({ length: SIGNAL_CONFIG.minHistoryPoints }, () => 100);
 
     const signals = detectSignals([makeInput(108, 5000, flat)]);
 

@@ -86,4 +86,6 @@ jobs:
         run: psql -h localhost -U idleclans -d idleclans -c "INSERT INTO items (item_id, name, tradeable) VALUES (8, 'Teak log', true) ON CONFLICT (item_id) DO NOTHING"
 
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
+      - run: npm run coverage
