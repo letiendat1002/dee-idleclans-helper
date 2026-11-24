@@ -115,7 +115,8 @@ re-arms after the price moves back across your threshold.
 | `interval hours:<n> minutes:<n>` | `hours` 0–24 required, `minutes` 15/30/45 optional — any quarter hour from 15 min to 24 h |
 
 Posts only when there are notable moves, always in one message, never as a
-notification. Requires **Manage Server** to change; anyone can read `list`.
+notification. Who can change it is set in **Server Settings > Integrations** (default: Manage
+Server); anyone can read `list`.
 
 ### `/vault` — clan vault log
 
@@ -126,7 +127,8 @@ notification. Requires **Manage Server** to change; anyone can read `list`.
 | `list` | show what this server follows |
 
 The bot reads the game's public clan log: a **14-day window**, and an entry can
-arrive up to about **30 minutes late**. Requires **Manage Server** to change.
+arrive up to about **30 minutes late**. Who can change it is set in
+**Server Settings > Integrations** (default: Manage Server).
 
 ### `/help`
 

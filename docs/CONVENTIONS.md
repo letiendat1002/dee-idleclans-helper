@@ -220,6 +220,11 @@ Rules that follow:
   visibility. Discord owns that axis; a copy of it is a second source of truth that drifts the
   first time an admin edits the Integrations page. The bot token cannot write command permissions
   at all -- Discord requires a Bearer token and Manage Guild + Manage Roles for that.
+- **The command handler does not re-check the permission.** Discord has already decided who may
+  run a command: the Integrations override first, the registration default after it. A
+  `memberPermissions` check inside the handler is a second source of truth that cannot see those
+  overrides, so it refuses exactly the roles a server admin allowed. Decided 2026-11-24 for
+  `/digest` and `/vault`; any future config command follows the same rule.
 - **Do keep the capability check.** Discord enforces permissions per request (403 / `50013`
   "You lack permissions to perform that action", `50001` missing access, `40043` interaction
   failed to send) and channel overwrites can be changed after install, so an install-time grant

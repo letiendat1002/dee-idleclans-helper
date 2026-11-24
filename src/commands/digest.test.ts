@@ -193,17 +193,13 @@ describe('/digest handle', () => {
     expect(deferReply).not.toHaveBeenCalled();
   });
 
-  it('writes nothing when the member lacks the Manage Server permission', async () => {
-    const { interaction, deferReply } = fake({ memberPermissions: false, botPost: true });
+  it('runs even when the member has no Manage Server, because Discord owns command access', async () => {
+    const { interaction, deferReply } = fake({ memberPermissions: false, botPost: true, subcommand: 'add' });
 
     await handle(interaction);
 
-    expect(queryMock).not.toHaveBeenCalled();
-    expect(deferReply).not.toHaveBeenCalled();
-    expect(safeReply).toHaveBeenCalledWith(interaction, {
-      content: expect.stringContaining('Manage Server'),
-      flags: 64,
-    });
+    expect(deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
+    expect(safeReply).not.toHaveBeenCalled();
   });
 
   it('refuses a DM invocation without throwing', async () => {
@@ -216,7 +212,7 @@ describe('/digest handle', () => {
     expect(editReply).not.toHaveBeenCalled();
   });
 
-  it('subscribes a channel for a member with the Manage Server permission', async () => {
+  it('subscribes a channel', async () => {
     const { interaction, deferReply, editReply } = fake({
       memberPermissions: true,
       botPost: true,

@@ -61,7 +61,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
             '`/digest remove` — unsubscribe a channel',
             '`/digest list` — the digest channels of this server',
             '`/digest interval <minutes>` — how often the digest posts, 15 minutes to once a day',
-            'Manage Server needed · one channel per server',
+            'Access is set in Server Settings > Integrations · one channel per server',
           ].join('\n'),
         },
         {
@@ -70,7 +70,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
             '`/vault add <clan> #channel` — follow the vault of a clan',
             '`/vault remove <clan> #channel` — stop following it',
             '`/vault list` — the clan vault channels of this server',
-            'Manage Server needed · up to 5 channels per server',
+            'Access is set in Server Settings > Integrations · up to 5 channels per server',
             'The bot reads the public clan log of the game: a 14-day window, and an entry can arrive up to ~30 minutes late.',
           ].join('\n'),
         },
