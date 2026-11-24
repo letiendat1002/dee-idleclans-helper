@@ -69,20 +69,37 @@ export const builder = new SlashCommandBuilder()
       .setDescription('Set how often the digest posts')
       .addIntegerOption((opt) =>
         opt
-          .setName('minutes')
-          .setDescription('How often the digest posts')
+          .setName('hours')
+          .setDescription('Hours between posts')
           .setRequired(true)
           .addChoices(
-            { name: 'Every 15 minutes', value: 15 },
-            { name: 'Every 30 minutes', value: 30 },
-            { name: 'Every hour', value: 60 },
-            { name: 'Every 3 hours', value: 180 },
-            { name: 'Every 6 hours', value: 360 },
-            { name: 'Every 12 hours', value: 720 },
-            { name: 'Once a day', value: 1440 }
+            ...Array.from({ length: 25 }, (_, hours) => ({
+              name: hours === 1 ? '1 hour' : `${hours} hours`,
+              value: hours,
+            }))
+          )
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('minutes')
+          .setDescription('Extra minutes after the hours')
+          .addChoices(
+            { name: '0 minutes', value: 0 },
+            { name: '15 minutes', value: 15 },
+            { name: '30 minutes', value: 30 },
+            { name: '45 minutes', value: 45 }
           )
       )
   );
+
+/** `30 minutes`, `1 hour`, `1 hour 30 minutes`: a reply must never say "90 minutes". */
+function formatInterval(minutes: number): string {
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  const hourLabel = `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  return rest === 0 ? hourLabel : `${hourLabel} ${rest} minutes`;
+}
 
 /** `1 channel`, `2 channels`: a reply must never say "1 channels". */
 function countLabel(count: number): string {
@@ -126,7 +143,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction, guild: Guild)
     .setTitle(`Digest on — #${cached.name}`)
     .setDescription(
       [
-        `${ICONS.digest} Notable market moves post in #${cached.name}, every ${interval} minutes. It never pushes a notification.`,
+        `${ICONS.digest} Notable market moves post in #${cached.name}, every ${formatInterval(interval)}. It never pushes a notification.`,
         '',
         `A server can subscribe at most ${countLabel(MAX_CHANNELS)}.`,
         'The bot cannot create channels — create one first and run this command again.',
@@ -178,7 +195,7 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
     .setTitle('Digest channels')
     .setDescription(
       [
-        `Every ${interval} minutes · ${countLabel(channels.length)} subscribed.`,
+        `Every ${formatInterval(interval)} · ${countLabel(channels.length)} subscribed.`,
         '',
         ...(lines.length === 0 ? ['No channel receives the digest yet.'] : lines),
       ].join('\n')
@@ -191,15 +208,16 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
  * Set the cadence of the guild.
  */
 async function handleInterval(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  const minutes = interaction.options.getInteger('minutes', true);
-  const stored = await DigestSettings.setIntervalMinutes(guild.id, minutes);
+  const hours = interaction.options.getInteger('hours', true);
+  const minutes = interaction.options.getInteger('minutes') ?? 0;
+  const stored = await DigestSettings.setIntervalMinutes(guild.id, hours * 60 + minutes);
 
   const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
   const embed = new EmbedBuilder()
     .setColor(COLORS.brand)
     .setAuthor(brandAuthor(avatarUrl))
     .setTitle('Digest cadence')
-    .setDescription(`The market digest posts every ${stored} minutes in this server.`);
+    .setDescription(`The market digest posts every ${formatInterval(stored)} in this server.`);
 
   await interaction.editReply({ embeds: [embed] });
 }

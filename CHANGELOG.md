@@ -12,6 +12,16 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 Nothing yet.
 
+## [1.1.0] - 2026-11-24
+
+### Changed
+
+- **`/digest interval` now covers every quarter hour from 15 minutes to 24 hours.**
+  The old option offered seven presets (15 min → 24 h), so 45 minutes or 1 h 45
+  did not exist. Discord caps one option at 25 choices, so the cadence is now two
+  dropdowns — `hours` (0–24) and `minutes` (0/15/30/45) — and the reply speaks
+  hours ("every 1 hour 45 minutes") instead of raw minutes.
+
 ## [1.0.3] - 2026-11-24
 
 ### Changed

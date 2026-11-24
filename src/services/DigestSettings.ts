@@ -177,7 +177,7 @@ export class DigestSettings {
   static async setIntervalMinutes(guildId: string, minutes: number): Promise<number> {
     if (!Number.isInteger(minutes) || minutes < MIN_INTERVAL_MIN || minutes > MAX_INTERVAL_MIN) {
       throw new DeeError(
-        `The interval must be between ${MIN_INTERVAL_MIN} and ${MAX_INTERVAL_MIN} minutes.`,
+        `The interval must be between ${MIN_INTERVAL_MIN} minutes and 24 hours.`,
         'E1',
         ErrCodes.INVALID_INPUT
       );
