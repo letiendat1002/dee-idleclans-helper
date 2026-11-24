@@ -3,7 +3,7 @@
 The durable ledger for this project. If a session is compacted, this file plus `ARCHITECTURE.md`
 is the resume contract: read those two first, then only the docs a track names.
 
-Last updated: 2026-11-22.
+Last updated: 2026-11-24.
 
 ## 0. Decisions locked by the owner
 
@@ -174,6 +174,7 @@ Active work is track **T10**. If a restored todo list disagrees with T10, T10 wi
 
 | Date | What landed | Evidence |
 | --- | --- | --- |
+| 2026-11-24 | **Release `v1.2.0` — quyền command do Discord sở hữu**: handler `/digest` và `/vault` thôi tự kiểm `Manage Server` (một role được server cho phép không còn bị từ chối sau gate); `/help` trỏ `Server Settings > Integrations` thay vì nêu tên quyền; `ENVIRONMENTS.md` ghi bot production ở Horde | PR #36 `8eb0684` + #37 `f549828` → `c3e937a` trên `develop`; release PR #38 (bump 1.2.0) + #39 → merge `19f9fe7`, `deploy.sh` ghi `.deployed-sha=19f9fe7b`, tag `v1.2.0` = `19f9fe7` (version-guard `success`), merge-back #40 → `a6fba8a`; 399/399 test, typecheck 0, lint 0, scan clean; prod 4/4 healthy, `image=sha-19f9fe7b` restarts 0, 8 commands, snapshot cách 82 s, `/digest list` trên Horde trả lời ephemeral (0 channel) — lần bấm đầu fail `EAI_AGAIN discord.com` (DNS blip của host lúc 16:16Z), lần hai OK |
 | 2026-11-24 | **Live-test đủ 8/8 command trên production, rồi bot rời mọi guild**: `/watch` arm → fired → DM delivered (`delivered=t`, `00:40:09Z`), `/unwatch` xoá row; `/digest` add (cap 1 kênh) / list / interval / remove + đăng digest thật 00:51, 01:52, 02:53; `/vault` add → list → remove (DB 1→0 row); `/help`, `/price`, `/graph 7d`, `/watchlist`, `@mention` | DB kiểm chéo từng bước trên `dee`; `DELETE /users/@me/guilds/<id>` trả 204 cho cả hai guild, `GET /users/@me/guilds` rỗng; DIH Dev giữ guild test (bảng digest/vault/watch không có cột bot nên 1 bot/guild là ràng buộc) |
 | 2026-11-24 | **RPO backup 24h → 1h + cổng chất lượng**: `backup-db.sh` dump lại mỗi lượt (bỏ `SKIP_IF_PRESENT`/`FRESH`), watchdog 26h/30h → **3h/3h**, unit host bỏ env chết; `npm run lint` (oxlint, deny warnings) và coverage thresholds 84/71/85/85 vào CI; migration `011` drop `guild_settings.digest_channel_id` + `digest_enabled` | dump `idleclans-2026-11-24.sql.gz` viết lại `03:52:32Z` (trước `00:00:06Z`), log `uploaded to b2` + `healthcheck pinged`, watchdog im lặng; `schema_migrations` có 011, `guild_settings` còn 3 cột; 399/399 test, coverage 84.89/71.74/86.47/85.92 |
 | 2026-11-24 | **Release `v1.0.3` và `v1.1.0`; `/digest interval` thành lưới 15 phút**: `hours` 0–24 + `minutes` 15/30/45 (bỏ `0 minutes` vì optional), reply nói "1 hour 45 minutes"; drill restore **máy trắng** từ B2; luật release viết vào `AGENTS.md` hard rule 4 + `CONVENTIONS.md` §8.3 + checklist §0 | `1d0f4daa` rồi `d40679d0` deployed, 4/4 healthy, `Registered 8 commands globally`, payload Discord có `hours` 25 choices / `minutes` 3; drill: tải 5 s, postgres 3 s, restore 9 s, 1 832 176 snapshot, migrate skip 11; `develop` = `47d1cd3` |
