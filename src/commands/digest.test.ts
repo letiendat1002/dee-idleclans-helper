@@ -105,7 +105,8 @@ interface FakeOptions {
   channelId?: string;
   channelName?: string;
   channelType?: ChannelType;
-  integerValue?: number;
+  hoursValue?: number;
+  minutesValue?: number;
   stringValue?: string;
 }
 
@@ -156,7 +157,8 @@ function fake(options: FakeOptions = {}): {
         getSubcommand: () => options.subcommand ?? 'add',
         getChannel: () => channel,
         getString: () => options.stringValue ?? channelId,
-        getInteger: () => options.integerValue ?? 60,
+        getInteger: (name: string) =>
+          name === 'hours' ? (options.hoursValue ?? 1) : (options.minutesValue ?? 0),
       },
       deferReply,
       editReply,
@@ -320,7 +322,8 @@ describe('/digest handle', () => {
     const { interaction, editReply } = fake({
       memberPermissions: true,
       subcommand: 'interval',
-      integerValue: 30,
+      hoursValue: 0,
+      minutesValue: 30,
     });
 
     await handle(interaction);
@@ -331,12 +334,32 @@ describe('/digest handle', () => {
     expect(embed?.description).toContain('every 30 minutes');
   });
 
-  it('offers the cadence as a fixed preset list, not a free number', () => {
-    const interval = builder.toJSON().options?.find((option) => option.name === 'interval');
-    const minutes = interval && 'options' in interval ? interval.options?.[0] : undefined;
-    const choices = minutes && 'choices' in minutes ? minutes.choices?.map((c) => c.value) : undefined;
+  it('adds the minutes to the hours and speaks hours back', async () => {
+    const { interaction, editReply } = fake({
+      memberPermissions: true,
+      subcommand: 'interval',
+      hoursValue: 1,
+      minutesValue: 45,
+    });
 
-    expect(choices).toEqual([15, 30, 60, 180, 360, 720, 1440]);
+    await handle(interaction);
+
+    const update = sqlCalls().find((call) => call.sql.includes('INSERT INTO guild_settings'));
+    expect(update?.params).toEqual(['guild-1', 105]);
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.description).toContain('every 1 hour 45 minutes');
+  });
+
+  it('offers quarter-hour presets from 15 minutes to 24 hours', () => {
+    const interval = builder.toJSON().options?.find((option) => option.name === 'interval');
+    const options = interval && 'options' in interval ? interval.options : undefined;
+    const hours = options?.find((option) => option.name === 'hours');
+    const minutes = options?.find((option) => option.name === 'minutes');
+    const values = (option: typeof hours) =>
+      option && 'choices' in option ? option.choices?.map((c) => c.value) : undefined;
+
+    expect(values(hours)).toEqual(Array.from({ length: 25 }, (_, hours) => hours));
+    expect(values(minutes)).toEqual([0, 15, 30, 45]);
   });
 
   it('answers a reference id when the settings write throws', async () => {

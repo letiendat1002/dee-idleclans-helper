@@ -242,7 +242,7 @@ describe('DigestSettings.interval', () => {
     expect(settingRows).toHaveLength(0);
   });
 
-  it('refuses an interval above 1440 minutes', async () => {
+  it('refuses an interval above 24 hours', async () => {
     let failure: unknown;
     try {
       await DigestSettings.setIntervalMinutes('guild-1', 1441);
@@ -251,7 +251,7 @@ describe('DigestSettings.interval', () => {
     }
 
     expect(failure).toBeInstanceOf(DeeError);
-    expect(failure instanceof DeeError ? failure.message : '').toContain('1440');
+    expect(failure instanceof DeeError ? failure.message : '').toContain('24 hours');
     expect(settingRows).toHaveLength(0);
   });
 
