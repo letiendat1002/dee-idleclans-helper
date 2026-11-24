@@ -1,7 +1,7 @@
 # Dee IdleClans Helper — server guide
 
 Everything a server owner or player needs, from the invite to every command.
-Written against the shipped bot (**8 commands**, v1.0.3); every output below was
+Written against the shipped bot (**8 commands**, v1.1.0); every output below was
 observed on a real server, not copied from the code.
 
 ---

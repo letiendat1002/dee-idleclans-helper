@@ -25,7 +25,7 @@ A healthy start logs, in order: `Redis connected`, `Logged in as DIH Dev#5813`, 
 summary (`Skipping …` for every applied file), `Synced guild: DeeLY's test server`, then
 
 ```
-[REGISTER] Registered 9 commands globally
+[REGISTER] Registered 8 commands globally
 [REGISTER] Cleared the guild-scoped commands of guild <dev-guild-id>
 ```
 
@@ -214,8 +214,9 @@ empty state is a muted embed that points at `/watch`.
 
 ### `/digest #channel` — ephemeral
 
-Needs `Manage Channels` on the invoker (the bot itself only has SEND_MESSAGES and cannot create a
-channel). It upserts `guild_settings` with `digest_channel_id` and `digest_enabled = true`. The
+Needs `Manage Server` on the invoker (the bot itself only has SEND_MESSAGES and cannot create a
+channel). It writes one row into `digest_channels` — the single-channel columns of `guild_settings`
+were dropped in migration 011. The
 digest job then posts on its own schedule and logs
 `[DIGEST] market digest posted {"guildId":…,"channelId":…,"items":N}`; the post carries
 `flags: 4096` so it does not ping.

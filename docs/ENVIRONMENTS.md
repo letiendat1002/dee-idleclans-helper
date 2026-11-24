@@ -10,13 +10,15 @@ application, nên app dev không bao giờ nhận lệnh ở guild của app pro
 |---|---|---|
 | Application | Dee IdleClans Helper `1569644838012325968` | DIH Dev `1573952148209795072` |
 | Bot user | `DIH#7997` | `DIH Dev#5813` |
-| Guild | Clint's Polygon Abilities `1283509005477609562` | Test server riêng `<dev-guild-id>` |
+| Guild | **không còn** — đã rời hết ngày 2026-11-24 (xem §2) | Test server riêng `<dev-guild-id>` |
 | Env file | `.env` | `.env.dev` |
 | Stack | host server, 24/7 | laptop, `STACK_PREFIX=dih-dev` |
 | Database | `idleclans` | `idleclans_dev` |
 
-Lịch sử: ngày 2026-11-22 DIH bị gỡ khỏi server test, DIH Dev được mời vào thay. Từ đó production
-và dev không còn chung guild nào.
+Lịch sử: ngày 2026-11-22 DIH bị gỡ khỏi server test, DIH Dev được mời vào thay. Ngày 2026-11-24 DIH
+rời nốt `Clint's Polygon Abilities` bằng `DELETE /users/@me/guilds/<id>` sau khi live-test xong, nên
+production hiện không ở guild nào — muốn dùng lại thì invite lại và cấp lại `Manage Messages` nếu cần
+dọn tin (xem `docs/GUIDE.md` §2).
 
 ## 2. Quy tắc
 
