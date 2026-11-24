@@ -123,6 +123,10 @@ what it needs rather than linking a path that does not resolve here.
    `.env*` stay ignored; a committed build output is a bug, not a convenience.
 4. **Push and release are separate decisions.** Pushing a branch is normal work; merging into
    `production`, deploying, tagging and enabling a timer each need the owner's word in that turn.
+   **Default end state of any change: merged into `develop`, nothing else.** A slice of work does not
+   earn its own release — batch it. Release only when the owner says "release"/"deploy"/"ship" in
+   that turn, or explicitly approves a release the agent proposed; approval of the *change* is not
+   approval of the release.
 
 ## Hard code rules
 

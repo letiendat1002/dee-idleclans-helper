@@ -82,9 +82,8 @@ export const builder = new SlashCommandBuilder()
       .addIntegerOption((opt) =>
         opt
           .setName('minutes')
-          .setDescription('Extra minutes after the hours')
+          .setDescription('Optional: add 15, 30 or 45 minutes')
           .addChoices(
-            { name: '0 minutes', value: 0 },
             { name: '15 minutes', value: 15 },
             { name: '30 minutes', value: 30 },
             { name: '45 minutes', value: 45 }

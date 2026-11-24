@@ -408,6 +408,11 @@ a session boundary goes there; a fact that only exists in the conversation is lo
 
 ### 8.3 Release
 
+**A release is a decision, not a step.** A change lands on `develop` and stops there. Several
+changes accumulate; a release happens when the owner asks for one in that turn, or approves one the
+agent proposed — never because a fix looks small. Approving a change is not approving its release.
+When in doubt, ask "release now, or keep it on `develop`?" and wait.
+
 `production` is what the host runs. A release is exactly five steps:
 
 1. PR `develop` → `production`, merge commit. CI must be green on the branch tip.
