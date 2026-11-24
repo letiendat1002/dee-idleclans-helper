@@ -359,7 +359,7 @@ describe('/digest handle', () => {
       option && 'choices' in option ? option.choices?.map((c) => c.value) : undefined;
 
     expect(values(hours)).toEqual(Array.from({ length: 25 }, (_, hours) => hours));
-    expect(values(minutes)).toEqual([0, 15, 30, 45]);
+    expect(values(minutes)).toEqual([15, 30, 45]);
   });
 
   it('answers a reference id when the settings write throws', async () => {

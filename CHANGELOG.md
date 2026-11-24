@@ -10,7 +10,10 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- `/digest interval` drops the redundant `0 minutes` choice: `minutes` is optional,
+  so leaving it blank already means a whole number of hours.
 
 ## [1.1.0] - 2026-11-24
 

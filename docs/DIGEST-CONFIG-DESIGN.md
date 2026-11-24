@@ -63,7 +63,7 @@
 | `/digest add` | `channel` (bắt buộc) | subscribe channel; idempotent |
 | `/digest remove` | `channel` (bắt buộc, autocomplete từ subscription hiện có) | unsubscribe |
 | `/digest list` | — | bảng các channel đang nhận + interval + lần gửi cuối; ephemeral |
-| `/digest interval` | `hours` (0–24, bắt buộc) + `minutes` (0 / 15 / 30 / 45) | đổi nhịp của guild; phủ mọi mốc 15 phút từ 15 phút tới 24 giờ |
+| `/digest interval` | `hours` (0–24, bắt buộc) + `minutes` (15 / 30 / 45, không bắt buộc — bỏ trống là tròn giờ) | đổi nhịp của guild; phủ mọi mốc 15 phút từ 15 phút tới 24 giờ |
 
 Tất cả: `setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)` + `setContexts(InteractionContextType.Guild)`.
 Giữ rate limit 5/phút/user như hiện tại.

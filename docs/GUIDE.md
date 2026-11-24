@@ -112,7 +112,7 @@ re-arms after the price moves back across your threshold.
 | `add channel:<#channel>` | subscribe a channel (max **1 per server**) |
 | `remove channel:<#channel>` | unsubscribe |
 | `list` | show the subscription and interval |
-| `interval hours:<n> minutes:<n>` | `hours` 0–24, `minutes` 0/15/30/45 — any quarter hour from 15 min to 24 h |
+| `interval hours:<n> minutes:<n>` | `hours` 0–24 required, `minutes` 15/30/45 optional — any quarter hour from 15 min to 24 h |
 
 Posts only when there are notable moves, always in one message, never as a
 notification. Requires **Manage Server** to change; anyone can read `list`.
