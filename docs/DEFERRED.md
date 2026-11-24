@@ -35,6 +35,8 @@ ngay trong lần release kế tiếp. Không tạo mục riêng cho nó ở đâ
 
 | G9 | Dev stack đã được bấm thử lệnh thật | **đóng 2026-11-22**: `/help` trả embed Commands (Market `/price`, `/graph`), `/price Spruce log` trả `27g · 27,334 units` / buy `25g · 4,182 units` / `snapshot 13:41 UTC`, `/graph` 24h → menu 7 days → về 24h đổi tại chỗ | — |
 
+| G10 | Restore trên **máy trắng** (kịch bản mất host) | **đóng 2026-11-24**: drill trên laptop từ object B2 thật — tải 24 MB (5 s), postgres mới (3 s), `psql` restore 1,83 M snapshot + 5 677 `price_daily` + 1 009 item (9 s, 0 lỗi), `npm run migrate` báo skip đủ 11 migration, spot-check `Teak log` = 64g @ 04:59:37Z với 1 801 dòng 7 ngày. Không đăng nhập Discord (tránh đá session bot dev đang chạy). Tổng ~17 s + verify | đóng; stamp `.last-drill` trên host **không** đổi vì drill chạy trên máy khác — lần drill *trên host* kế tiếp vẫn theo lịch tuần |
+
 ## 3. Tech debt
 
 | # | Debt | Mức | Ghi chú |
@@ -42,11 +44,15 @@ ngay trong lần release kế tiếp. Không tạo mục riêng cho nó ở đâ
 | D1 | Rate window (Redis) + cooldown share (RAM) giả định **một process** | trung bình | lên multi-instance thì chuyển cả hai sang Redis; luật đã ghi `CONVENTIONS.md` §6.5 |
 | D2 | 131 chỗ `as` còn lại (đã bỏ 3 ở `ItemCatalogue`) | thấp | bỏ dần ở biên query bằng `query<Row>`; không làm một đợt riêng |
 | D3 | `statement_timeout` 15s chưa đo với backfill lớn | thấp | theo dõi log `canceling statement due to statement timeout` |
-| D4 | CI không chạy `npm run coverage` | thấp | thêm một dòng vào `.github/workflows/tests.yml` khi muốn; đừng đặt ngưỡng vội |
+| D4 | ~~CI không chạy `npm run coverage`~~ — **đóng 2026-11-24 (v1.0.3)** | thấp | CI chạy `npm run coverage` và `vitest.config.ts` giữ ngưỡng 84/71/85/85, đặt dưới mức thực tế để chặn tụt chứ không phải mục tiêu |
 | D5 | `.env` nằm ở nhiều chỗ: checkout workspace (stack đang chạy), checkout deploy riêng (chép tay mode 600), và `.env.dev` cho app dev | thấp, dễ sai | mỗi lần rotate phải sửa đúng file của stack đang chạy; `.env.dev` là app khác nên token khác. Kiểm bằng token prefix khi nghi ngờ (không chép prefix vào repo) |
 | D6 | T4 "docs consolidation" queued (11 docs; `AGENTS.md` còn lặp `CONVENTIONS.md`) | trung bình | không chặn release |
-| D7 | `systemError` là export không dùng | trivial | xoá 3 dòng khi tiện tay |
+| D7 | ~~`systemError` là export không dùng~~ — **đóng 2026-11-24** | trivial | không còn trong `src/`; oxlint (`no-unused-vars`) giữ loại này khỏi quay lại |
 | D8 | Depth strip cho chart 24h (dải low/high mỗi cột) | thấp | **Lý do cũ hết hiệu lực 2026-11-23**: bucket history của vendor có sẵn `low`/`high`/`avg`/`volume`, không cần `price_snapshots`. Chart v3 chỉ vẽ avg + volume; thêm dải là vẽ thêm hai polyline trong `chartHistory.ts`. Mở lại khi owner muốn thấy độ rộng giá trong một bucket |
+
+| D17 | Prettier chưa áp dụng (repo chỉ có oxlint + `tsc`) | thấp | cây code hiện không được Prettier format; thêm vào sẽ tạo diff reformat toàn repo. Mở khi muốn khoá style: commit riêng chỉ chứa `npx prettier --write .` + `format:check` trong CI, không trộn với thay đổi logic |
+| D18 | Bảng `digest_channels`/`vault_channels`/`watchlists` không có cột phân biệt bot (`app_id`) | thấp, có điều kiện | hai bot trong cùng guild sẽ cùng đọc một subscription và cùng đăng bài (đã gặp 2026-11-24 với prod + dev). Ràng buộc "1 bot / guild" đã ghi ở `DISCORD-TESTING.md`; chỉ thêm cột khi thật sự muốn chạy nhiều bot một guild |
+| D19 | `docs-private/` nằm ngoài git (không versioned) | trung bình | chứa path/ID host nên `scan-secrets.sh` không cho vào repo public. Mở khi owner tạo repo private riêng rồi đưa thư mục sang đó; trước đó nó chỉ tồn tại trên máy |
 | D9 | `vault_events` ghi **trước** khi post: một batch lỗi Discord là mất luôn, không retry (không có ledger giao cho từng channel) | trung bình | bảng trạng thái giao (`event_id, channel_id, delivered_at`) hoặc chỉ ghi sau khi post thành công; cần migration, không làm chung đợt |
 | D10 | `price_daily` có ngày dựng từ **một** poll (2026-11-12: 604 samples / 630 item); card daily không in `samples` | thấp | thêm `samples` vào footer hoặc ẩn ngày có < 5% số poll; đợi dữ liệu 1 ngày đủ trước khi quyết |
 | D11 | Catalogue trễ tối đa 30 phút (sync) nhưng không surface nào nói "catalogue lúc mấy giờ" | thấp | thêm `last_synced_at` vào `/help` hoặc footer `/price` khi rename item gây nhầm |
