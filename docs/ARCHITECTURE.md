@@ -110,7 +110,7 @@ interaction
   → rateLimiter.check(userId, command, 5, 60 s)      fail-open, Redis window
                                                      (every command except /help)
   → [config commands only] inCachedGuild()? no → silent return
-  → [config commands only] memberPermissions.has(ManageGuild)? no → refusal
+  → [config commands only] no permission re-check: Discord decided who may run it
   → deferReply(ephemeral)
   → service call (DigestSettings / SnapshotStore / MarketService / …)
   → EmbedBuilder from ui/theme.ts constants
@@ -128,15 +128,18 @@ including DMs — a member who can see the bot can ask it a question about a pri
 | `/graph` | snapshots, daily | — | none |
 | `/watch` | — | `watchlists` | none |
 | `/unwatch`, `/watchlist` | `watchlists` | `watchlists` | none |
-| `/digest add\|remove\|list\|interval` | `digest_channels` | `digest_channels` | **Manage Server** |
-| `/vault add\|remove\|list` | `vault_channels` | `vault_channels` | **Manage Server** |
+| `/digest add\|remove\|list\|interval` | `digest_channels` | `digest_channels` | **Discord** (default Manage Server) |
+| `/vault add\|remove\|list` | `vault_channels` | `vault_channels` | **Discord** (default Manage Server) |
 | `/help` | — | — | none |
 
-Server-wide configuration is a server decision: only `ManageGuild` may write
-it. The bot's own permissions are never treated as a proxy for the member's —
-that inversion was a defect in the previous `/digest` and is now blocked by the
-runtime check, not only by `default_member_permissions` (that field is a
-*default* that a server admin can override in Server Settings → Integrations).
+Server-wide configuration is a server decision, and the server makes it in
+Discord: both commands are registered with `ManageGuild` as their default, and
+an admin narrows or widens that per role and per channel in Server Settings →
+Integrations. The handlers do not re-check the permission. An earlier build did,
+as the fix for a defect where the *bot's* permissions were read instead of the
+member's; that check cannot see Integrations overrides, so it refused the roles
+a server had explicitly allowed. Discord is the only source of truth for command
+access (`CONVENTIONS.md` §5.1).
 
 Rendered diagrams, generated from the code with the `archify` skill (open in a browser; offline,
 no network needed): [`runtime-flow.html`](diagrams/runtime-flow.html) ·

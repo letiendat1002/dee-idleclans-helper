@@ -6,10 +6,13 @@
  * the channel — the owner creates it first and points the command at it.
  *
  * The command is a set of subcommands: `add`, `remove`, `list` and `interval`.
- * Configuring the bot of a whole server is a server decision, so the gate is
- * the Manage Server permission of the member who runs the command. The
- * permission of the bot is only ever asked about posting: a bot that may
- * manage channels does not grant that right to anybody else.
+ *
+ * Who may run it is a server decision, and Discord owns that decision: the
+ * command is registered with `ManageGuild` as its default, and a server admin
+ * narrows or widens it in Server Settings > Integrations. The handler does not
+ * re-check the permission -- that check cannot see the Integrations overrides,
+ * so it would be a second and wrong source of truth. The permission of the bot
+ * is only ever asked about posting.
  */
 import {
   SlashCommandBuilder,
@@ -234,18 +237,9 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     throw err;
   }
 
-  // Outside a cached server there is nothing to configure and no way to read
-  // the permission of the member: the command answers nothing.
+  // Outside a cached server there is nothing to configure: the command
+  // answers nothing.
   if (!interaction.inCachedGuild()) return;
-
-  const canManage = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ?? false;
-  if (!canManage) {
-    await safeReply(interaction, {
-      content: 'You need the Manage Server permission to configure the digest.',
-      flags: 64,
-    });
-    return;
-  }
 
   const guild = interaction.guild;
 
