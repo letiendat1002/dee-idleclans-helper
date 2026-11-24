@@ -80,7 +80,7 @@ function install(scenario: {
   updates = [];
   queryMock.mockReset();
   queryMock.mockImplementation(async (sql: string, params?: unknown[]) => {
-    if (/^UPDATE watchlists/.test(sql)) {
+    if (sql.startsWith('UPDATE watchlists')) {
       updates.push({ sql, params: params ?? [] });
       return { rowCount: 1 };
     }

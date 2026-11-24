@@ -1,11 +1,12 @@
 {
   "name": "dee-idleclans-helper",
-  "version": "1.0.2",
-  "description": "Dee IdleClans Helper — Idle Clans market facts for Discord.",
+  "version": "1.0.3",
+  "description": "Dee IdleClans Helper \u2014 Idle Clans market facts for Discord.",
   "main": "dist/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc && node scripts/copy-migrations.mjs",
     "typecheck": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings src",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -18,7 +19,7 @@
     "url": "git+https://github.com/letiendat1002/dee-idleclans-helper.git"
   },
   "keywords": [],
-  "author": "Lê Tiến Đạt",
+  "author": "L\u00ea Ti\u1ebfn \u0110\u1ea1t",
   "license": "MIT",
   "type": "commonjs",
   "engines": {
@@ -38,6 +39,7 @@
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.1.1",
+    "oxlint": "^1.95.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.1"

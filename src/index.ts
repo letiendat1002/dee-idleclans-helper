@@ -5,18 +5,15 @@ import {
   ActivityType,
   type AutocompleteInteraction,
   type ChatInputCommandInteraction,
-  type InteractionReplyOptions,
-  type ModalSubmitInteraction,
   type SlashCommandOptionsOnlyBuilder,
   type SlashCommandSubcommandsOnlyBuilder,
-  type StringSelectMenuInteraction,
 } from 'discord.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
 import { closePool } from './db/pool.js';
 import { redis } from './cache/CacheService.js';
-import { DeeError, ErrCodes, formatUnexpectedError, fatalError } from './utils/errors.js';
+import { DeeError } from './utils/errors.js';
 import { createLogger } from './utils/logger.js';
 import { registerCommands } from './registerCommands.js';
 import { safeReply } from './ui/reply.js';

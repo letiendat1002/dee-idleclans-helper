@@ -139,7 +139,7 @@ export async function handleWatchModal(interaction: ModalSubmitInteraction): Pro
       return;
     }
 
-    const row = await WatchlistService.add(
+    await WatchlistService.add(
       interaction.user.id,
       interaction.guildId,
       itemId,
