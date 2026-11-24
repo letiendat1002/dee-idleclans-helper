@@ -51,7 +51,7 @@ setting changing, and the bot will say so when it cannot post.
 
 ```
 /digest add channel:#market-digest
-/digest interval minutes:60
+/digest interval hours:1 minutes:0
 /vault add clan:<your clan> channel:#clan-vault
 ```
 
@@ -112,7 +112,7 @@ re-arms after the price moves back across your threshold.
 | `add channel:<#channel>` | subscribe a channel (max **1 per server**) |
 | `remove channel:<#channel>` | unsubscribe |
 | `list` | show the subscription and interval |
-| `interval minutes:<n>` | `15`, `30`, `60`, `180`, `360`, `720` (12 h), `1440` (24 h) |
+| `interval hours:<n> minutes:<n>` | `hours` 0–24, `minutes` 0/15/30/45 — any quarter hour from 15 min to 24 h |
 
 Posts only when there are notable moves, always in one message, never as a
 notification. Requires **Manage Server** to change; anyone can read `list`.
@@ -142,6 +142,7 @@ overview.
 | Commands per user per minute | 5, per command |
 | Digest channels per server | 1 |
 | Vault channels per server | 5 |
+| Digest cadence | any quarter hour, 15 min – 24 h |
 | Snapshot freshness | ~2 minutes |
 | Alert check | every 2 minutes |
 | Vault log window | 14 days, entries up to ~30 min late |
