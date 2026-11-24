@@ -18,6 +18,9 @@ shows: the **sell price** a buyer pays, the **buy order** a seller receives, the
 The `/price` and `/graph` cards carry a `Post to channel` button, and `/graph` a range menu, so a
 chart can change window or be posted without retyping a command.
 
+Server owners: [docs/GUIDE.md](docs/GUIDE.md) walks from the invite to every command, with the
+permission set, per-server limits and troubleshooting in one page.
+
 ## Facts, not forecasts
 
 Every number is a market fact or arithmetic over market facts. There is no profit
