@@ -178,11 +178,12 @@ describe('showcase content', () => {
     const buttons = buildShowcaseRow().toJSON().components;
 
     const labels = buttons.map((button) => ('label' in button ? button.label : null));
-    expect(labels).toEqual(['Add to server', 'Community server']);
+    expect(labels).toEqual(['Add to server', 'Community server', 'Source on GitHub']);
     const urls = buttons.map((button) => ('url' in button ? button.url : null));
     expect(urls[0]).toContain('client_id=1234567890');
     expect(urls[0]).toContain('scope=bot+applications.commands');
     expect(urls[0]).toContain('permissions=2147535872');
     expect(urls[1]).toBe('https://discord.gg/fepAZKG2Ss');
+    expect(urls[2]).toBe('https://github.com/letiendat1002/dee-idleclans-helper');
   });
 });

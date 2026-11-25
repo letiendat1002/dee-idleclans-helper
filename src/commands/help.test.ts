@@ -71,7 +71,7 @@ describe('/help', () => {
     expect(embed?.footer?.text).toContain('5 uses per minute (except /help) · digest and vault post publicly');
     // A footer renders as plain text: markdown there reaches the reader as brackets.
     expect(embed?.footer?.text).not.toContain('](');
-    expect(JSON.stringify(embed)).toContain('[Sponsor on GitHub](https://github.com/sponsors/letiendat1002)');
+    expect(JSON.stringify(embed)).toContain('[Support on Ko-fi](https://ko-fi.com/letiendat1002)');
   });
 
   it('answers with a reference id when the embed cannot be sent', async () => {

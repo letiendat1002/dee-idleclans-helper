@@ -59,7 +59,8 @@ issue). Release notes: `CHANGELOG.md`.
 ## Support
 
 The bot is free and has no paid tier: a donation unlocks nothing. If it saves you time,
-[sponsor the work on GitHub Sponsors](https://github.com/sponsors/letiendat1002).
+[support it on Ko-fi](https://ko-fi.com/letiendat1002) or
+[through GitHub Sponsors](https://github.com/sponsors/letiendat1002).
 
 ## License
 
