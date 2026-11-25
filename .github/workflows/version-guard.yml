@@ -28,8 +28,13 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
 
           if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
-            echo "pull request: checking that CHANGELOG.md is parseable"
+            echo "pull request: checking that CHANGELOG.md names the manifest version"
             head -1 CHANGELOG.md | grep -qx '# Changelog'
+            # A bump without its section would only fail at tag time, after the deploy.
+            if ! grep -qE "^## \[${version}\]" CHANGELOG.md; then
+              echo "::error::CHANGELOG.md has no '## [${version}]' section for package.json $version"
+              exit 1
+            fi
             exit 0
           fi
 

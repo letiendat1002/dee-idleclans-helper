@@ -432,6 +432,15 @@ When in doubt, ask "release now, or keep it on `develop`?" and wait.
 `CHANGELOG.md` gets its `[Unreleased]` entries in the PRs that make the change; the version section
 is renamed and dated in the release PR, not afterwards.
 
+**What the digits mean.** The public surface is the command surface, the shape of what the bot
+posts, and the database schema — Discord has no consumer that pins a version, so "nobody imports
+it" is not a reason to call a breaking change a patch.
+
+- `MAJOR` — something a user relies on changes meaning or disappears: a command renamed or
+  removed, a post that has to be re-read differently, a schema change that loses or rewrites data.
+- `MINOR` — a new command, option, post or setting. Existing behaviour keeps working.
+- `PATCH` — a fix, a wording change, a docs change. Nothing a reader has to learn.
+
 ### 8.4 Commit rule override
 
 **This repo overrides the global commit rule.** The global `~/.config/opencode/AGENTS.md` keeps
