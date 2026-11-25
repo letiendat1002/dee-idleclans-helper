@@ -4,6 +4,9 @@ Market intel for Idle Clans. Ask about an item and get the numbers the game
 shows: the **sell price** a buyer pays, the **buy order** a seller receives, the
 24-hour trend, and what its materials cost.
 
+[Privacy Policy](https://letiendat1002.github.io/dee-idleclans-helper/privacy.html) ·
+[Terms of Service](https://letiendat1002.github.io/dee-idleclans-helper/terms.html)
+
 ## What it answers
 
 | Command | The question |

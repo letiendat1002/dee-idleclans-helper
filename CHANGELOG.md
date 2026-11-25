@@ -10,6 +10,11 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Added
+
+- Published Terms of Service and Privacy Policy pages, linked from the `/help` footer. They are
+  the two URLs Discord asks for at app verification.
+
 ## [1.3.1] - 2026-11-25
 
 ### Changed

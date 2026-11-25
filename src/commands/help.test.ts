@@ -66,7 +66,9 @@ describe('/help', () => {
     expect(text).toContain('permissions=2147535872');
     expect(text).toContain('https://discord.gg/fepAZKG2Ss');
     expect(text).toContain('Made by HRDDee');
-    expect(embed?.footer?.text).toBe('5 uses per minute (except /help) · digest and vault post publicly');
+    expect(embed?.footer?.text).toContain('5 uses per minute (except /help) · digest and vault post publicly');
+    expect(embed?.footer?.text).toContain('[Privacy](https://letiendat1002.github.io/dee-idleclans-helper/privacy.html)');
+    expect(embed?.footer?.text).toContain('[Terms](https://letiendat1002.github.io/dee-idleclans-helper/terms.html)');
   });
 
   it('answers with a reference id when the embed cannot be sent', async () => {
