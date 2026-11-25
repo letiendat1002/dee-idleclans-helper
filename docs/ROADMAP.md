@@ -130,14 +130,14 @@ command: it belongs to the `Phoenix` bot in the test guild, and `AGENTS.md` name
 | Fact | Value | Source |
 | --- | --- | --- |
 | quoted items per poll | 632 (2026-11-21) | `SELECT ... GROUP BY captured_at` |
-| snapshot write rate | ~455 k rows/day (632 × 720) | 1 085 777 rows / 1 718 polls |
-| database size | 183 MB (`price_snapshots` 174 MB, 1.09 M rows) | `pg_database_size` |
-| bytes per snapshot row | ~168 B (heap + indexes) | 174 MB / 1.09 M rows |
+| snapshot write rate | ~455 k rows/day (632 × 720); **453 458 rows in the 24 h to 2026-11-25 03:08Z** on the host | 1 085 777 rows / 1 718 polls; live query on `dee` |
+| database size | **337 MB** (`price_snapshots` 328 MB, 2.25 M rows; `price_daily` 6 310; `items` 1 009) | `pg_database_size`, 2026-11-25 |
+| bytes per snapshot row | ~153 B (heap + indexes) | 328 MB / 2.25 M rows, 2026-11-25 |
 | upstream limits | 50 req/min/IP, 500 max limit on clan log | `DATA-PROVENANCE.md` |
-| guilds, commands | 2 guilds, 8 global slash commands | Discord API, boot log |
-| tests | 438 across 31 files | `npm test` |
+| guilds, commands | **1 guild (HORDE), 8 global slash commands**; the dev app is a separate application | Discord API 2026-11-25 |
+| tests | **404 across 32 files** | `npm test`, 2026-11-25 |
 | trade-average cache | 5 min TTL; miss 2 942 ms, hit 1 ms; 20/min budget, 21st = `null` in 1 ms | in-container probe 2026-11-21 |
-| 24 h window coverage | 52 polls / 1.65 h; 609 of 609 items under 20.4 h | live query 2026-11-21 |
+| 24 h window coverage | **453 458 rows over 24.0 h; 0 gaps > 20 min, largest gap 6 min (the 1.3.0 deploy)** | live query on `dee`, 2026-11-25 |
 | staleness caps | alerts and digest both refuse a snapshot older than 10 min | `AlertDispatcher.ts`, `MarketDigest.ts` |
 
 ## 3. Verified host and repo facts
