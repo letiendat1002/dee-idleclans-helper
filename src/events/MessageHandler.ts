@@ -28,6 +28,9 @@ const COOLDOWN_SWEEP_AT = 1_000;
 /** The community server. The showcase links to it, not to the game wiki. */
 const COMMUNITY_URL = 'https://discord.gg/fepAZKG2Ss';
 
+/** The source. A stranger can check the code and the licence before inviting the bot. */
+const REPO_URL = 'https://github.com/letiendat1002/dee-idleclans-helper';
+
 /**
  * ViewChannel | SendMessages | EmbedLinks | AttachFiles | UseApplicationCommands
  * = 1024 + 2048 + 16384 + 32768 + 2147483648.
@@ -71,11 +74,12 @@ export function buildShowcaseEmbed(avatarUrl: string | null = null): EmbedBuilde
     );
 }
 
-/** The invite and community buttons of the showcase. */
+/** The invite, community and source buttons of the showcase. */
 export function buildShowcaseRow(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setLabel('Add to server').setStyle(ButtonStyle.Link).setURL(inviteUrl()),
-    new ButtonBuilder().setLabel('Community server').setStyle(ButtonStyle.Link).setURL(COMMUNITY_URL)
+    new ButtonBuilder().setLabel('Community server').setStyle(ButtonStyle.Link).setURL(COMMUNITY_URL),
+    new ButtonBuilder().setLabel('Source on GitHub').setStyle(ButtonStyle.Link).setURL(REPO_URL)
   );
 }
 
