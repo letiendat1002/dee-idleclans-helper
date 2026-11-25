@@ -10,6 +10,10 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Added
+
+- `/help` links the GitHub Sponsors page. The bot stays free: sponsoring unlocks nothing.
+
 ## [1.4.1] - 2026-11-25
 
 ### Fixed

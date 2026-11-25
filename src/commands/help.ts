@@ -28,6 +28,9 @@ const COMMUNITY_URL = 'https://discord.gg/fepAZKG2Ss';
 /** The published policy pages, the URLs Discord asks for at verification. */
 const POLICY_URL = 'https://letiendat1002.github.io/dee-idleclans-helper';
 
+/** The donation page. Sponsoring unlocks nothing: every feature is free. */
+const SPONSOR_URL = 'https://github.com/sponsors/letiendat1002';
+
 /** The invite URL of the bot, built from the client id of the environment. */
 function inviteUrl(): string {
   const clientId = process.env.DISCORD_CLIENT_ID ?? '';
@@ -82,6 +85,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
           value: [
             `[Add Dee IdleClans Helper to your server](${inviteUrl()})`,
             `[Horde server](${COMMUNITY_URL})`,
+            `[Sponsor on GitHub](${SPONSOR_URL})`,
             '*Made by HRDDee*',
           ].join('\n'),
         }
