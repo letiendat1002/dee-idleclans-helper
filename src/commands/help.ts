@@ -60,7 +60,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
             '`/digest add #channel` — subscribe a channel to the market digest',
             '`/digest remove` — unsubscribe a channel',
             '`/digest list` — the digest channels of this server',
-            '`/digest interval <minutes>` — how often the digest posts, 15 minutes to once a day',
+            '`/digest interval <hours> [minutes]` — how often the digest posts, 15 minutes to once a day',
             'Access is set in Server Settings > Integrations · one channel per server',
           ].join('\n'),
         },

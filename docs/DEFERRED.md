@@ -15,10 +15,10 @@ Quy ước: khi một mục xong, xoá nó khỏi file này và thêm một dòn
 | B3 | Discord/Horde: tạo category bot (announcements, feedback) | chờ B1 và quyết định cấu trúc server | sau B1 |
 | B4 | Donation rails: handle Ko-fi (VietQR **đã chốt bỏ** 2026-11-21) | owner loại kênh nội địa vì tệp người dùng là quốc tế; `LEGAL_DONATION_VN.md` §6 đã ghi lại | owner gửi handle ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` + link ở `/help` footer và README. Đánh đổi đã chấp nhận: người chơi VN không còn đường nội địa (PayPal VN không giao dịch nội địa từ 2016) |
 | B5 | Bật GitHub Sponsors (hồ sơ + thuế + ngân hàng) | cần KYC; nên public repo trước để hồ sơ "open source" dễ duyệt | sau khi repo public; nút Sponsor đã có trong `.github/FUNDING.yml` |
-| B6 | Rotate token của **DIH Dev** | token dev đã xuất hiện trong chat lúc setup 2026-11-22 (owner đã nói sẽ reset); app chỉ ở server test nên rủi ro thấp, nhưng token phải đổi trước khi mở rộng quyền | Portal → DIH Dev → Bot → Reset Token → sửa `DISCORD_TOKEN` trong `.env.dev` → `docker compose --env-file .env.dev -p dih-dev up -d bot collector` |
+| B6 | ~~Rotate token của **DIH Dev**~~ — **đóng 2026-11-25, không làm** | owner quyết bỏ: token chỉ nằm trong `.env.dev` (untracked) và app dev chỉ ở guild test; đổi token không mua thêm gì cho một app không phục vụ ai | đã xoá runbook riêng trong ops notes; nếu sau này app dev được mời vào server thật thì mở lại mục này |
 
-Rotate credential **không** nằm trong bảng này: nó là bước §2 của checklist release riêng của operator, chạy
-ngay trong lần release kế tiếp. Không tạo mục riêng cho nó ở đây.
+Việc rotate credential đã bị owner bỏ (2026-11-25); checklist release riêng của operator không còn bước
+rotate, và không tạo mục riêng cho nó ở đây.
 
 ## 2. Gap — đã kiểm nhưng chưa chứng minh trên đường thật
 

@@ -1,0 +1,24 @@
+name: release notify
+
+# The release checklist deploys first and tags second, so a plain v* tag means
+# "this build is running in production". That makes the tag the right trigger for
+# the note in the updates channel: no extra state, no scheduler, nothing to drift.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Post the release note
+        env:
+          DIH_UPDATES_WEBHOOK: ${{ secrets.DIH_UPDATES_WEBHOOK }}
+          DIH_RELEASE_ROLE_ID: ${{ secrets.DIH_RELEASE_ROLE_ID }}
+        run: bash scripts/notify-release.sh
