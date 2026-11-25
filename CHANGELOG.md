@@ -10,6 +10,14 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-11-26
+
+### Fixed
+
+- A mention that arrives while the cooldown still runs is answered again. The per-user window is ten
+  seconds instead of a minute, and a skipped mention is logged with how long it had left, so silence
+  in a channel no longer hides a working cooldown.
+
 ## [1.5.1] - 2026-11-25
 
 ### Changed
