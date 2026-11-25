@@ -83,18 +83,19 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
         {
           name: `${ICONS.wiki} Links`,
           value: [
-            `[Add Dee IdleClans Helper to your server](${inviteUrl()})`,
-            `[Horde server](${COMMUNITY_URL})`,
+            `[Add to your server](${inviteUrl()})`,
+            `[Community server](${COMMUNITY_URL})`,
             `[Sponsor on GitHub](${SPONSOR_URL})`,
-            '*Made by HRDDee*',
+            '',
+            `[Privacy](${POLICY_URL}/privacy.html) · [Terms](${POLICY_URL}/terms.html)`,
           ].join('\n'),
         }
       )
+      // Discord does not render markdown in a footer, so a policy link there
+      // showed as literal brackets. The links live in the field; the footer is
+      // one plain line.
       .setFooter({
-        text: [
-          '5 uses per minute (except /help) · digest and vault post publicly',
-          `[Privacy](${POLICY_URL}/privacy.html) · [Terms](${POLICY_URL}/terms.html)`,
-        ].join('\n'),
+        text: 'Made by HRDDee · 5 uses per minute (except /help) · digest and vault post publicly',
       });
 
     await safeReply(interaction, { embeds: [embed], flags: 64 });
