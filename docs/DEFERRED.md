@@ -68,6 +68,25 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | ~~D14~~ | ~~Ops script chạy từ **dev tree**, deploy chạy từ checkout deploy~~ | **đóng 2026-11-23** | `DEPLOY_DIR` của các unit ops đã trỏ vào checkout deploy thay vì cây dev, nên `git switch` ở cây dev không còn đổi script mà backup/watchdog/drill chạy; code đổi chỉ có hiệu lực từ release kế tiếp. Chứng minh: `dee-idleclans-backup.service` chạy 22:07:39 upload OK từ checkout đó, `dee-idleclans-drill.service` chạy 22:08:51 ghi marker `items=1009 price_snapshots=1568238` |
 | ~~D12~~ | ~~Restore drill chưa có lịch~~ | **đóng 2026-11-23** | `deploy/dee-idleclans-drill.{service,timer}` chạy `restore-drill.sh` ngày 1 mỗi tháng (`Persistent=true`); lượt pass ghi `$BACKUP_DIR/.last-drill`, và `watchdog.sh` DM khi marker cũ hơn 45 ngày — drill ngừng chạy cũng bị bắt. Lượt chạy thật qua systemd 2026-11-23 22:08:51: `items=1009 price_snapshots=1568238 schema_migrations=10` |
 
+### Đã soát 2026-11-25 — quyết định cho từng mục (không làm mục nào trong lượt này)
+
+Lý do soát: owner yêu cầu xử lý debt "properly". Kết luận là **không mục nào đáng một đợt code
+riêng**; mỗi mục có trigger rõ để quay lại, và số đo đủ để không phải suy lại.
+
+| # | Quyết định 2026-11-25 | Mở lại khi |
+|---|---|---|
+| D1 | Giữ một process. Multi-instance là thay đổi thiết kế (rate window + cooldown sang Redis), không phải fix | có nhu cầu chạy ≥2 instance |
+| D2 | Không làm một đợt. Chỉ bỏ `as` ở biên query khi đang sửa chính file đó | file có `as` được chạm vì việc khác |
+| D3 | `statement_timeout` 15 s giữ nguyên. Log `canceling statement due to statement timeout` là tín hiệu duy nhất | log đó xuất hiện |
+| D5 | Giữ 3 chỗ `.env`; bản đồ file nào thuộc stack nào đã ở `OPERATIONS.md` §1. Không gộp: gộp dễ làm dev trỏ nhầm DB production | rotate credential lần tới |
+| D8 | Không thêm dải low/high. Chart v3 vẽ avg + volume; dải là thông tin thêm, không phải lỗi | owner muốn thấy độ rộng giá |
+| D10 | Không thêm `samples` vào footer. Dữ liệu 1 ngày chưa đủ để quyết ngưỡng "ít mẫu" | có ngày built từ 1 poll mà người dùng thật đọc |
+| D11 | Không surface giờ sync catalogue. Rename item chưa gây nhầm lẫn nào được báo | có báo cáo nhầm do catalogue cũ |
+| D12 | Giữ budget 5/phút chung. `/graph` đã rẻ hơn sau v3 (cache 10/phút) | log `[RATE]` cho thấy `/graph` chặn lệnh khác |
+| D15 | **Giữ 30 ngày (a).** Đo 2026-11-25: `price_snapshots` **353 MB** (193 heap + 160 idx), **2 393 710 dòng**, **80 B/dòng** heap ⇒ ~148 B/dòng cả index; 452 458 dòng/ngày ≈ **67 MB/ngày**, trần 30 ngày ≈ **2,0 GB**, một năm churn ≈ **24 GB** (+ WAL) trên đĩa còn **206 GB**. Archive sang B2 (b) và hạ 14 ngày (c) không mua gì; mất 16 ngày audit | DB > 1 GB hoặc dump > 64 MB |
+| D17 | Không áp Prettier. Sẽ là một commit reformat toàn repo, phải đứng riêng | muốn khoá style |
+| D18 | Không thêm `app_id`. Ràng buộc "1 bot / guild" đã ghi và đang đúng | bot thứ hai vào cùng guild |
+
 Đã đóng trong đợt 2026-11-17 (giữ lại để không mở lại): v1 tables (migration 010, cả hai DB),
 `dist` cũ ship nhầm (build xoá `dist` trước), 4 bản copy permission check → `canPost`, pool thiếu
 timeout/listener, 2 bản shutdown, copy slow-down sai `0/5`, `AGENTS.md` mô tả thiếu `/price`,
