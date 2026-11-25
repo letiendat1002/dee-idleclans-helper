@@ -103,7 +103,7 @@ describe('MessageHandler', () => {
     expect(reply).not.toHaveBeenCalled();
   });
 
-  it('replies once per user per minute, and again after the minute', async () => {
+  it('replies once per user per ten seconds, and again after that', async () => {
     vi.useFakeTimers();
     try {
       const handler = new MessageHandler(CLIENT);
@@ -113,14 +113,19 @@ describe('MessageHandler', () => {
       await handler.handleMessage(message);
       expect(reply).toHaveBeenCalledTimes(1);
 
-      // 59.999 s is still inside the window: the minute is not approximate.
-      vi.advanceTimersByTime(59_999);
+      // 9.999 s is still inside the window: the boundary is not approximate.
+      vi.advanceTimersByTime(9_999);
       await handler.handleMessage(message);
       expect(reply).toHaveBeenCalledTimes(1);
 
       vi.advanceTimersByTime(1);
       await handler.handleMessage(message);
       expect(reply).toHaveBeenCalledTimes(2);
+
+      // The 2026-11-25 report: a second mention 20 s later answered nothing.
+      vi.advanceTimersByTime(20_000);
+      await handler.handleMessage(message);
+      expect(reply).toHaveBeenCalledTimes(3);
     } finally {
       vi.useRealTimers();
     }
