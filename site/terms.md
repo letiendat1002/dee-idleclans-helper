@@ -1,6 +1,6 @@
 ---
+layout: default
 ---
-
 # Terms of Service
 
 Dee IdleClans Helper ("the bot") is a free Discord bot that reports Idle Clans market data. It is

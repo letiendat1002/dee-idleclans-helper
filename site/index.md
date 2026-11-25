@@ -1,6 +1,6 @@
 ---
+layout: default
 ---
-
 # Dee IdleClans Helper
 
 Market intel for Idle Clans, as a Discord bot: sell price, buy order, chart, DM price alerts, a
