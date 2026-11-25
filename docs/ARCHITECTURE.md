@@ -51,6 +51,13 @@ There is no chart renderer call any more. `/graph` used to POST a Chart.js confi
 are Discord, the API and B2. The `NODE_OPTIONS=--dns-result-order=ipv4first` flag
 stays on the service: the API host is reached over the compose network, and the
 container still has **no IPv6 route** (measured 2026-11-21).
+
+Since 1.3.0 the bot and the collector also skip the host's resolver stub: `docker-compose.yml` sets
+`dns: [1.1.1.1, 8.8.8.8]`, because on 2026-11-24 the stub stopped answering `AAAA` for
+`discord.com` for nine seconds and the interaction in flight died with `EAI_AGAIN`. That override
+does *not* replace `--dns-result-order=ipv4first` — public resolvers do return `AAAA` records, and
+with no IPv6 route a `connect` to one fails, so the ordering flag is what keeps the A record
+chosen. Two independent faults, two fixes.
 or the renderer goes back to intermittent local PNGs.
 
 Neither process publishes a port, so no healthcheck is an HTTP probe. The bot

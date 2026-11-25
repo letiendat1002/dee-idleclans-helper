@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 A release is cut from `[Unreleased]` after the host has deployed the commit and
 the health gate has passed; the tag is `v` plus the version in `package.json`.
 
-## [Unreleased]
+## [1.3.0] - 2026-11-25
 
 ### Added
 
