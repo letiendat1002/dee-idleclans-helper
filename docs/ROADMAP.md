@@ -3,12 +3,13 @@
 The durable ledger for this project. If a session is compacted, this file plus `ARCHITECTURE.md`
 is the resume contract: read those two first, then only the docs a track names.
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-25.
 
 ## 0. Decisions locked by the owner
 
 | # | Decision | Where it lives |
 | --- | --- | --- |
+| 2026-11-25 | **Release 1.3.0: note tự đăng khi tag, deploy fail tự báo, resolver công cộng** | `develop` → PR #45 → `production` `8ca86cd` → deploy `dee` OK (4/4 healthy, restarts 0, log error 0, snapshot 38 s, 8 command, `.deployed-sha` = `8ca86cd3`); tag `v1.3.0` (tag object `8d860ae`) từ máy dev; `version-guard` + `release notify` success, note trong `dih-updates` `1574969309720219781` có ping `Release [DIH]`; merge-back PR #46 `f260e44`. Container giờ có `dns: [1.1.1.1, 8.8.8.8]` (host stub timeout AAAA `discord.com` 2026-11-24) và `ipv4first` giữ nguyên. Deploy lần này suýt chặn ở bước `git fetch`: chính stub của host treo 8 s rồi trả `Temporary failure in name resolution` — đã trỏ tạm `resolvectl dns enp2s0 192.168.100.1` (xem `docs-private/OPERATIONS.md`) |
 | 2026-11-23 | **Audit sau chart v3: tách image dev/prod, sửa `/help`, archive prompt cũ** | Phát hiện: hai stack dùng chung tag `dee-idleclans-helper:local` nên lần build dev 00:47Z đã ghi đè tag production tham chiếu, và image production (prune mất, container vẫn chạy) không còn để tạo lại → `docker-compose.yml` đổi sang `${STACK_PREFIX:-dee-idleclans-helper}:local` (prod resolve y nguyên), build lại tag prod từ `5349b75` (commit HEAD lúc prod start 08:51:42Z), dev chuyển sang `dih-dev:local`; `/help` còn ghi "sell-price trend over 24h, 7d or 30d" → "average traded price over 24h, 7d, 30d or 1y" + assertion; `RESTART-PROMPT.md` (2026-11-14) đang tự nhận authoritative và trỏ `src/ui/chart.ts` đã xoá → archive. 398/398 test, typecheck 0, build OK; prod container không bị restart (vẫn Up 18 h, image ID cũ) |
 | 2026-11-23 | **`/graph` chart v3 committed và live-verified trên DIH Dev** (`0f9bed4`): bốn range 24h/7d/30d/1y đổi tại chỗ, ảnh 900×260 (512×148 trong Discord) | Coal ore: 24h `49 buckets of 30 minutes` `144g–150g` `14.42m units`; 1y `53 buckets of 1 week` `99g–190g` `4.78b units` `+9.0%`; 7d `29 buckets of 6 hours`; 30d `31 buckets of 1 day` — khớp site từng số ở 1y và 24h; 398/398 test, typecheck 0, build OK, ảnh lưu tại `personal/idle-clans/chart-2026-11-23-live-graph-{1y,7d,30d}-coal.webp`; evidence `docs/DISCORD-TESTING.md` §7.8 |
 | D1 | Digest is capped at **1 channel per server** (abuse surface beats convenience) | `DIGEST-CONFIG-DESIGN.md` |
