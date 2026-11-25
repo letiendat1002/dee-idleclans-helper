@@ -14,6 +14,11 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 - `/help` links the GitHub Sponsors page. The bot stays free: sponsoring unlocks nothing.
 
+### Fixed
+
+- The first tick after the delivery ledger shipped replayed every entry in the retain window.
+  Migration `013` marks the events a subscriber has already been given, so the replay stops.
+
 ## [1.4.1] - 2026-11-25
 
 ### Fixed
