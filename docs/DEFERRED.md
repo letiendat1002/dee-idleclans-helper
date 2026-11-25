@@ -12,9 +12,9 @@ Quy ước: khi một mục xong, xoá nó khỏi file này và thêm một dòn
 | # | Việc | Vì sao hoãn | Mở khi |
 |---|---|---|---|
 | B2 | ~~`deploy.timer` bật chờ release đầu~~ — **đóng 2026-11-23** | timer tự deploy `9b502dc` lúc 11:08 ngay sau khi publish, trước khi có tag: đúng cái ADR-2 loại bỏ | đã `disable --now`; release chạy tay theo `CONVENTIONS.md` §8.3. Không bật lại |
-| B3 | Discord/Horde: tạo category bot (announcements, feedback) | chờ B1 và quyết định cấu trúc server | sau B1 |
-| B4 | Donation rails: handle Ko-fi (VietQR **đã chốt bỏ** 2026-11-21) | owner loại kênh nội địa vì tệp người dùng là quốc tế; `LEGAL_DONATION_VN.md` §6 đã ghi lại | owner gửi handle ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` + link ở `/help` footer và README. Đánh đổi đã chấp nhận: người chơi VN không còn đường nội địa (PayPal VN không giao dịch nội địa từ 2016) |
-| B5 | Bật GitHub Sponsors (hồ sơ + thuế + ngân hàng) | cần KYC; nên public repo trước để hồ sơ "open source" dễ duyệt | sau khi repo public; nút Sponsor đã có trong `.github/FUNDING.yml` |
+| B3 | ~~Discord/Horde: tạo category bot (announcements, feedback)~~ — **đóng 2026-11-25** | category `DIH` sống trên Horde: `dih-announcements`, `dih-updates` (webhook tự động), `dih-roles`, `dih-suggestion`, `dih-bug-reports` (forum), `bot-archive`; kênh dùng chung `idle-market` (digest), `idle-bots`, `idle-vault` (`/vault` clan `DeeCorp`) | đóng — bản đồ channel + quyền trong `docs-private/HORDE-SERVER.md` |
+| B4 | Donation rails: handle Ko-fi (VietQR **đã chốt bỏ** 2026-11-21) | **hoãn sang phase sau (owner 2026-11-25)** — có requirement khác quan trọng hơn, owner nêu sau khi sạch tech debt; lý do loại kênh nội địa vẫn giữ nguyên (`LEGAL_DONATION_VN.md` §6) | owner gửi handle ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` + link ở `/help` footer và README |
+| B5 | Bật GitHub Sponsors (hồ sơ + thuế + ngân hàng) | **hoãn sang phase sau (owner 2026-11-25)** — điều kiện "repo public" **đã đạt** (repo public); còn KYC/thuế/ngân hàng là việc owner | khi owner mở phase donation; nút Sponsor đã có trong `.github/FUNDING.yml` |
 | B6 | ~~Rotate token của **DIH Dev**~~ — **đóng 2026-11-25, không làm** | owner quyết bỏ: token chỉ nằm trong `.env.dev` (untracked) và app dev chỉ ở guild test; đổi token không mua thêm gì cho một app không phục vụ ai | đã xoá runbook riêng trong ops notes; nếu sau này app dev được mời vào server thật thì mở lại mục này |
 
 Việc rotate credential đã bị owner bỏ (2026-11-25); checklist release riêng của operator không còn bước
