@@ -1,5 +1,8 @@
 # Voice
 
+Who reads this: anyone writing a user-facing string — when: before shipping copy in an embed, a footer, a listing or `/help`.
+Neighbours: [UI-DESIGN.md](UI-DESIGN.md) · [MARKETING-COPY.md](MARKETING-COPY.md) · [PRODUCT.md](../PRODUCT.md) · [CONVENTIONS.md](CONVENTIONS.md).
+
 How the bot writes. Short on purpose: every rule here exists because the copy broke it.
 
 ## Who is talking

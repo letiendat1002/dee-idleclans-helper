@@ -1,5 +1,8 @@
 # Architecture — dee-idleclans-helper
 
+Who reads this: an agent changing a flow, a poller, a table, a cache key or a budget — when: before that change, so the topology it touches is known.
+Neighbours: [CONVENTIONS.md](CONVENTIONS.md) · [ROADMAP.md](ROADMAP.md) · [ENVIRONMENTS.md](ENVIRONMENTS.md) · [DEFERRED.md](DEFERRED.md).
+
 How the bot is put together, what talks to what, and where it breaks. Read this
 before changing a poller, a cache key or a permission gate.
 

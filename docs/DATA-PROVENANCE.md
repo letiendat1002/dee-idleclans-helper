@@ -1,5 +1,8 @@
 # Data provenance — every figure the bot prints
 
+Who reads this: an agent adding, changing or defending a number the bot prints — when: a figure has no traceable source, or an upstream field looks wrong.
+Neighbours: [GAME-MECHANICS.md](GAME-MECHANICS.md) · [CHART.md](CHART.md) · [CONVENTIONS.md](CONVENTIONS.md) · [ARCHITECTURE.md](ARCHITECTURE.md).
+
 The bot reports market facts. Every number must trace to a source; this file records that source
 and when it was last checked. If a number is not in this table, the bot must not print it.
 
