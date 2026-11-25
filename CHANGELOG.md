@@ -10,6 +10,25 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-25
+
+### Changed
+
+- `/help` links `ko-fi.com/letiendat1002`. A player has a card or PayPal, not a GitHub account; the
+  GitHub Sponsors link stays in the README for the people who do.
+- The mention card gains `Source on GitHub`, so a stranger can read the code before inviting the bot.
+
+### Fixed
+
+- The policy links in `/help` reached the reader as literal `[Privacy](…)` brackets: Discord draws
+  embed footers as plain text. They sit in the Links field now, and the test checks the footer has no
+  markdown instead of copying the broken string.
+- A release that failed while building exited without telling anyone. The build and the rollback now
+  share one function, and a failed build posts to the updates channel like a failed gate.
+- `package-lock.json` no longer drifts behind the manifest: the release guard fails when the three
+  version strings disagree.
+
+
 ## [1.5.0] - 2026-11-25
 
 ### Added

@@ -28,8 +28,12 @@ const COMMUNITY_URL = 'https://discord.gg/fepAZKG2Ss';
 /** The published policy pages, the URLs Discord asks for at verification. */
 const POLICY_URL = 'https://letiendat1002.github.io/dee-idleclans-helper';
 
-/** The donation page. Sponsoring unlocks nothing: every feature is free. */
-const SPONSOR_URL = 'https://github.com/sponsors/letiendat1002';
+/**
+ * The support page. Ko-fi takes a card or PayPal without an account, which is what
+ * a player has; GitHub Sponsors needs a GitHub account and stays in the README.
+ * A donation unlocks nothing: every feature is free.
+ */
+const SPONSOR_URL = 'https://ko-fi.com/letiendat1002';
 
 /** The invite URL of the bot, built from the client id of the environment. */
 function inviteUrl(): string {
@@ -85,7 +89,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
           value: [
             `[Add to your server](${inviteUrl()})`,
             `[Community server](${COMMUNITY_URL})`,
-            `[Sponsor on GitHub](${SPONSOR_URL})`,
+            `[Support on Ko-fi](${SPONSOR_URL})`,
             '',
             `[Privacy](${POLICY_URL}/privacy.html) · [Terms](${POLICY_URL}/terms.html)`,
           ].join('\n'),
