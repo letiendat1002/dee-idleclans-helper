@@ -53,6 +53,11 @@ post is refused it names the missing permission instead.
 `CONTRIBUTING.md`. Security reports: `SECURITY.md` (private advisory, not an
 issue). Release notes: `CHANGELOG.md`.
 
+## Support
+
+The bot is free and has no paid tier: a donation unlocks nothing. If it saves you time,
+[sponsor the work on GitHub Sponsors](https://github.com/sponsors/letiendat1002).
+
 ## License
 
 The code is MIT — see `LICENSE`. The game's OpenAPI description is not redistributed here; `docs/DATA-PROVENANCE.md`

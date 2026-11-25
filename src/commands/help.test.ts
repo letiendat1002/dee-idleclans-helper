@@ -69,6 +69,7 @@ describe('/help', () => {
     expect(embed?.footer?.text).toContain('5 uses per minute (except /help) · digest and vault post publicly');
     expect(embed?.footer?.text).toContain('[Privacy](https://letiendat1002.github.io/dee-idleclans-helper/privacy.html)');
     expect(embed?.footer?.text).toContain('[Terms](https://letiendat1002.github.io/dee-idleclans-helper/terms.html)');
+    expect(JSON.stringify(embed)).toContain('[Sponsor on GitHub](https://github.com/sponsors/letiendat1002)');
   });
 
   it('answers with a reference id when the embed cannot be sent', async () => {
