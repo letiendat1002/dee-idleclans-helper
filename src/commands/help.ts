@@ -25,6 +25,9 @@ const INVITE_PERMISSIONS = 2147535872;
 /** The community server: the same URL the showcase button points at. */
 const COMMUNITY_URL = 'https://discord.gg/fepAZKG2Ss';
 
+/** The published policy pages, the URLs Discord asks for at verification. */
+const POLICY_URL = 'https://letiendat1002.github.io/dee-idleclans-helper';
+
 /** The invite URL of the bot, built from the client id of the environment. */
 function inviteUrl(): string {
   const clientId = process.env.DISCORD_CLIENT_ID ?? '';
@@ -83,7 +86,12 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
           ].join('\n'),
         }
       )
-      .setFooter({ text: '5 uses per minute (except /help) · digest and vault post publicly' });
+      .setFooter({
+        text: [
+          '5 uses per minute (except /help) · digest and vault post publicly',
+          `[Privacy](${POLICY_URL}/privacy.html) · [Terms](${POLICY_URL}/terms.html)`,
+        ].join('\n'),
+      });
 
     await safeReply(interaction, { embeds: [embed], flags: 64 });
   } catch (err) {
