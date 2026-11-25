@@ -178,27 +178,31 @@ export class VaultNotifier {
       (oldest, target) => (target.createdAt < oldest ? target.createdAt : oldest),
       targets[0].createdAt
     );
-    const fresh = await VaultLog.recordNewEvents(clanName, entries, since);
-    if (fresh.length === 0) return { channels: 0, events: 0 };
+    await VaultLog.recordNewEvents(clanName, entries, since);
 
     const avatarUrl = client.user?.displayAvatarURL({ size: 128 }) ?? null;
 
     let channels = 0;
+    let events = 0;
     for (const target of targets) {
       const channel = await VaultNotifier.postableChannel(client, target);
       if (!channel) continue;
 
-      const events = fresh.filter(
-        (event) => event.happenedAt.getTime() >= target.createdAt.getTime()
-      );
-      if (events.length === 0) continue;
+      const pending = await VaultLog.undeliveredFor(clanName, target.channelId, target.createdAt);
+      if (pending.length === 0) continue;
 
       try {
         await channel.send({
-          embeds: [VaultNotifier.buildEmbed(clanName, events, avatarUrl)],
+          embeds: [VaultNotifier.buildEmbed(clanName, pending, avatarUrl)],
           flags: SUPPRESS_NOTIFICATIONS,
         });
+        await VaultLog.markDelivered(
+          clanName,
+          pending.map((event) => event.eventKey),
+          target.channelId
+        );
         channels += 1;
+        events += pending.length;
       } catch (err) {
         logger.error('clan vault post failed for a channel', {
           clanName,
@@ -209,7 +213,7 @@ export class VaultNotifier {
       }
     }
 
-    return { channels, events: fresh.length };
+    return { channels, events };
   }
 
   /**

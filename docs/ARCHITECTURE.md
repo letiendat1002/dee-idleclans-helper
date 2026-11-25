@@ -185,6 +185,7 @@ compose file therefore keeps a single replica.
 | `digest_channels` | new | per guild channel | digest subscriptions, `last_sent_at` |
 | `vault_channels` | new | per guild channel + clan | clan vault subscriptions, `created_at` is the no-backfill line |
 | `vault_events` | new | per clan entry | dedupe of the public clan log, pruned at 14 days |
+| `vault_deliveries` | new | per clan entry + channel | which channel already received an entry; written **after** a successful post, so a refused post is retried instead of lost. Pruned when its entry is pruned |
 | `guild_settings` | — | per guild | the live per-guild digest cadence (`digest_interval_min`); channel columns legacy |
 | `clans` | 0 | — | unused legacy table |
 | `schema_migrations` | 6 | per migration | applied migration versions |
