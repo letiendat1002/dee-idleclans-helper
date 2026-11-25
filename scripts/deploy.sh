@@ -48,6 +48,19 @@ notify_failure() {
 exec 9>"${TMPDIR:-/tmp}/dee-idleclans-deploy.lock"
 flock -n 9 || { log 'another deploy is running, skipping this tick'; exit 0; }
 
+# Build the image for one commit. The deploy and the rollback both call it, so
+# the two directions cannot drift, and a build that dies tells the channel
+# instead of exiting before any gate could.
+build_at() {
+  local sha=$1
+  git checkout --quiet --detach "$sha"
+  npm ci
+  npm run build
+  IMAGE_TAG="$(image_tag "$sha")"
+  export IMAGE_TAG
+  docker compose build "$SERVICE"
+}
+
 # Restore the previous release and stop. Code only: the pre-deploy dump is not
 # replayed automatically, because the database may have taken writes since it
 # was taken and a dump that old would delete them.
@@ -59,12 +72,7 @@ rollback() {
   fi
 
   log "rolling back to ${current:0:8}"
-  git checkout --quiet --detach "$current"
-  npm ci
-  npm run build
-  IMAGE_TAG="$(image_tag "$current")"
-  export IMAGE_TAG
-  docker compose build "$SERVICE"
+  build_at "$current" || true
   # shellcheck disable=SC2086  # two services, word splitting is the point
   docker compose up -d --wait $SERVICES || true
   log "rollback finished; inspect the stack before the next attempt"
@@ -110,12 +118,7 @@ if ! bash "$REPO_DIR/scripts/backup-db.sh"; then
   exit 1
 fi
 
-git checkout --quiet --detach "$target"
-npm ci
-npm run build
-IMAGE_TAG="$(image_tag "$target")"
-export IMAGE_TAG
-docker compose build "$SERVICE"
+build_at "$target" || rollback "the build failed"
 
 # shellcheck disable=SC2086  # two services, word splitting is the point
 if docker compose up -d --wait $SERVICES; then

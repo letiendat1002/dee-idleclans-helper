@@ -69,6 +69,11 @@ jobs:
       - name: Shell scripts pass shellcheck
         run: docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable scripts/*.sh
 
+      # The failure branches of a deploy only run when a release is already
+      # broken; stubs make them cheap enough to check on every push.
+      - name: Deploy failure paths behave
+        run: bash scripts/deploy.failure.test.sh
+
       - run: npm ci
 
       # Before the database work: a leaked credential or an operator path must
