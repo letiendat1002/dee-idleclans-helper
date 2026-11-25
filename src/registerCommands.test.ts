@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { put, logger } = vi.hoisted(() => {
   process.env.DISCORD_TOKEN = 'token';
   process.env.DISCORD_CLIENT_ID = 'client-1';
-  process.env.DISCORD_GUILD_ID = 'guild-1';
   return {
     put: vi.fn(),
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },

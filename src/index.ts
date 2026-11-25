@@ -49,10 +49,9 @@ const logger = createLogger('BOT');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
-const GUILD_ID = process.env.DISCORD_GUILD_ID;
 
-if (!TOKEN || !CLIENT_ID || !GUILD_ID) {
-  logger.error('Missing DISCORD_TOKEN, DISCORD_CLIENT_ID, or DISCORD_GUILD_ID in environment');
+if (!TOKEN || !CLIENT_ID) {
+  logger.error('Missing DISCORD_TOKEN or DISCORD_CLIENT_ID in environment');
   process.exit(1);
 }
 
