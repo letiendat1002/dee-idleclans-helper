@@ -10,6 +10,25 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-25
+
+### Added
+
+- `/help` links the GitHub Sponsors page. The bot stays free: sponsoring unlocks nothing.
+- `/vault recent` shows the newest entries of a clan on demand, ephemeral and outside the subscription.
+
+### Changed
+
+- A vault post names the UTC window it covers, lists up to 30 entries (was 10), and its footer
+  says the game publishes deltas only, so no message claims a vault total.
+
+### Fixed
+
+- The backup timer's catch-up tick no longer leaves a red unit: the service retries for up to five
+  minutes after boot instead of failing while Postgres is still starting.
+- The first tick after the delivery ledger shipped replayed every entry in the retain window.
+  Migration `013` marks the events a subscriber has already been given, so the replay stops.
+
 ## [1.4.1] - 2026-11-25
 
 ### Fixed

@@ -1,5 +1,8 @@
 # Dee IdleClans Helper
 
+Who reads this: a visitor deciding whether to install or self-host — when: first arrival, before the invite.
+Neighbours: [docs/GUIDE.md](docs/GUIDE.md) · [docs/SETUP.md](docs/SETUP.md) · [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Market intel for Idle Clans. Ask about an item and get the numbers the game
 shows: the **sell price** a buyer pays, the **buy order** a seller receives, the
 24-hour trend, and what its materials cost.
@@ -52,6 +55,11 @@ post is refused it names the missing permission instead.
 
 `CONTRIBUTING.md`. Security reports: `SECURITY.md` (private advisory, not an
 issue). Release notes: `CHANGELOG.md`.
+
+## Support
+
+The bot is free and has no paid tier: a donation unlocks nothing. If it saves you time,
+[sponsor the work on GitHub Sponsors](https://github.com/sponsors/letiendat1002).
 
 ## License
 

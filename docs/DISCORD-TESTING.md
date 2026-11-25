@@ -1,11 +1,15 @@
 # Discord live testing — Dee IdleClans Helper
 
+Who reads this: an agent verifying a command on the real Discord surface — when: before claiming a live behaviour, and after every rebuild of the image.
+Neighbours: [CONVENTIONS.md](CONVENTIONS.md) · [GUIDE.md](GUIDE.md) · [ENVIRONMENTS.md](ENVIRONMENTS.md) · [SETUP.md](SETUP.md).
+
 How to run this bot against a real Discord server and verify each command end to end. Written
 from verified sessions (2026-11-13, 2026-11-14) — every expected output below was actually
 observed, not imagined.
 
 Test server: guild `<dev-guild-id>` ("DeeLY's test server"), channel `general` =
-`<dev-channel-id>`. The guild id comes from `DISCORD_GUILD_ID` in `.env`.
+`<dev-channel-id>`. The curl snippets below take the guild id from a shell variable you export
+for the test guild; the bot itself does not read it.
 
 The test guild belongs to the **dev** bot only. The production bot left it on
 2026-11-24: the digest, vault and watch tables are keyed by guild with no bot

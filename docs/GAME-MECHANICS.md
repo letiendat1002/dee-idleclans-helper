@@ -1,5 +1,8 @@
 # Idle Clans — Game Mechanics That Change The Cost Of A Craft
 
+Who reads this: an agent modelling a game formula, a modifier or a derived rate — when: before adding or changing any derived number.
+Neighbours: [DATA-PROVENANCE.md](DATA-PROVENANCE.md) · [CONVENTIONS.md](CONVENTIONS.md) · [DEFERRED.md](DEFERRED.md).
+
 **Research date:** 2026-11-14
 **Status:** Research deliverable. No code was touched.
 **Serves the rule:** *no unmodelled, undisclosed formulas.* Every number below carries its source. Where a

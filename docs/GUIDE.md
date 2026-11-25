@@ -1,5 +1,8 @@
 # Dee IdleClans Helper — server guide
 
+Who reads this: a server owner or player installing and using the bot — when: from the invite to a command that misbehaves.
+Neighbours: [SETUP.md](SETUP.md) · [ENVIRONMENTS.md](ENVIRONMENTS.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md) · [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Everything a server owner or player needs, from the invite to every command.
 Written against the shipped bot (**8 commands**, v1.1.0); every output below was
 observed on a real server, not copied from the code.

@@ -1,5 +1,8 @@
 # Setup — Dee IdleClans Helper
 
+Who reads this: an operator or contributor running the bot on a new machine — when: first run, a fresh host, or a restore from a backup.
+Neighbours: [ENVIRONMENTS.md](ENVIRONMENTS.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [GUIDE.md](GUIDE.md).
+
 **Dự án:** thư mục chứa repo này (clone về máy, mọi đường dẫn dưới đây tính từ gốc repo)
 
 ## 1. Chuẩn bị Discord Application
@@ -35,7 +38,7 @@ node dist/index.js
 cd dee-idleclans-helper
 
 cp .env.example .env
-# Chỉnh DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID
+# Chỉnh DISCORD_TOKEN, DISCORD_CLIENT_ID
 
 docker compose up -d --build
 ```

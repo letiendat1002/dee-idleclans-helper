@@ -1,5 +1,8 @@
 # Marketing copy — the listing, surface by surface
 
+Who reads this: whoever writes or edits a listing surface (top.gg, Developer Portal) — when: before publishing copy, and before re-researching anything here.
+Neighbours: [VOICE.md](VOICE.md) · [PRODUCT.md](../PRODUCT.md) · [DEFERRED.md](DEFERRED.md) · [ROADMAP.md](ROADMAP.md).
+
 Status: **DECIDED** (owner, 2026-11-16). The recommended strings in §3 are the ones to paste; what
 is left is owner-side work in the listing UI (§7). Everything a future session needs is here: the
 surfaces and their limits, the chosen strings, the alternatives with character counts, the evidence

@@ -1,5 +1,8 @@
 # Deferred work — ledger và trigger để quay lại
 
+Who reads this: an agent deciding whether a known problem can wait, or picking up a parked item — when: before re-opening one, and before planning the next phase.
+Neighbours: [ROADMAP.md](ROADMAP.md) · [CONVENTIONS.md](CONVENTIONS.md) · [MARKETING-COPY.md](MARKETING-COPY.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md).
+
 Cập nhật 2026-11-23. Đây là **nơi duy nhất** liệt kê những việc đã cố ý hoãn, để một phase sau
 không phải dựng lại lý do từ đầu. Không có việc nào ở đây là "quên": mỗi mục ghi rõ vì sao hoãn,
 điều kiện mở, cách chạy, và một prompt dán-là-chạy ở §5.
@@ -13,9 +16,9 @@ Quy ước: khi một mục xong, xoá nó khỏi file này và thêm một dòn
 |---|---|---|---|
 | B2 | ~~`deploy.timer` bật chờ release đầu~~ — **đóng 2026-11-23** | timer tự deploy `9b502dc` lúc 11:08 ngay sau khi publish, trước khi có tag: đúng cái ADR-2 loại bỏ | đã `disable --now`; release chạy tay theo `CONVENTIONS.md` §8.3. Không bật lại |
 | B3 | ~~Discord/Horde: tạo category bot (announcements, feedback)~~ — **đóng 2026-11-25** | category `DIH` sống trên Horde: `dih-announcements`, `dih-updates` (webhook tự động), `dih-roles`, `dih-suggestion`, `dih-bug-reports` (forum), `bot-archive`; kênh dùng chung `idle-market` (digest), `idle-bots`, `idle-vault` (`/vault` clan `DeeCorp`) | đóng — bản đồ channel + quyền trong `docs-private/HORDE-SERVER.md` |
-| B4 | Donation rails: handle Ko-fi (VietQR **đã chốt bỏ** 2026-11-21) | **Phase donation mở lại 2026-11-25**, 2 hướng chốt: Ko-fi + GitHub Sponsors; **không làm website** (quyết định cùng ngày: chưa có traffic để convert, `/help` footer + listing top.gg là bề mặt đủ) | owner gửi handle ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` + link `/help` footer + README |
-| B5 | Bật GitHub Sponsors (hồ sơ + thuế + ngân hàng) | **Phase donation mở lại 2026-11-25**; điều kiện repo public **đã đạt**, và VN **nhận được payout** (GitHub thêm VN 2023-10, Stripe Connect trả VND) | owner bật profile + Stripe onboarding; nút Sponsor đã có trong `.github/FUNDING.yml` |
-| B7 | Discord App Verification: ToS + Privacy | **Code xong 2026-11-25** (PR #55): `site/privacy.md`, `site/terms.md`, Pages build từ `production`, footer `/help` có 2 link | còn lại là việc owner: set 2 URL vào Developer Portal, bật Community cho support server, điền description/tags/install link cho App Directory. Ngưỡng thật: bot chưa verify bị chặn ở **100 server** |
+| B4 | Donation rails: Ko-fi handle (VietQR **đã chốt bỏ** 2026-11-21) | GitHub Sponsors **đã lên bề mặt 2026-11-25** (`FUNDING.yml`, README §Support, `/help` Links); Ko-fi vẫn thiếu handle | owner gửi handle Ko-fi ⇒ gắn `ko_fi:` vào `.github/FUNDING.yml` |
+| B5 | ~~Bật GitHub Sponsors~~ — **đóng (profile) 2026-11-25** | profile công khai `github.com/sponsors/letiendat1002` (tier tháng + one-time + custom, verified 200); `FUNDING.yml` trỏ đúng handle | còn owner: Stripe onboarding/payout và lần nhận tiền thật đầu tiên |
+| B7 | ~~Discord App Verification~~ — **đóng 2026-11-25, Discord duyệt** | code: `site/privacy.md`, `site/terms.md`, Pages build từ `production`, footer `/help` có 2 link (PR #55). Portal: 2 URL đã lưu và đọc lại sau reload, description + 5 tag + install link có sẵn; app thuộc Team, owner qua Identity Verification, dev email verified + 2FA, 2 affirmation | **owner xác nhận app đã verify** — trần 100 server của bot chưa verify không còn áp dụng. Còn lại là việc App Directory: bật Community cho support server rồi submit listing |
 | B6 | ~~Rotate token của **DIH Dev**~~ — **đóng 2026-11-25, không làm** | owner quyết bỏ: token chỉ nằm trong `.env.dev` (untracked) và app dev chỉ ở guild test; đổi token không mua thêm gì cho một app không phục vụ ai | đã xoá runbook riêng trong ops notes; nếu sau này app dev được mời vào server thật thì mở lại mục này |
 
 Việc rotate credential đã bị owner bỏ (2026-11-25); checklist release riêng của operator không còn bước
@@ -67,6 +70,25 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | ~~D13~~ | ~~Chỉ tự lên không cần đăng nhập thì cần native Docker engine~~ — **đóng 2026-11-25** | — | Đã xảy ra cùng lúc với việc dời host: production chạy Docker engine native trên server (`docker.service` enabled), không còn Docker Desktop/`graphical-session.target` |
 | ~~D14~~ | ~~Ops script chạy từ **dev tree**, deploy chạy từ checkout deploy~~ | **đóng 2026-11-23** | `DEPLOY_DIR` của các unit ops đã trỏ vào checkout deploy thay vì cây dev, nên `git switch` ở cây dev không còn đổi script mà backup/watchdog/drill chạy; code đổi chỉ có hiệu lực từ release kế tiếp. Chứng minh: `dee-idleclans-backup.service` chạy 22:07:39 upload OK từ checkout đó, `dee-idleclans-drill.service` chạy 22:08:51 ghi marker `items=1009 price_snapshots=1568238` |
 | ~~D12~~ | ~~Restore drill chưa có lịch~~ | **đóng 2026-11-23** | `deploy/dee-idleclans-drill.{service,timer}` chạy `restore-drill.sh` ngày 1 mỗi tháng (`Persistent=true`); lượt pass ghi `$BACKUP_DIR/.last-drill`, và `watchdog.sh` DM khi marker cũ hơn 45 ngày — drill ngừng chạy cũng bị bắt. Lượt chạy thật qua systemd 2026-11-23 22:08:51: `items=1009 price_snapshots=1568238 schema_migrations=10` |
+
+### Đã soát 2026-11-25 — quyết định cho từng mục (không làm mục nào trong lượt này)
+
+Lý do soát: owner yêu cầu xử lý debt "properly". Kết luận là **không mục nào đáng một đợt code
+riêng**; mỗi mục có trigger rõ để quay lại, và số đo đủ để không phải suy lại.
+
+| # | Quyết định 2026-11-25 | Mở lại khi |
+|---|---|---|
+| D1 | Giữ một process. Multi-instance là thay đổi thiết kế (rate window + cooldown sang Redis), không phải fix | có nhu cầu chạy ≥2 instance |
+| D2 | Không làm một đợt. Chỉ bỏ `as` ở biên query khi đang sửa chính file đó | file có `as` được chạm vì việc khác |
+| D3 | `statement_timeout` 15 s giữ nguyên. Log `canceling statement due to statement timeout` là tín hiệu duy nhất | log đó xuất hiện |
+| D5 | Giữ 3 chỗ `.env`; bản đồ file nào thuộc stack nào đã ở `OPERATIONS.md` §1. Không gộp: gộp dễ làm dev trỏ nhầm DB production | rotate credential lần tới |
+| D8 | Không thêm dải low/high. Chart v3 vẽ avg + volume; dải là thông tin thêm, không phải lỗi | owner muốn thấy độ rộng giá |
+| D10 | Không thêm `samples` vào footer. Dữ liệu 1 ngày chưa đủ để quyết ngưỡng "ít mẫu" | có ngày built từ 1 poll mà người dùng thật đọc |
+| D11 | Không surface giờ sync catalogue. Rename item chưa gây nhầm lẫn nào được báo | có báo cáo nhầm do catalogue cũ |
+| D12 | Giữ budget 5/phút chung. `/graph` đã rẻ hơn sau v3 (cache 10/phút) | log `[RATE]` cho thấy `/graph` chặn lệnh khác |
+| D15 | **Giữ 30 ngày (a).** Đo 2026-11-25: `price_snapshots` **353 MB** (193 heap + 160 idx), **2 393 710 dòng**, **80 B/dòng** heap ⇒ ~148 B/dòng cả index; 452 458 dòng/ngày ≈ **67 MB/ngày**, trần 30 ngày ≈ **2,0 GB**, một năm churn ≈ **24 GB** (+ WAL) trên đĩa còn **206 GB**. Archive sang B2 (b) và hạ 14 ngày (c) không mua gì; mất 16 ngày audit | DB > 1 GB hoặc dump > 64 MB |
+| D17 | Không áp Prettier. Sẽ là một commit reformat toàn repo, phải đứng riêng | muốn khoá style |
+| D18 | Không thêm `app_id`. Ràng buộc "1 bot / guild" đã ghi và đang đúng | bot thứ hai vào cùng guild |
 
 Đã đóng trong đợt 2026-11-17 (giữ lại để không mở lại): v1 tables (migration 010, cả hai DB),
 `dist` cũ ship nhầm (build xoá `dist` trước), 4 bản copy permission check → `canPost`, pool thiếu

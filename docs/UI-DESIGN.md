@@ -1,5 +1,8 @@
 # UI design
 
+Who reads this: an agent touching an embed, a chart card, a DM or a user-facing label — when: before editing any surface, and before choosing a new style, palette or icon.
+Neighbours: [VOICE.md](VOICE.md) · [CHART.md](CHART.md) · [PRODUCT.md](../PRODUCT.md) · [CONVENTIONS.md](CONVENTIONS.md).
+
 This file is the **design system of record** for the bot. Product context (users, positioning,
 constraints, brand commitments) lives in `PRODUCT.md` at the repo root; do not create a second
 `DESIGN.md` or a duplicate brand page -- a future session reads this file and `docs/VOICE.md`. — Dee IdleClans Helper

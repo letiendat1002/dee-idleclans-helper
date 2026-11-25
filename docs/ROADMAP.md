@@ -1,5 +1,8 @@
 # Roadmap — decisions, tracks, and what is left
 
+Who reads this: an agent starting or resuming a session — when: at the start of work, and after every compaction.
+Neighbours: [ARCHITECTURE.md](ARCHITECTURE.md) · [CONVENTIONS.md](CONVENTIONS.md) · [DEFERRED.md](DEFERRED.md) · [AGENTS.md](../AGENTS.md).
+
 The durable ledger for this project. If a session is compacted, this file plus `ARCHITECTURE.md`
 is the resume contract: read those two first, then only the docs a track names.
 
@@ -49,9 +52,9 @@ discovery guidance. Deliverables to land:
 3. Digest footer: replace `digest only, no notifications` with provenance, not a limitation.
 Constraint (D5): no negative framing, no profit language.
 
-### T4 — Docs consolidation · queued
+### T4 — Docs consolidation · done (2026-11-25, PR #68 + #70)
 
-Eleven docs, all written for an agent to act on. Goal: each file has one job, a header that says
+Sixteen docs, all written for an agent to act on. Goal: each file has one job, a header that says
 who reads it, and links to its neighbours; `AGENTS.md` becomes the map + the five rules that break
 the product, not a duplicate of `CONVENTIONS.md`.
 
@@ -206,7 +209,7 @@ Active work is track **T10**. If a restored todo list disagrees with T10, T10 wi
 | 2026-11-16 | stale-backup alert | `scripts/watchdog.sh` ages the newest dump (limit 26h) → WARN + DM, 12h rate limit; proven by a stale dir (DM sent) and a re-run (suppressed) |
 | 2026-11-16 | design pass: product context and listing copy | `PRODUCT.md` written (`/impeccable init`, now in the `AGENTS.md` doc map); `MARKETING-COPY.md` flips OPEN → **DECIDED** with strings measured (short 133/200, tagline 44, portal 261/400); the old recommended tagline was replaced because its first clause is a three-part fragment list, which `VOICE.md` bans |
 | 2026-11-16 | showcase link and `/help` identity | showcase button `Website` → `Community server` (`idleclans.wiki` is third-party); `/help` last field is now `Links` (invite, DeeCorp, italic `HRDDee` credit -- italic because `-#` does not render in field values); the showcase closing line stopped claiming "never stores your game data", which the database contradicts; 425/425 tests |
-| 2026-11-17 | release path works without a runner | `deploy.yml` trigger `push` bỏ (0 runner → run treo pending), host có checkout `~/deploy/dee-idleclans-helper` + cron 5 phút gọi `deploy.sh` với guard `[ -x ]` cho tới release đầu, `.deployed-sha` seed sẵn; `docs/RELEASE-CHECKLIST.md` viết đủ quy trình gồm rotate credential |
+| 2026-11-17 | release path works without a runner | `deploy.yml` trigger `push` bỏ (0 runner → run treo pending), host có checkout `~/deploy/dee-idleclans-helper` + cron 5 phút gọi `deploy.sh` với guard `[ -x ]` cho tới release đầu, `.deployed-sha` seed sẵn; release checklist (private notes) viết đủ quy trình gồm rotate credential |
 | 2026-11-17 | CI gate on develop | `.github/workflows/tests.yml` chạy `npm ci` + migrate + seed + typecheck + test trên hosted runner với Postgres/Redis service; lần đầu fail vì Node 20 thiếu `Map.groupBy` (vitest 4) → Dockerfile, `engines`, CI cùng lên Node 22; container chạy `v22.23.5`, 441 test |
 | 2026-11-17 | debt pass (code) | migration `010_drop_v1_tables.sql` (5 bảng v1, đã chứng minh trống + không tham chiếu, áp cả hai DB); `as any` trong `ItemCatalogue.test.ts` → `vi.mocked`; wiki URL percent-encode + test; `/buy-or-craft` có `Post to channel` với modifiers trong custom id |
 | 2026-11-17 | backup missed a day, schedule made sleep-proof | 04:00 cron never fired: the laptop was suspended (`journalctl` gap 03:30-04:30) and cron does not run a missed job, so `daily/` stopped at 11-16. Ran the script by hand (8.5 MB, uploaded) and moved the entry to hourly with `SKIP_IF_PRESENT=1`: the first tick of an awake day dumps, later ticks reuse it and still do the monthly archive and the 30-day remote purge; both paths verified (skip path uploaded nothing new, empty dir path wrote the dump) |

@@ -1,5 +1,8 @@
 # Môi trường: một codebase, hai ứng dụng Discord
 
+Who reads this: an operator running, cloning or rotating a stack — when: a production-versus-dev question comes up, a second stack is started, or a token is rotated.
+Neighbours: [SETUP.md](SETUP.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md) · [GITHUB-SETUP.md](GITHUB-SETUP.md).
+
 Bot production và bot dev là **hai ứng dụng Discord khác nhau**, không phải hai lần chạy của một
 token. Đó là lý do chúng có thể online cùng lúc mà không trả lời đôi: Discord route interaction theo
 application, nên app dev không bao giờ nhận lệnh ở guild của app prod.
@@ -20,6 +23,11 @@ rời nốt `Clint's Polygon Abilities` bằng `DELETE /users/@me/guilds/<id>` s
 được mời lại vào **Horde** cùng ngày để chạy category `DEE IDLECLANS HELPER`. Cấu hình server (channel
 id, role, ma trận quyền) là tài liệu private của owner, không nằm trong repo này; `docs/DISCORD-TESTING.md`
 là chỗ kiểm hành vi, và `docs/GUIDE.md` §2 là chỗ nói người dùng thấy gì.
+
+Production chạy trên host server always-on, cài ngày 2026-11-23: bot và collector ở đó phục vụ
+guild thật, laptop chỉ giữ stack dev và một watcher bên ngoài báo host chết qua Telegram. File
+được track không nêu đường dẫn host (workflow scan từ chối đường dẫn tuyệt đối trên host); đường
+dẫn chính xác, unit và stack rollback trên laptop nằm trong `docs-private/DEPLOYMENT.md` (private).
 
 ## 2. Quy tắc
 

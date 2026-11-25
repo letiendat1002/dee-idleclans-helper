@@ -25,7 +25,7 @@ const DEFAULT_INTERVAL_MS = 5 * 60_000;
 const PRUNE_INTERVAL_MS = 24 * 60 * 60_000;
 
 /** The number of entries one vault message carries. */
-const MAX_EVENTS_PER_MESSAGE = 10;
+const MAX_EVENTS_PER_MESSAGE = 30;
 
 /** The number of days the game keeps its clan log. */
 const RETENTION_DAYS = 14;
@@ -39,6 +39,33 @@ export interface VaultRunResult {
   channels: number;
   /** How many entries were new for the clan. */
   events: number;
+}
+
+/**
+ * The footer of every vault message: where the lines come from, and what the
+ * game does not publish. A reader who expects a vault total has to be told
+ * here, because the API has no endpoint for one.
+ */
+export function vaultFooter(): string {
+  return `clan log · last ${RETENTION_DAYS} days · deltas only, the game publishes no vault totals`;
+}
+
+/**
+ * The UTC span a batch covers, e.g. `04:38–08:22 UTC`.
+ *
+ * The game delivers entries up to ~30 minutes late, so the window is what makes
+ * a post checkable against the log instead of against a guess.
+ */
+export function vaultWindow(events: VaultEvent[]): string {
+  if (events.length === 0) return '';
+
+  const first = events[0].happenedAt;
+  const last = events[events.length - 1].happenedAt;
+  const clock = (moment: Date) => moment.toISOString().slice(11, 16);
+  const spansDays = first.toISOString().slice(0, 10) !== last.toISOString().slice(0, 10);
+  const head = spansDays ? `${first.toISOString().slice(0, 10)} ${clock(first)}` : clock(first);
+
+  return `${head}–${clock(last)} UTC`;
 }
 
 /**
@@ -83,7 +110,7 @@ export function vaultDescription(events: VaultEvent[]): string {
   const left = events.length - shown.length;
 
   const lines = [
-    `${ICONS.digest} ${events.length} new ${events.length === 1 ? 'entry' : 'entries'}`,
+    `${ICONS.digest} ${events.length} new ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
     '',
     ...shown.map(formatVaultLine),
   ];
@@ -261,7 +288,7 @@ export class VaultNotifier {
       .setAuthor(brandAuthor(avatarUrl))
       .setTitle(`Clan vault — ${clanName}`)
       .setDescription(vaultDescription(events))
-      .setFooter({ text: `clan log · last ${RETENTION_DAYS} days` });
+      .setFooter({ text: vaultFooter() });
   }
 
   /**

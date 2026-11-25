@@ -1,5 +1,8 @@
 # Digest config & quyền — thiết kế có dẫn nguồn
 
+Who reads this: an agent changing `/digest` behaviour, its schema or its permission model — when: before editing the digest command, its settings table or its job.
+Neighbours: [CONVENTIONS.md](CONVENTIONS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md) · [DEFERRED.md](DEFERRED.md).
+
 **Trạng thái:** đã implement — `/digest` thành 4 subcommand (`add` / `remove` / `list` / `interval`), bảng `digest_channels` + migration `005_digest_channels.sql`, nhịp lấy từ `last_sent_at` trong DB, dọn subscription 3 lớp.
 **Phạm vi:** cấu hình digest (nhiều channel / guild, interval), mô hình quyền, dọn dẹp channel bị xoá.
 **Chốt sau review:** giới hạn hạ xuống **1 channel / guild** (`MAX_CHANNELS_PER_GUILD = 1`) — schema vẫn nhiều dòng để sau này mở lại, nhưng mỗi channel thêm là thêm bề mặt bị lạm dụng và thêm lượng gửi. Phần phân tích nhiều channel bên dưới giữ nguyên làm nguồn.

@@ -1,5 +1,8 @@
 # GitHub setup
 
+Who reads this: a maintainer changing a repository setting, a workflow or a dependency policy — when: before editing `.github/` or any repo-level configuration.
+Neighbours: [CONVENTIONS.md](CONVENTIONS.md) · [ROADMAP.md](ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [DEFERRED.md](DEFERRED.md).
+
 The repository is public, so its settings are part of the product: a fork must be
 able to build, and a leak must be stopped before it lands. Every setting below is
 something a maintainer can check or restore.
