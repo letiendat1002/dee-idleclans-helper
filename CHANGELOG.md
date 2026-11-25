@@ -10,6 +10,8 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-25
+
 ### Added
 
 - Published Terms of Service and Privacy Policy pages, linked from the `/help` footer. They are
