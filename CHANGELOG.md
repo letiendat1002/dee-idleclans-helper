@@ -10,6 +10,8 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-25
+
 ### Fixed
 
 - A clan vault post that Discord refused no longer loses the entries: delivery is recorded per
