@@ -1,5 +1,8 @@
 # Discord live testing — Dee IdleClans Helper
 
+Who reads this: an agent verifying a command on the real Discord surface — when: before claiming a live behaviour, and after every rebuild of the image.
+Neighbours: [CONVENTIONS.md](CONVENTIONS.md) · [GUIDE.md](GUIDE.md) · [ENVIRONMENTS.md](ENVIRONMENTS.md) · [SETUP.md](SETUP.md).
+
 How to run this bot against a real Discord server and verify each command end to end. Written
 from verified sessions (2026-11-13, 2026-11-14) — every expected output below was actually
 observed, not imagined.

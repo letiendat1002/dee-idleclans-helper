@@ -13,6 +13,9 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 ### Added
 
 - `/help` links the GitHub Sponsors page. The bot stays free: sponsoring unlocks nothing.
+- `/vault recent` shows the newest entries of a clan on demand, ephemeral and outside the subscription.
+- A vault post names the UTC window it covers, lists up to 30 entries (was 10), and its footer
+  says the game publishes deltas only, so no message claims a vault total.
 
 ### Fixed
 

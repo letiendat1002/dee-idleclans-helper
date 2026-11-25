@@ -1,5 +1,8 @@
 # Deferred work — ledger và trigger để quay lại
 
+Who reads this: an agent deciding whether a known problem can wait, or picking up a parked item — when: before re-opening one, and before planning the next phase.
+Neighbours: [ROADMAP.md](ROADMAP.md) · [CONVENTIONS.md](CONVENTIONS.md) · [MARKETING-COPY.md](MARKETING-COPY.md) · [DISCORD-TESTING.md](DISCORD-TESTING.md).
+
 Cập nhật 2026-11-23. Đây là **nơi duy nhất** liệt kê những việc đã cố ý hoãn, để một phase sau
 không phải dựng lại lý do từ đầu. Không có việc nào ở đây là "quên": mỗi mục ghi rõ vì sao hoãn,
 điều kiện mở, cách chạy, và một prompt dán-là-chạy ở §5.

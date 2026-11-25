@@ -1,5 +1,8 @@
 # Coding & product conventions — Dee IdleClans Helper
 
+Who reads this: any agent or maintainer writing, reviewing or releasing a change here — when: before the first edit, and again before the commit.
+Neighbours: [AGENTS.md](../AGENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [ROADMAP.md](ROADMAP.md) · [DEFERRED.md](DEFERRED.md).
+
 Binding convention for every change in this repository. It exists so that the bot behaves the
 same way whether it was written in one session or ten, and so that a reviewer can check a diff
 against a written rule instead of against taste.
@@ -25,6 +28,16 @@ The v2 design spec, the build plan and the session ledger are **private** ticket
 are not in this repository; the maintainer reads them from the private notes folder beside the
 clone. A public doc that needs one of them names what it needs instead of linking a path that
 does not resolve here.
+
+The private notes are versioned in the private repository `dee-idleclans-private`, which holds
+`docs-private/`, `tasks/`, `ops/`, `assets/` and `evidence/`. `<private notes>/CONVENTION.md`
+there records which document wins and the reload prompt after a compaction.
+
+A skill's body is not memory: it loads as a tool result, so a compaction drops it while the
+skill's index line survives in the prompt. Re-call the skill when its trigger matches. For
+anything drawn (embed, chart, colour, type scale, spacing) read `docs/VOICE.md` +
+`docs/UI-DESIGN.md` first; those two win over any skill. Call `skill ui-ux-pro-max` only when
+choosing a new style, palette, font pairing or chart type.
 
 ---
 
@@ -257,7 +270,8 @@ subsections are the review checklist, not a style guide.
 
 ### 6.0 House rules
 
-- **English comments only.** No Vietnamese in the code. Docs under `docs/` are Vietnamese.
+- **English comments only.** No Vietnamese in the code. Docs under `docs/` are Vietnamese;
+  user-facing copy (embeds, footers, README, the Discord application description) is English.
 - **Docblock `/** */`** for anything describing a function, method, class or module-level
   constant. No `//` standing in for a docblock; no comment that restates the line below it.
 - **Never `as any`.** No `@ts-ignore`, no `@ts-expect-error`, no `as unknown as T`. A narrow
@@ -268,6 +282,8 @@ subsections are the review checklist, not a style guide.
 - **`npm run build` cleans `dist` first.** `tsc` never prunes a renamed or deleted module, and the
   image copies `dist` verbatim (`COPY dist ./dist` in the Dockerfile), so a dirty tree ships a
   module nobody imports or a missing one as a broken `require`. Never hand-edit `dist`.
+- **No generated artifacts in git.** `dist/`, `node_modules/`, `graphify-out/`, `*.log` and every
+  `.env*` stay ignored; a committed build output is a bug, not a convenience.
 
 ### 6.1 Shape and layering (maintainability)
 
@@ -408,8 +424,9 @@ Work that spans more than one sitting keeps a folder **outside** this repository
 | `IMPLEMENTATION_PLAN.md` | the task table with commit hashes, scope, files, verify steps, risk register |
 | `CONTEXT_FOR_COMPACT.md` | objective, environment, gotchas, locked decisions, build/verify recipes, test status, remaining work, blockers |
 
-`CONTEXT_FOR_COMPACT.md` is written **before** a compaction, not after. Anything that must survive
-a session boundary goes there; a fact that only exists in the conversation is lost.
+Read the active task's `CONTEXT_FOR_COMPACT.md` before touching anything; it is written **before**
+a compaction, not after. Anything that must survive a session boundary goes there; a fact that only
+exists in the conversation is lost.
 
 ### 8.3 Release
 
@@ -417,6 +434,10 @@ a session boundary goes there; a fact that only exists in the conversation is lo
 changes accumulate; a release happens when the owner asks for one in that turn, or approves one the
 agent proposed — never because a fix looks small. Approving a change is not approving its release.
 When in doubt, ask "release now, or keep it on `develop`?" and wait.
+
+**Default end state of any change: merged into `develop`, nothing else.** A slice of work does not
+earn its own release — batch it. `production` stays on the host server; a deploy never moves it
+back onto a laptop.
 
 `production` is what the host runs. A release is exactly five steps:
 
@@ -445,8 +466,15 @@ it" is not a reason to call a breaking change a patch.
 
 **This repo overrides the global commit rule.** The global `~/.config/opencode/AGENTS.md` keeps
 "không commit tự động" as the default for other projects; here the agent commits at the end of each
-finished unit of work — one commit per coherent change, no per-commit permission prompt. A push is
-not a deploy: releases follow §8.3.
+finished unit of work — one commit per coherent change, no per-commit permission prompt. Run
+`npm run typecheck && npm test` before committing. A push is not a deploy: releases follow §8.3.
+
+### 8.5 Agent workflow
+
+One implementer per task → a task review (spec compliance **and** code quality) → a fix round →
+the ledger. Never dispatch two implementers for the same task at once, and never dispatch a second
+implementer while the first might still be alive — check the session and the file mtimes first.
+Review the fix diff; a task is not done until its review is clean.
 
 ---
 

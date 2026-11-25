@@ -7,7 +7,7 @@
  * create the channel — the owner creates it first and points the command at
  * it.
  *
- * The command is a set of subcommands: `add`, `remove` and `list`.
+ * The command is a set of subcommands: `add`, `remove`, `list` and `recent`.
  *
  * Who may point the bot at a clan is a server decision, and Discord owns that
  * decision: the command is registered with `ManageGuild` as its default, and a
@@ -34,6 +34,7 @@ import { safeReply } from '../ui/reply.js';
 import { canPost } from '../ui/channel.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 import { VaultLog, MAX_VAULT_CHANNELS_PER_GUILD } from '../services/VaultLog.js';
+import { formatVaultLine, vaultFooter, vaultWindow } from '../jobs/VaultNotifier.js';
 
 const logger = createLogger('VAULT');
 
@@ -85,6 +86,25 @@ export const builder = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub.setName('list').setDescription('Show the clan vault channels of this server')
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('recent')
+      .setDescription('Show the newest entries of a clan vault')
+      .addStringOption((opt) =>
+        opt
+          .setName('clan')
+          .setDescription('Name of the clan')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('limit')
+          .setDescription('How many entries to show (1-50, default 20)')
+          .setMinValue(1)
+          .setMaxValue(50)
+      )
   );
 
 /**
@@ -194,6 +214,43 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
   await interaction.editReply({ embeds: [embed] });
 }
 
+/**
+ * Show the newest entries of a clan, exactly as they appear in the posts.
+ *
+ * The posts are a feed: they carry the deltas of a window and never a vault
+ * total, because the game publishes none. A member who needs one line verified
+ * asks here and gets the rows, without scrolling a channel.
+ */
+async function handleRecent(interaction: ChatInputCommandInteraction): Promise<void> {
+  const clan = interaction.options.getString('clan', true).trim();
+  const limit = interaction.options.getInteger('limit') ?? 20;
+
+  if (clan.length === 0) {
+    await interaction.editReply({ content: 'Name the clan to read.' });
+    return;
+  }
+
+  const events = await VaultLog.recentFor(clan, limit);
+  const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.brand)
+    .setAuthor(brandAuthor(avatarUrl))
+    .setTitle(`Clan vault — ${clan}`)
+    .setDescription(
+      [
+        events.length === 0
+          ? `No entries for ${clan} in the last 14 days.`
+          : `${events.length} ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
+        ...(events.length === 0 ? [] : ['', ...events.map(formatVaultLine)]),
+        '',
+        SOURCE_NOTE,
+      ].join('\n')
+    )
+    .setFooter({ text: vaultFooter() });
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
 export async function handle(interaction: ChatInputCommandInteraction): Promise<void> {
   const userId = interaction.user.id;
 
@@ -224,6 +281,8 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
       await handleRemove(interaction, guild);
     } else if (subcommand === 'list') {
       await handleList(interaction, guild);
+    } else if (subcommand === 'recent') {
+      await handleRecent(interaction);
     }
   } catch (err) {
     if (err instanceof DeeError) {

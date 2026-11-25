@@ -1,5 +1,8 @@
 # The `/graph` chart — what it draws, and why it looks like this
 
+Who reads this: an agent changing a chart series, caption, bucket or window — when: before editing `src/ui/chartHistory.ts`, `src/commands/graph.ts`, or the card copy.
+Neighbours: [UI-DESIGN.md](UI-DESIGN.md) · [DATA-PROVENANCE.md](DATA-PROVENANCE.md) · [CONVENTIONS.md](CONVENTIONS.md).
+
 `docs/UI-DESIGN.md` owns how the card looks. This file owns what the picture *means*, what the
 data can support, and every decision that shaped it. Read it before changing a series or a caption.
 

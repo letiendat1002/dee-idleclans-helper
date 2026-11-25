@@ -313,11 +313,11 @@ describe('VaultNotifier.runClan', () => {
     expect((sends.get('channel-1') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
   });
 
-  it('caps a digest at ten lines and says how many were left out', async () => {
+  it('caps a digest at thirty lines and says how many were left out', async () => {
     subscribe('channel-1', 'AOE', new Date('2026-11-01T00:00:00Z'));
     getClanLogsMock.mockResolvedValue(
       Array.from(
-        { length: 12 },
+        { length: 32 },
         (_, index) =>
           entry(
             `USERNAME added ${index + 1}x Gold.`,
@@ -330,6 +330,7 @@ describe('VaultNotifier.runClan', () => {
     await VaultNotifier.runClan(client, 'AOE');
 
     const embed = sentEmbed(sends.get('channel-1') as ReturnType<typeof vi.fn>);
+    expect(embed.description).toContain('32 new entries · 10:00–10:31 UTC');
     expect(embed.description).toContain('… and 2 more');
   });
 
@@ -467,7 +468,7 @@ describe('VaultNotifier.runClan', () => {
 });
 
 describe('vaultDescription', () => {
-  it('names the entries and the count that did not fit', () => {
+  it('names the count and the UTC window the entries cover', () => {
     const events = Array.from({ length: 12 }, (_, index) => ({
       clanName: 'AOE',
       eventKey: `key-${index}`,
@@ -481,8 +482,9 @@ describe('vaultDescription', () => {
 
     const description = vaultDescription(events);
 
-    expect(description).toContain('12 new entries');
-    expect(description).toContain('… and 2 more');
+    expect(description).toContain('12 new entries · 10:00–10:11 UTC');
+    expect(description).toContain('12x Gold');
+    expect(description).not.toContain('more');
   });
 
   it('names no leftover count when every entry fits', () => {

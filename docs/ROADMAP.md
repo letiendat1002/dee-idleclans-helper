@@ -1,5 +1,8 @@
 # Roadmap — decisions, tracks, and what is left
 
+Who reads this: an agent starting or resuming a session — when: at the start of work, and after every compaction.
+Neighbours: [ARCHITECTURE.md](ARCHITECTURE.md) · [CONVENTIONS.md](CONVENTIONS.md) · [DEFERRED.md](DEFERRED.md) · [AGENTS.md](../AGENTS.md).
+
 The durable ledger for this project. If a session is compacted, this file plus `ARCHITECTURE.md`
 is the resume contract: read those two first, then only the docs a track names.
 
