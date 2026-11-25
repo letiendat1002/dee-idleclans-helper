@@ -10,6 +10,12 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Changed
+
+- The vault post names the chest as `vault 1` instead of the game's `tier 1`, and reads
+  the same way for every action: `added … to vault 1`, `withdrew … from vault 1`,
+  `moved … from vault 1 to vault 2`.
+
 ## [1.3.0] - 2026-11-25
 
 ### Added
