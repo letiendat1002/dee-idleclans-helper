@@ -21,6 +21,12 @@ services:
       # The collector owns the poller heartbeat; the bot stamps its own file so
       # this healthcheck cannot pass on the collector's liveness.
       - HEARTBEAT_FILE=/tmp/dee-bot-alive
+    # Resolution goes straight to a public resolver: on 2026-11-24 the host's
+    # systemd-resolved stub timed out on AAAA for discord.com for ~9 s, and the
+    # interaction that was in flight failed with EAI_AGAIN.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +67,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - NODE_OPTIONS=--dns-result-order=ipv4first
       - HEARTBEAT_FILE=/tmp/dee-heartbeat
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     depends_on:
       postgres:
         condition: service_healthy
