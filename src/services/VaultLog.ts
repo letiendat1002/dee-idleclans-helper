@@ -378,6 +378,26 @@ export class VaultLog {
    * can never be posted again.
    */
   /**
+   * The newest entries of one clan, oldest first, at most `limit`.
+   *
+   * Discord answers `/vault recent` from the dedupe table instead of the live
+   * log: it is the same rows the posts were built from, and it needs no call
+   * to the game.
+   */
+  static async recentFor(clanName: string, limit: number): Promise<VaultEvent[]> {
+    const res = (await query(
+      `SELECT clan_name, event_key, member_username, message, kind, item_name, quantity, happened_at
+       FROM vault_events
+       WHERE clan_name = $1
+       ORDER BY happened_at DESC, event_key DESC
+       LIMIT $2`,
+      [clanName, limit]
+    )) as { rows: VaultEventDbRow[] };
+
+    return res.rows.map(toEvent).reverse();
+  }
+
+  /**
    * The events of one clan that a channel has not been given yet, oldest first.
    *
    * The `since` bound is the subscription's `created_at`: a channel that

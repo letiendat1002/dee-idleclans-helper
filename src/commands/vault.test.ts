@@ -57,6 +57,15 @@ function stubPool(): void {
       return { rows: [], rowCount: known ? 0 : 1 };
     }
 
+    if (sql.includes('FROM vault_events')) {
+      const [clanName, limit] = params as [string, number];
+      const rows = eventRows
+        .filter((row) => row.clan_name === clanName)
+        .sort((a, b) => b.happened_at.getTime() - a.happened_at.getTime())
+        .slice(0, limit);
+      return { rows };
+    }
+
     if (sql.includes('DELETE FROM vault_channels') && sql.includes('clan_name = $3')) {
       const [guildId, channelId, clanName] = params as string[];
       const before = channelRows.length;
@@ -87,6 +96,20 @@ function stubPool(): void {
 }
 
 /** The interaction members `/vault` reads. */
+interface VaultEventRow {
+  clan_name: string;
+  event_key: string;
+  member_username: string;
+  message: string;
+  kind: 'deposit' | 'withdraw' | 'move';
+  item_name: string;
+  quantity: number;
+  happened_at: Date;
+}
+
+/** The rows of the fake `vault_events` table. */
+let eventRows: VaultEventRow[] = [];
+
 interface FakeOptions {
   guildId?: string | null;
   memberPermissions?: boolean;
@@ -97,6 +120,7 @@ interface FakeOptions {
   channelName?: string;
   channelType?: ChannelType;
   stringValue?: string;
+  limit?: number | null;
 }
 
 interface EditPayload {
@@ -149,6 +173,7 @@ function fake(options: FakeOptions = {}): {
           if (name === 'clan') return options.clanValue ?? 'AOE';
           return options.stringValue ?? channelId;
         },
+        getInteger: (name: string) => (name === 'limit' ? (options.limit ?? null) : null),
       },
       deferReply,
       editReply,
@@ -159,6 +184,7 @@ function fake(options: FakeOptions = {}): {
 beforeEach(() => {
   vi.clearAllMocks();
   channelRows = [];
+  eventRows = [];
   check.mockResolvedValue(undefined);
   stubPool();
 });
@@ -319,5 +345,54 @@ describe('/vault handle', () => {
     expect(embed?.title).toContain('Clan vault channels');
     expect(embed?.description).toContain('AOE');
     expect(embed?.description).toContain(`1 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+  });
+
+  it('shows the newest entries of a clan, with the window and the delta note', async () => {
+    eventRows = [
+      {
+        clan_name: 'DeeCorp',
+        event_key: 'k1',
+        member_username: 'dee',
+        message: 'dee added 5x Gold.',
+        kind: 'deposit',
+        item_name: 'Gold',
+        quantity: 5,
+        happened_at: new Date('2026-11-25T10:10:00Z'),
+      },
+      {
+        clan_name: 'DeeCorp',
+        event_key: 'k2',
+        member_username: 'dee',
+        message: 'dee withdrew 2x Gold.',
+        kind: 'withdraw',
+        item_name: 'Gold',
+        quantity: 2,
+        happened_at: new Date('2026-11-25T10:12:00Z'),
+      },
+    ];
+    const { interaction, editReply } = fake({
+      memberPermissions: true,
+      subcommand: 'recent',
+      clanValue: 'DeeCorp',
+      limit: 20,
+    });
+
+    await handle(interaction);
+
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.title).toContain('DeeCorp');
+    expect(embed?.description).toContain('2 entries · 10:10–10:12 UTC');
+    expect(embed?.footer?.text).toBe(
+      'clan log · last 14 days · deltas only, the game publishes no vault totals'
+    );
+  });
+
+  it('says so when a clan has no entry in the window', async () => {
+    const { interaction, editReply } = fake({ memberPermissions: true, subcommand: 'recent' });
+
+    await handle(interaction);
+
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.description).toContain('No entries for AOE in the last 14 days.');
   });
 });
