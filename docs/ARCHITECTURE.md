@@ -15,7 +15,7 @@ Idle Clans API over outbound HTTPS only.
 ```
    Discord ──gw/rest──▶ ┌──────────────────────────────────────┐
                         │ dee-idleclans-helper  (node, 512 MB) │
-                        │ 9 slash commands, 4 jobs (no poller) │
+                        │ 8 slash commands, 4 jobs (no poller) │
                         └───────────┬──────────────┬───────────┘
                                     │              │
    Idle Clans API ──https──▶ ┌──────▼──────────────▼───────────┐
@@ -151,11 +151,9 @@ member's; that check cannot see Integrations overrides, so it refused the roles
 a server had explicitly allowed. Discord is the only source of truth for command
 access (`CONVENTIONS.md` §5.1).
 
-Rendered diagrams, generated from the code with the `archify` skill (open in a browser; offline,
-no network needed): [`runtime-flow.html`](diagrams/runtime-flow.html) ·
-[`data-lifecycle.html`](diagrams/data-lifecycle.html) ·
-[`deploy-flow.html`](diagrams/deploy-flow.html). The sketch above stays because it survives a
-terminal; the diagrams carry the detail.
+Rendered diagrams (runtime flow, data lifecycle, deploy flow) are generated from the code with
+the `archify` skill and live with the private notes under `docs-private/diagrams/`; they are not
+tracked here. The sketch above stays because it survives a terminal.
 
 ## 4. Pollers
 
@@ -330,7 +328,7 @@ Host: 8-core i5-1135G7, 30 GiB RAM (21 GiB available), 446 GB free on `/`.
 | collector heartbeat | 1 file, 2 min cadence | 10 min stale = unhealthy | — |
 | postgres | 357 MiB | 4 GiB | 11× |
 | redis | 40 MiB | 256 MiB | 6× |
-| database | 102 MB now (609 k raw rows, ~153 B/row), ~2.1 GB at the 30-day raw ceiling | 444 GB free of 791 GB | raw tier capped at 30 days (~13.6 M rows); `price_daily` adds ~40 MB/year and is never pruned |
+| database | measured in `ROADMAP.md` §2 (rows, size, free space); ~2.1 GB at the 30-day raw ceiling | — | raw tier capped at 30 days (~13.6 M rows); `price_daily` adds ~40 MB/year and is never pruned |
 | off-host copy | 274 MB on B2 in the steady state | 10 GB free tier | ~7.9 MB/day × 30 + a 30 KB archive/month; inside the free tier with ~35× headroom |
 | hot query (latest quote) | 0.087 ms | — | index scan, constant time |
 

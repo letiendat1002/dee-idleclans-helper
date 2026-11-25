@@ -35,8 +35,8 @@ there records which document wins and the reload prompt after a compaction.
 
 A skill's body is not memory: it loads as a tool result, so a compaction drops it while the
 skill's index line survives in the prompt. Re-call the skill when its trigger matches. For
-anything drawn (embed, chart, colour, type scale, spacing) read `docs/VOICE.md` +
-`docs/UI-DESIGN.md` first; those two win over any skill. Call `skill ui-ux-pro-max` only when
+anything drawn (embed, chart, colour, type scale, spacing) read `VOICE.md` +
+`UI-DESIGN.md` first; those two win over any skill. Call `skill ui-ux-pro-max` only when
 choosing a new style, palette, font pairing or chart type.
 
 ---
@@ -72,7 +72,7 @@ Never compare an ask with a trade average. `prices/summary` and `dailyAveragePri
 from the plan for exactly this reason.
 
 On screen the two book sides are named after the player's action, never after the API field:
-**ask → `sell price`**, **bid → `buy order`** (`docs/VOICE.md`, `docs/UI-DESIGN.md`). "Buy price"
+**ask → `sell price`**, **bid → `buy order`** (`VOICE.md`, `UI-DESIGN.md`). "Buy price"
 is banned because it reads as the ask.
 
 ### 2.3 No unmodelled, undisclosed formulas
@@ -272,6 +272,8 @@ subsections are the review checklist, not a style guide.
 
 - **English comments only.** No Vietnamese in the code. Docs under `docs/` are Vietnamese;
   user-facing copy (embeds, footers, README, the Discord application description) is English.
+  The `Who reads this:` / `Neighbours:` header of a doc is the exception: it is agent navigation,
+  in English like `AGENTS.md`, and the prose under it stays Vietnamese.
 - **Docblock `/** */`** for anything describing a function, method, class or module-level
   constant. No `//` standing in for a docblock; no comment that restates the line below it.
 - **Never `as any`.** No `@ts-ignore`, no `@ts-expect-error`, no `as unknown as T`. A narrow
