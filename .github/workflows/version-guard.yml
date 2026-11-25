@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - package.json
+      - package-lock.json
       - CHANGELOG.md
       - .github/workflows/version-guard.yml
 
@@ -20,6 +21,20 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # `npm install` mirrors the manifest version into the lockfile, but a hand
+      # edit of package.json does not. Every release so far left it behind, so the
+      # drift is only harmless until somebody reads it.
+      - name: package-lock.json agrees with the manifest
+        run: |
+          set -euo pipefail
+          manifest=$(node -p "require('./package.json').version")
+          lock=$(node -p "require('./package-lock.json').version")
+          locked=$(node -p "require('./package-lock.json').packages[''].version")
+          if [[ "$lock" != "$manifest" || "$locked" != "$manifest" ]]; then
+            echo "::error::package-lock.json ($lock / $locked) does not match package.json $manifest: run npm install --package-lock-only"
+            exit 1
+          fi
 
       - name: CHANGELOG has a section for this version
         run: |
