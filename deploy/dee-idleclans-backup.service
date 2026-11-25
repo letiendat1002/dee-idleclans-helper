@@ -12,5 +12,11 @@ User=CHANGE_ME
 # the scripts have working defaults for the last two when it is absent.
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=-/etc/dee-idleclans/backup.env
+# Persistent=true runs the missed tick right after boot, while Postgres is still
+# starting: the first attempt can fail with "the database system is starting up".
+Restart=on-failure
+RestartSec=60
+StartLimitIntervalSec=600
+StartLimitBurst=5
 ExecStart=/bin/sh -c 'if [ -z "$DEPLOY_DIR" ]; then echo "DEPLOY_DIR is unset: set it in /etc/dee-idleclans/backup.env" >&2; exit 78; fi; if [ ! -x "$DEPLOY_DIR/scripts/backup-db.sh" ]; then echo "DEPLOY_DIR=$DEPLOY_DIR has no scripts/backup-db.sh: set it in /etc/dee-idleclans/backup.env" >&2; exit 78; fi; exec "$DEPLOY_DIR/scripts/backup-db.sh"'
 TimeoutStartSec=600
