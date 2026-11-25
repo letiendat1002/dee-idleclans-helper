@@ -19,8 +19,8 @@ import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 
 const logger = createLogger('MENTION');
 
-/** One showcase reply per user per minute. */
-const COOLDOWN_MS = 60_000;
+/** One showcase reply per user per ten seconds; a full minute read as broken (2026-11-25). */
+const COOLDOWN_MS = 10_000;
 
 /** The number of remembered cooldowns before the expired ones are dropped. */
 const COOLDOWN_SWEEP_AT = 1_000;
@@ -109,7 +109,13 @@ export class MessageHandler {
     this.sweepCooldowns(now);
 
     const last = this.lastReplyAt.get(message.author.id);
-    if (last !== undefined && now - last < COOLDOWN_MS) return;
+    if (last !== undefined && now - last < COOLDOWN_MS) {
+      logger.debug('showcase skipped: still cooling down', {
+        userId: message.author.id,
+        sinceMs: now - last,
+      });
+      return;
+    }
 
     this.lastReplyAt.set(message.author.id, now);
 
