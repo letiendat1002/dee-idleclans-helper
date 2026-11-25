@@ -21,7 +21,7 @@ vi.mock('../services/IdleClansApi.js', () => ({
 }));
 
 import type { ClanLogEntry } from '../services/IdleClansApi.js';
-import { VaultNotifier, vaultDescription } from './VaultNotifier.js';
+import { VaultNotifier, formatVaultLine, vaultDescription } from './VaultNotifier.js';
 
 /** The guild the tests post to. */
 const GUILD = 'guild-1';
@@ -437,5 +437,40 @@ describe('vaultDescription', () => {
     ];
 
     expect(vaultDescription(events)).not.toContain('and 0 more');
+  });
+});
+
+describe('formatVaultLine', () => {
+  /** One parsed vault event, as the log reader hands it over. */
+  const event = (kind: 'deposit' | 'withdraw' | 'move', message: string, quantity: number) => ({
+    clanName: 'AOE',
+    eventKey: `key-${kind}-${quantity}`,
+    memberUsername: 'USERNAME',
+    message,
+    kind,
+    itemName: 'Gold',
+    quantity,
+    happenedAt: new Date('2026-11-25T04:35:00.000Z'),
+  });
+
+  it('reads a deposit and a withdrawal with the same vault wording', () => {
+    expect(formatVaultLine(event('deposit', 'USERNAME added 69x Gold (tier 1).', 69))).toBe(
+      'USERNAME added 69x Gold to vault 1'
+    );
+    expect(formatVaultLine(event('withdraw', 'USERNAME withdrew 67x Gold from tier 1.', 67))).toBe(
+      'USERNAME withdrew 67x Gold from vault 1'
+    );
+  });
+
+  it('names both vaults of a move', () => {
+    expect(
+      formatVaultLine(event('move', 'USERNAME moved 5x Gold from tier 1 to tier 2.', 5))
+    ).toBe('USERNAME moved 5x Gold from vault 1 to vault 2');
+  });
+
+  it('leaves the location out when the game named none', () => {
+    expect(formatVaultLine(event('deposit', 'USERNAME added 5x Gold.', 5))).toBe(
+      'USERNAME added 5x Gold'
+    );
   });
 });

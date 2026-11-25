@@ -42,26 +42,36 @@ export interface VaultRunResult {
 }
 
 /**
- * The tier suffix of a clan-log line, e.g. ` (tier 2)` or ` from tier 1 to tier 2`.
+ * The vault numbers a clan-log line names: ` (tier 1)` on a deposit,
+ * ` from tier 1` on a withdrawal, ` from tier 1 to tier 2` on a move.
  */
-function tierSuffix(message: string): string {
+function vaultNumbers(message: string): { from?: number; to?: number } {
   const match = /\s*(?:\(tier (\d+)\)|from tier (\d+) to tier (\d+)|from tier (\d+))\.?\s*$/.exec(
     message
   );
-  if (!match) return '';
-  if (match[1] !== undefined) return ` (tier ${match[1]})`;
-  if (match[2] !== undefined) return ` from tier ${match[2]} to tier ${match[3]}`;
-  return ` from tier ${match[4]}`;
+  if (!match) return {};
+  if (match[1] !== undefined) return { to: Number(match[1]) };
+  if (match[2] !== undefined) return { from: Number(match[2]), to: Number(match[3]) };
+  return { from: Number(match[4]) };
 }
 
-/** The line of one entry, in the wording of the game. */
+/**
+ * The line of one entry in one shape, whatever grammar the game used: a deposit
+ * reads `to vault 1`, a withdrawal `from vault 1`, a move `from vault 1 to vault 2`.
+ */
 export function formatVaultLine(event: VaultEvent): string {
   if (event.kind === 'other') return event.message;
 
   const verb = event.kind === 'deposit' ? 'added' : event.kind === 'withdraw' ? 'withdrew' : 'moved';
   const quantity = event.quantity.toLocaleString('en-US');
+  const line = `${event.memberUsername} ${verb} ${quantity}x ${event.itemName}`;
+  const { from, to } = vaultNumbers(event.message);
+  const out = from === undefined ? '' : ` from vault ${from}`;
+  const into = to === undefined ? '' : ` to vault ${to}`;
 
-  return `${event.memberUsername} ${verb} ${quantity}x ${event.itemName}${tierSuffix(event.message)}`;
+  if (event.kind === 'withdraw') return line + out;
+  if (event.kind === 'move') return line + out + into;
+  return line + into;
 }
 
 /**
