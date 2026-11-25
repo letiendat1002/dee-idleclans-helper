@@ -27,6 +27,22 @@ image_tag() { printf 'sha-%s' "${1:0:8}"; }
 
 log() { printf '%s %s\n' "$(date -Is)" "$*"; }
 
+# A failed release is the one event somebody must see without reading the host.
+# The webhook lives in .env and is optional: without it the deploy behaves exactly
+# as before. Only failures post; a tag is pushed after this script succeeded, so
+# the release note from CI is what tells the channel a version went live.
+notify_failure() {
+  local hook text
+  hook=$(grep -m1 '^DIH_UPDATES_WEBHOOK=' "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2- || true)
+  [ -n "$hook" ] || return 0
+  # shellcheck disable=SC2016  # the backticks are Discord markdown, not a substitution
+  text=$(printf '**Deploy failed** · `%.8s` — %s' "$target" "$1")
+  printf '{"content":"%s","allowed_mentions":{"parse":[]}}' "$text" > /tmp/dih-deploy-notify.json
+  curl -fsS -m 10 -o /dev/null -H 'Content-Type: application/json' \
+    --data @/tmp/dih-deploy-notify.json "$hook" || log 'release notification failed to post'
+  rm -f /tmp/dih-deploy-notify.json
+}
+
 # A cron line and the systemd timer can overlap on a slow build (docker compose
 # build takes minutes); the second run exits instead of racing the first.
 exec 9>"${TMPDIR:-/tmp}/dee-idleclans-deploy.lock"
@@ -36,6 +52,7 @@ flock -n 9 || { log 'another deploy is running, skipping this tick'; exit 0; }
 # replayed automatically, because the database may have taken writes since it
 # was taken and a dump that old would delete them.
 rollback() {
+  notify_failure "${1:-a gate failed}"
   if [ "$current" = none ]; then
     log "no previous release recorded, nothing to roll back to"
     exit 1
@@ -89,6 +106,7 @@ log "deploying ${target:0:8} (was ${current:0:8}) as image $(image_tag "$target"
 # and a failed backup aborts the deploy.
 if ! bash "$REPO_DIR/scripts/backup-db.sh"; then
   log "refusing to deploy: the pre-deploy backup failed"
+  notify_failure "the pre-deploy backup failed"
   exit 1
 fi
 
@@ -117,7 +135,7 @@ if docker compose up -d --wait $SERVICES; then
     if ! curl -fsS -m 10 -o /dev/null -H "Authorization: Bot $smoke_token" \
         https://discord.com/api/v10/users/@me; then
       log "discord smoke failed: the API rejected the bot token"
-      rollback
+      rollback "the Discord API rejected the bot token"
     fi
     printf '%s\n' "$target" > "$SHA_FILE"
     log "deployed ${target:0:8}"
@@ -127,10 +145,10 @@ if docker compose up -d --wait $SERVICES; then
   log "schema gate failed: expected ${expected}, the database reports '${applied:-none}'"
   # shellcheck disable=SC2086
   docker compose logs --tail 40 $SERVICES || true
-  rollback
+  rollback "the schema gate failed"
 fi
 
 log "health gate failed for ${target:0:8}"
 # shellcheck disable=SC2086
 docker compose logs --tail 40 $SERVICES || true
-rollback
+rollback "the health gate failed"

@@ -10,6 +10,25 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-25
+
+### Added
+
+- **Release notifications.** A `v*` tag posts that version's changelog section to a Discord
+  webhook (`DIH_UPDATES_WEBHOOK`), and a deploy that fails its gate posts the reason and the commit
+  that was rolled back. Both are silent when the webhook is unset, so a fork is unaffected.
+
+### Changed
+
+- The bot and the collector resolve names through `1.1.1.1` / `8.8.8.8` instead of the host's
+  resolver stub: on 2026-11-24 that stub timed out on `AAAA` records for `discord.com` for nine
+  seconds and the interaction in flight failed with `EAI_AGAIN`.
+
+### Fixed
+
+- `/help` described `/digest interval` by minutes only, while the command has taken `hours` plus an
+  optional `minutes` since 1.1.0.
+
 ## [1.2.0] - 2026-11-24
 
 ### Changed
