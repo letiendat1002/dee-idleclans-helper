@@ -377,11 +377,64 @@ export class VaultLog {
    * The game keeps fourteen days of the clan log, so an event older than that
    * can never be posted again.
    */
+  /**
+   * The events of one clan that a channel has not been given yet, oldest first.
+   *
+   * The `since` bound is the subscription's `created_at`: a channel that
+   * subscribes today is never handed the log from before it subscribed.
+   */
+  static async undeliveredFor(
+    clanName: string,
+    channelId: string,
+    since: Date
+  ): Promise<VaultEvent[]> {
+    const res = (await query(
+      `SELECT e.clan_name, e.event_key, e.member_username, e.message, e.kind, e.item_name, e.quantity, e.happened_at
+       FROM vault_events e
+       WHERE e.clan_name = $1
+         AND e.happened_at >= $2
+         AND NOT EXISTS (
+           SELECT 1 FROM vault_deliveries d
+           WHERE d.clan_name = e.clan_name AND d.event_key = e.event_key AND d.channel_id = $3
+         )
+       ORDER BY e.happened_at, e.event_key`,
+      [clanName, since, channelId]
+    )) as { rows: VaultEventDbRow[] };
+
+    return res.rows.map(toEvent);
+  }
+
+  /**
+   * Record that a channel accepted these events, so the next tick skips them.
+   */
+  static async markDelivered(
+    clanName: string,
+    eventKeys: string[],
+    channelId: string
+  ): Promise<void> {
+    if (eventKeys.length === 0) return;
+
+    await query(
+      `INSERT INTO vault_deliveries (clan_name, event_key, channel_id)
+       SELECT $1, t, $3 FROM unnest($2::text[]) AS t
+       ON CONFLICT DO NOTHING`,
+      [clanName, eventKeys, channelId]
+    );
+  }
+
   static async pruneOlderThanDays(days: number): Promise<number> {
     const res = (await query(
       "DELETE FROM vault_events WHERE happened_at < NOW() - ($1::int * INTERVAL '1 day')",
       [days]
     )) as { rowCount: number | null };
+
+    await query(
+      `DELETE FROM vault_deliveries d
+       WHERE NOT EXISTS (
+         SELECT 1 FROM vault_events e
+         WHERE e.clan_name = d.clan_name AND e.event_key = d.event_key
+       )`
+    );
 
     const deleted = res.rowCount ?? 0;
     logger.info('clan vault events pruned', { deleted, days });

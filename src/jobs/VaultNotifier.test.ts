@@ -53,6 +53,9 @@ let channelRows: ChannelRow[] = [];
 /** The rows of the fake `vault_events` table. */
 let eventRows: EventRow[] = [];
 
+/** The rows of the fake `vault_deliveries` table. */
+let deliveryRows: Array<{ clan_name: string; event_key: string; channel_id: string }> = [];
+
 /** A subscription of a clan, created at the given moment. */
 function subscribe(channelId: string, clanName: string, createdAt: Date): void {
   channelRows.push({
@@ -132,6 +135,47 @@ function stubPool(): void {
         inserted.push(row);
       });
       return { rows: inserted, rowCount: inserted.length };
+    }
+
+    if (sql.includes('INSERT INTO vault_deliveries')) {
+      const [clanName, eventKeys, channelId] = params as [string, string[], string];
+      for (const eventKey of eventKeys) {
+        const known = deliveryRows.some(
+          (row) =>
+            row.clan_name === clanName &&
+            row.event_key === eventKey &&
+            row.channel_id === channelId
+        );
+        if (!known) deliveryRows.push({ clan_name: clanName, event_key: eventKey, channel_id: channelId });
+      }
+      return { rows: [], rowCount: eventKeys.length };
+    }
+
+    if (sql.includes('FROM vault_events e')) {
+      const [clanName, since, channelId] = params as [string, Date, string];
+      const rows = eventRows
+        .filter((row) => row.clan_name === clanName && row.happened_at >= since)
+        .filter(
+          (row) =>
+            !deliveryRows.some(
+              (delivery) =>
+                delivery.clan_name === row.clan_name &&
+                delivery.event_key === row.event_key &&
+                delivery.channel_id === channelId
+            )
+        )
+        .sort((a, b) => a.happened_at.getTime() - b.happened_at.getTime());
+      return { rows, rowCount: rows.length };
+    }
+
+    if (sql.includes('DELETE FROM vault_deliveries')) {
+      const before = deliveryRows.length;
+      deliveryRows = deliveryRows.filter((delivery) =>
+        eventRows.some(
+          (row) => row.clan_name === delivery.clan_name && row.event_key === delivery.event_key
+        )
+      );
+      return { rows: [], rowCount: before - deliveryRows.length };
     }
 
     if (sql.includes('DELETE FROM vault_events')) {
@@ -217,6 +261,7 @@ function sentFlags(send: ReturnType<typeof vi.fn>, index = 0): number {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  deliveryRows = [];
   channelRows = [];
   eventRows = [];
   stubPool();
@@ -341,7 +386,7 @@ describe('VaultNotifier.runClan', () => {
 
     const result = await VaultNotifier.runClan(client, 'AOE');
 
-    expect(result).toEqual({ channels: 0, events: 1 });
+    expect(result).toEqual({ channels: 0, events: 0 });
     expect(channelRows).toHaveLength(0);
   });
 
@@ -368,6 +413,24 @@ describe('VaultNotifier.runClan', () => {
 
     expect(result.channels).toBe(1);
     expect((sends.get('channel-1') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+  });
+
+  it('retries an event the channel refused instead of losing it', async () => {
+    subscribe('channel-1', 'AOE', new Date('2026-11-01T00:00:00Z'));
+    getClanLogsMock.mockResolvedValue([
+      entry('USERNAME added 5x Gold.', '2026-11-02T10:00:00.000Z'),
+    ]);
+
+    const refused = fakeClient([{ id: 'channel-1', fail: true }]);
+    expect(await VaultNotifier.runClan(refused.client, 'AOE')).toEqual({ channels: 0, events: 0 });
+    expect(deliveryRows).toHaveLength(0);
+
+    const retry = fakeClient([{ id: 'channel-1' }]);
+    expect(await VaultNotifier.runClan(retry.client, 'AOE')).toEqual({ channels: 1, events: 1 });
+    expect((retry.sends.get('channel-1') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+
+    const later = fakeClient([{ id: 'channel-1' }]);
+    expect(await VaultNotifier.runClan(later.client, 'AOE')).toEqual({ channels: 0, events: 0 });
   });
 
   it('posts one message per channel with suppressed notifications', async () => {
