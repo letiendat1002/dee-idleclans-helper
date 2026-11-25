@@ -97,10 +97,11 @@ to ~5/min (20 clans). Confirm the failure modes under burst: one user cannot amp
 stated "data unavailable" instead of a retry storm. Research the game's documented limits and
 write the conclusion into `ARCHITECTURE.md` §6.
 
-### T9 — Ship · queued
+### T9 — Ship · done (2026-11-23 → 2026-11-25)
 
-After T2–T8: `npm run typecheck && npm test && npm run build`, deploy through T6, verify on the
-real Discord surface, then a single report.
+Shipped `v1.0.0` → `v1.3.1` through the §8.3 sequence: gates, PR into `production`, manual deploy,
+health gate, tag, merge-back. The real-surface gate was exercised more than once (digest post,
+`/help`, `/watch` DM, vault post).
 
 ### T10 — Live test 100% + data audit · done (2026-11-21)
 
