@@ -8,7 +8,8 @@ from verified sessions (2026-11-13, 2026-11-14) — every expected output below 
 observed, not imagined.
 
 Test server: guild `<dev-guild-id>` ("DeeLY's test server"), channel `general` =
-`<dev-channel-id>`. The guild id comes from `DISCORD_GUILD_ID` in `.env`.
+`<dev-channel-id>`. The curl snippets below take the guild id from a shell variable you export
+for the test guild; the bot itself does not read it.
 
 The test guild belongs to the **dev** bot only. The production bot left it on
 2026-11-24: the digest, vault and watch tables are keyed by guild with no bot

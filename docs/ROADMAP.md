@@ -52,7 +52,7 @@ discovery guidance. Deliverables to land:
 3. Digest footer: replace `digest only, no notifications` with provenance, not a limitation.
 Constraint (D5): no negative framing, no profit language.
 
-### T4 — Docs consolidation · queued
+### T4 — Docs consolidation · done (2026-11-25, PR #68 + #70)
 
 Sixteen docs, all written for an agent to act on. Goal: each file has one job, a header that says
 who reads it, and links to its neighbours; `AGENTS.md` becomes the map + the five rules that break
