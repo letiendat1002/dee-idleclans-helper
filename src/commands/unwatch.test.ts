@@ -11,6 +11,7 @@ const { logger, safeReply, check, getById, search, remove } = vi.hoisted(() => (
 
 vi.mock('../utils/logger.js', () => ({ createLogger: () => logger }));
 vi.mock('../ui/reply.js', () => ({ safeReply }));
+import { ICONS } from '../ui/theme.js';
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getById, search } }));
 vi.mock('../services/WatchlistService.js', () => ({ WatchlistService: { remove } }));
@@ -115,7 +116,7 @@ describe('/unwatch handle', () => {
 
     await handle(interaction);
 
-    expect(interaction.editReply).toHaveBeenCalledWith({ content: expect.stringContaining('🚨') });
+    expect(interaction.editReply).toHaveBeenCalledWith({ content: expect.stringContaining(ICONS.warning) });
   });
 });
 

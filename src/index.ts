@@ -17,6 +17,7 @@ import { DeeError } from './utils/errors.js';
 import { createLogger } from './utils/logger.js';
 import { registerCommands } from './registerCommands.js';
 import { safeReply } from './ui/reply.js';
+import { ICONS } from './ui/theme.js';
 import { builder as watchBuilder, handle as watchHandle, autocomplete as watchAutocomplete, handleWatchModal } from './commands/watch.js';
 import { builder as unwatchBuilder, handle as unwatchHandle, autocomplete as unwatchAutocomplete } from './commands/unwatch.js';
 import { builder as watchlistBuilder, handle as watchlistHandle, handleWatchlistMenu } from './commands/watchlist.js';
@@ -223,24 +224,24 @@ client.on('interactionCreate', async (interaction) => {
   } catch (err) {
     if (err instanceof DeeError) {
       if (err.tier === 'E1') {
-        await safeReply(interaction, { content: `❌ ${err.message}`, flags: 64 });
+        await safeReply(interaction, { content: `${ICONS.warning} ${err.message}`, flags: 64 });
       } else if (err.tier === 'E2') {
         logger.error(`[E2] ${err.code}: ${err.message}`);
         await safeReply(interaction, {
-          content: '⚠️ Something went wrong. Please try again.',
+          content: `${ICONS.warning} Something went wrong. Please try again.`,
           flags: 64,
         });
       } else {
         logger.error(`[E3] ${err.code}: ${err.message}`, err);
         await safeReply(interaction, {
-          content: '🚨 A critical error occurred.',
+          content: `${ICONS.warning} A critical error occurred.`,
           flags: 64,
         });
       }
     } else {
       logger.error(`[E3] Unhandled error in interaction:`, err);
       await safeReply(interaction, {
-        content: '🚨 An unexpected error occurred.',
+        content: `${ICONS.warning} An unexpected error occurred.`,
         flags: 64,
       });
     }
