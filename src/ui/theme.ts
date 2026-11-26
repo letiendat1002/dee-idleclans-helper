@@ -48,6 +48,7 @@ export const ICONS = {
   warning: '<:warning:1571074562421030936>',
   clock: '<:clock:1571074566833315913>',
   lock: '<:lock:1571074571598041121>',
+  vault: '<:vault:1575508224940048526>',
 } as const;
 
 /** The brand name every surface shows. */

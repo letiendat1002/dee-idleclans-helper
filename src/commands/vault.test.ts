@@ -15,6 +15,7 @@ vi.mock('../db/pool.js', () => ({ query: queryMock, pool: { connect: vi.fn() } }
 import { ChannelType, MessageFlags, type APIEmbed, type ChatInputCommandInteraction } from 'discord.js';
 import { DeeError } from '../utils/errors.js';
 import { MAX_VAULT_CHANNELS_PER_GUILD } from '../services/VaultLog.js';
+import { ICONS } from '../ui/theme.js';
 import { handle } from './vault.js';
 
 /** One row of the fake `vault_channels` table. */
@@ -24,6 +25,7 @@ interface ChannelRow {
   clan_name: string;
   created_by: string;
   created_at: Date;
+  last_post_at?: Date;
 }
 
 /** The rows of the fake `vault_channels` table. */
@@ -324,7 +326,9 @@ describe('/vault handle', () => {
     await handle(interaction);
 
     expect(channelRows).toHaveLength(0);
-    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining('AOE') });
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.title).toContain('Clan vault off');
+    expect(embed?.description).toContain('AOE');
   });
 
   it('lists the clan vault channels of the guild', async () => {
@@ -336,6 +340,14 @@ describe('/vault handle', () => {
         created_by: 'user-1',
         created_at: CREATED_AT,
       },
+      {
+        guild_id: 'guild-1',
+        channel_id: 'channel-2',
+        clan_name: 'AOE',
+        created_by: 'user-1',
+        created_at: CREATED_AT,
+        last_post_at: new Date('2026-11-25T10:12:00Z'),
+      },
     ];
     const { interaction, editReply } = fake({ memberPermissions: true, subcommand: 'list' });
 
@@ -344,16 +356,18 @@ describe('/vault handle', () => {
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
     expect(embed?.title).toContain('Clan vault channels');
     expect(embed?.description).toContain('AOE');
-    expect(embed?.description).toContain(`1 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).toContain(`2 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).toContain('nothing posted yet');
+    expect(embed?.description).toContain('last post 11-25 10:12 UTC');
   });
 
-  it('shows the newest entries of a clan, with the window and the delta note', async () => {
+  it('shows the newest entries of a clan, grouped by direction', async () => {
     eventRows = [
       {
         clan_name: 'DeeCorp',
         event_key: 'k1',
         member_username: 'dee',
-        message: 'dee added 5x Gold.',
+        message: 'dee added 5x Gold (tier 1).',
         kind: 'deposit',
         item_name: 'Gold',
         quantity: 5,
@@ -363,7 +377,7 @@ describe('/vault handle', () => {
         clan_name: 'DeeCorp',
         event_key: 'k2',
         member_username: 'dee',
-        message: 'dee withdrew 2x Gold.',
+        message: 'dee withdrew 2x Gold from tier 1.',
         kind: 'withdraw',
         item_name: 'Gold',
         quantity: 2,
@@ -381,10 +395,11 @@ describe('/vault handle', () => {
 
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
     expect(embed?.title).toContain('DeeCorp');
-    expect(embed?.description).toContain('2 entries · 10:10–10:12 UTC');
-    expect(embed?.footer?.text).toBe(
-      'clan log · last 14 days · deltas only, the game publishes no vault totals'
-    );
+    expect(embed?.description).toContain('entries · 10:10–10:12 UTC');
+    expect(embed?.description).toContain('**In · 1**');
+    expect(embed?.description).toContain('**Out · 1**');
+    expect(embed?.description).toContain('Vault 1 · +3 Gold');
+    expect(embed?.footer?.text).toBe('clan log · last 14 days');
   });
 
   it('says so when a clan has no entry in the window', async () => {
@@ -393,6 +408,24 @@ describe('/vault handle', () => {
     await handle(interaction);
 
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
-    expect(embed?.description).toContain('No entries for AOE in the last 14 days.');
+    expect(embed?.description).toBe(`${ICONS.vault} No entries recorded for AOE.`);
+  });
+
+  it('counts distinct channels, not subscriptions, against the cap', async () => {
+    channelRows = [
+      { guild_id: 'guild-1', channel_id: 'channel-1', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-1', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-2', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-2', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-3', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-3', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+    ];
+    const { interaction, editReply } = fake({ memberPermissions: true, subcommand: 'list' });
+
+    await handle(interaction);
+
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.description).toContain(`3 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).not.toContain(`6 of`);
   });
 });

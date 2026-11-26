@@ -69,6 +69,8 @@ stay readable.
 | `alert` | Bell | alert surfaces, showcase |
 | `watchlist` | Clipboard | watchlist list and empty state |
 | `digest` | Newspaper | digest surfaces, `/help` server block |
+| `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
+| `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
 | `paused` | Pause button | disarmed alert |
 | `warning` | Warning | thin market, blocked DM, no sell order, every error reply |
 | `clock` | Mantelpiece clock | fired alert, snapshot, rate limit |
@@ -215,12 +217,29 @@ second brand.
 
 - One embed per tick per subscribed channel; `/vault` accepts up to 5 channels per guild, and the
   clan log is fetched once per clan per tick and shared by every channel that follows it.
-- Title `Clan vault — <clan>`, one line per new entry, footer `clan log · last 14 days`.
+- Title `Clan vault — <clan>`; header `📰 **12** new entries · 04:38–05:22 UTC`; footer
+  `clan log · last 14 days`.
+- The body is grouped by direction — `**In · 7**`, `**Out · 3**`, `**Moved · 2**` — so a member
+  asking "what came in today" reads one block instead of re-parsing thirty sentences. Each line
+  leads with its UTC date and time and bolds the item and quantity:
+  `` `11-25 04:38` alice added **5x Gold** to vault 1 ``. The date is always printed: a backlog
+  posted a day late would otherwise read as today. `/vault recent` renders the same body, so the
+  replay and the feed read alike.
+- One post prints at most 30 entries; a larger backlog posts the next 30 on the following tick
+  rather than a "… and N more" line the reader can never reach. `/vault recent` caps `limit` at 30
+  for the same reason.
+- Above the entries, `**Net recorded since 11-12**` sums the deltas the bot stored, per vault tier:
+  `Vault 2 · +300,710 Gold · +3 Pine log`, the three largest items by net, the rest counted. A move
+  subtracts from its source tier and adds to its target. This is a **recorded change, never a
+  balance** — the game publishes deltas only — so the label names the day the record starts. The
+  same block appears on the feed and on `/vault recent`.
 - No ping, no DM, no backfill: `vault_channels.created_at` is the line, so a channel added today
   starts at the next entry, not at the history.
 - An empty tick posts nothing. A channel the bot can no longer post in (left the guild, lost the
   permission) is removed from the table instead of being retried every tick.
 - A failed fetch logs and keeps the stored events; nothing is posted into the channel about it.
+- The footer is provenance only. It does not explain the API: "deltas only, the game publishes no
+  vault totals" was a disclaimer on every post, not a fact a reader needs.
 
 ## What this deliberately does not do
 

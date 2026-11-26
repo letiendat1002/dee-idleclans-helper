@@ -10,6 +10,30 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Changed
+
+- A clan vault post groups its entries by direction (`In`, `Out`, `Moved`) and leads each line with
+  its UTC date and time and the bold item, so the feed reads as a ledger instead of thirty flat
+  sentences. The footer is `clan log · last 14 days`; the "deltas only, the game publishes no vault
+  totals" disclaimer is gone.
+- `/vault remove` answers with the same success card as `/vault add`, `/vault recent` caps `limit`
+  at 30 and labels the card `Newest N entries`, and `/vault list` counts distinct channels against
+  the cap.
+- A vault card opens with the net change recorded per vault tier since the oldest stored entry,
+  capped to the three largest items per tier. It sums recorded deltas only, so it is never
+  presented as a vault balance.
+
+- `/vault list` shows when each channel last accepted a post (`never` until the first one), so a
+  subscription that looks dead can be told apart from a clan that is quiet. Migration `014` adds
+  `vault_channels.last_post_at`; it applies on start like every other migration.
+- The vault surfaces carry their own `vault` icon instead of borrowing the digest newspaper, and
+  `/help` names the clan block with the same icon.
+
+### Fixed
+
+- A vault tick with more than 30 new entries marked the overflow delivered without printing it. Only
+  the batch that was posted is marked now, and the rest posts on the next tick.
+
 ## [1.5.2] - 2026-11-26
 
 ### Fixed
