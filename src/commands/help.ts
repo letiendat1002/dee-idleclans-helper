@@ -80,6 +80,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
             '`/vault add <clan> #channel` — follow the vault of a clan',
             '`/vault remove <clan> #channel` — stop following it',
             '`/vault list` — the clan vault channels of this server',
+            '`/vault recent <clan>` — the newest entries the bot has recorded',
             'Access is set in Server Settings > Integrations · up to 5 channels per server',
             'The bot reads the public clan log of the game: a 14-day window, and an entry can arrive up to ~30 minutes late.',
           ].join('\n'),
