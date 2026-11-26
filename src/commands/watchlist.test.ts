@@ -13,6 +13,7 @@ const { logger, safeReply, check, list, latestQuotes, latestSnapshotAt, getByIds
 
 vi.mock('../utils/logger.js', () => ({ createLogger: () => logger }));
 vi.mock('../ui/reply.js', () => ({ safeReply }));
+import { ICONS } from '../ui/theme.js';
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getByIds } }));
 vi.mock('../services/SnapshotStore.js', () => ({ SnapshotStore: { latestQuotes, latestSnapshotAt } }));
@@ -146,7 +147,7 @@ describe('/watchlist handle', () => {
 
     await handle(interaction);
 
-    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining('🚨') });
+    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining(ICONS.warning) });
   });
 });
 
@@ -196,7 +197,7 @@ describe('/watchlist select menu', () => {
     await handleWatchlistMenu(fakeMenu('7'));
 
     expect(safeReply).toHaveBeenCalledWith(expect.anything(), {
-      content: expect.stringContaining('🚨'),
+      content: expect.stringContaining(ICONS.warning),
       flags: 64,
     });
   });

@@ -70,8 +70,8 @@ stay readable.
 | `watchlist` | Clipboard | watchlist list and empty state |
 | `digest` | Newspaper | digest surfaces, `/help` server block |
 | `paused` | Pause button | disarmed alert |
-| `warning` | Warning | thin market, blocked DM, no sell order |
-| `clock` | Mantelpiece clock | fired alert, snapshot |
+| `warning` | Warning | thin market, blocked DM, no sell order, every error reply |
+| `clock` | Mantelpiece clock | fired alert, snapshot, rate limit |
 | `lock` | Locked | level requirement |
 
 **Platform limit that shapes the layout:** Discord expands `<:name:id>` only in embed

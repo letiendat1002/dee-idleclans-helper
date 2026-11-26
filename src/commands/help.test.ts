@@ -21,6 +21,7 @@ interface ReplyOptions {
 
 vi.mock('../utils/logger.js', () => ({ createLogger: () => logger }));
 vi.mock('../ui/reply.js', () => ({ safeReply }));
+import { ICONS } from '../ui/theme.js';
 
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { handle } from './help.js';
@@ -84,7 +85,7 @@ describe('/help', () => {
     await handle(interaction);
 
     expect(safeReply).toHaveBeenCalledTimes(2);
-    expect(sent(1).content).toContain('🚨');
+    expect(sent(1).content).toContain(ICONS.warning);
   });
 
   it('builds the invite without a client id when the environment has none', async () => {

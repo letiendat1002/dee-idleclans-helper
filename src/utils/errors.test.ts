@@ -6,6 +6,7 @@ const { logger } = vi.hoisted(() => ({
 
 vi.mock('./logger.js', () => ({ createLogger: () => logger }));
 
+import { ICONS } from '../ui/theme.js';
 import {
   DeeError,
   ErrCodes,
@@ -42,7 +43,7 @@ describe('formatUnexpectedError', () => {
   it('handles a non-Error value', () => {
     const message = formatUnexpectedError('/help', 'a string');
 
-    expect(message).toContain('🚨');
+    expect(message).toContain(ICONS.warning);
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('/help'), { error: 'a string' });
   });
 });
