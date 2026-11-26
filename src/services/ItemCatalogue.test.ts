@@ -264,6 +264,23 @@ describe('ItemCatalogue.sync', () => {
     expect(getGameData).not.toHaveBeenCalled();
   });
 
+  it('sync(true) re-reads the catalogue even when the build version matches', async () => {
+    vi.mocked(getBuildVersions).mockResolvedValue({ latestBuildVersion: '1.6800' });
+    vi.mocked(query).mockImplementation(async (sql: string) =>
+      sql.includes('catalogue_meta')
+        ? { rows: [{ value: '1.6800' }], rowCount: 1 }
+        : { rows: [], rowCount: 0 }
+    );
+    vi.mocked(getGameData).mockResolvedValue(JSON.stringify(GAME_DATA));
+    vi.mocked(getItemsMetadata).mockResolvedValue(META);
+    stubClient();
+
+    const result = await ItemCatalogue.sync(true);
+
+    expect(result.changed).toBe(true);
+    expect(getGameData).toHaveBeenCalled();
+  });
+
   it('sync upserts items and stores the new version', async () => {
     vi.mocked(getBuildVersions).mockResolvedValue({ latestBuildVersion: '1.6800' });
     stubSql();

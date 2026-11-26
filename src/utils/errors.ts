@@ -1,4 +1,5 @@
 import { createLogger } from './logger.js';
+import { ICONS } from '../ui/theme.js';
 
 // Error Tiers
 // E1: User Error (invalid input, permissions, business rules) — ephemeral reply
@@ -31,7 +32,7 @@ export function formatUnexpectedError(context: string, err: unknown): string {
   logger.error(`[${context}] Error ${id}`, {
     error: err instanceof Error ? (err.stack ?? err.message) : String(err),
   });
-  return `🚨 An unexpected error occurred. Reference: **${id}**. Try again; if it keeps failing, send this reference to an admin.`;
+  return `${ICONS.warning} An unexpected error occurred. Reference: **${id}**. Try again; if it keeps failing, send this reference to an admin.`;
 }
 
 export class DeeError extends Error {

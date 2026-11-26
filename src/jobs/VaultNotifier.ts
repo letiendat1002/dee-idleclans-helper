@@ -12,7 +12,13 @@
 import { EmbedBuilder, type Client, type SendableChannels } from 'discord.js';
 import { createLogger } from '../utils/logger.js';
 import { getClanLogs } from '../services/IdleClansApi.js';
-import { VaultLog, type VaultEvent, type VaultSubscription } from '../services/VaultLog.js';
+import {
+  VaultLog,
+  type VaultEvent,
+  type VaultEventKind,
+  type VaultRollup,
+  type VaultSubscription,
+} from '../services/VaultLog.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 import { canPost } from '../ui/channel.js';
 
@@ -42,12 +48,13 @@ export interface VaultRunResult {
 }
 
 /**
- * The footer of every vault message: where the lines come from, and what the
- * game does not publish. A reader who expects a vault total has to be told
- * here, because the API has no endpoint for one.
+ * The footer of every vault message: where the lines come from.
+ *
+ * It is provenance, not an API disclaimer: a reader who wants a vault total
+ * asks the game, and the post does not apologise for what the feed is not.
  */
 export function vaultFooter(): string {
-  return `clan log · last ${RETENTION_DAYS} days · deltas only, the game publishes no vault totals`;
+  return `clan log · last ${RETENTION_DAYS} days`;
 }
 
 /**
@@ -68,56 +75,93 @@ export function vaultWindow(events: VaultEvent[]): string {
   return `${head}–${clock(last)} UTC`;
 }
 
-/**
- * The vault numbers a clan-log line names: ` (tier 1)` on a deposit,
- * ` from tier 1` on a withdrawal, ` from tier 1 to tier 2` on a move.
- */
-function vaultNumbers(message: string): { from?: number; to?: number } {
-  const match = /\s*(?:\(tier (\d+)\)|from tier (\d+) to tier (\d+)|from tier (\d+))\.?\s*$/.exec(
-    message
-  );
-  if (!match) return {};
-  if (match[1] !== undefined) return { to: Number(match[1]) };
-  if (match[2] !== undefined) return { from: Number(match[2]), to: Number(match[3]) };
-  return { from: Number(match[4]) };
-}
+/** The directions of a post, in the order a reader scans them. */
+const VAULT_GROUPS: ReadonlyArray<{ kind: VaultEventKind; label: string }> = [
+  { kind: 'deposit', label: 'In' },
+  { kind: 'withdraw', label: 'Out' },
+  { kind: 'move', label: 'Moved' },
+  { kind: 'other', label: 'Other' },
+];
 
 /**
  * The line of one entry in one shape, whatever grammar the game used: a deposit
  * reads `to vault 1`, a withdrawal `from vault 1`, a move `from vault 1 to vault 2`.
+ *
+ * The UTC date and time lead so a line can be checked against the game's own
+ * log: a clock alone would read as today even when a backlog is a day old.
  */
 export function formatVaultLine(event: VaultEvent): string {
   if (event.kind === 'other') return event.message;
 
   const verb = event.kind === 'deposit' ? 'added' : event.kind === 'withdraw' ? 'withdrew' : 'moved';
   const quantity = event.quantity.toLocaleString('en-US');
-  const line = `${event.memberUsername} ${verb} ${quantity}x ${event.itemName}`;
-  const { from, to } = vaultNumbers(event.message);
-  const out = from === undefined ? '' : ` from vault ${from}`;
-  const into = to === undefined ? '' : ` to vault ${to}`;
+  const line = `${event.memberUsername} ${verb} **${quantity}x ${event.itemName}**`;
+  const out = event.fromTier === null ? '' : ` from vault ${event.fromTier}`;
+  const into = event.toTier === null ? '' : ` to vault ${event.toTier}`;
+  const clock = event.happenedAt.toISOString().slice(5, 16).replace('T', ' ');
 
-  if (event.kind === 'withdraw') return line + out;
-  if (event.kind === 'move') return line + out + into;
-  return line + into;
+  const body =
+    event.kind === 'withdraw' ? line + out : event.kind === 'move' ? line + out + into : line + into;
+
+  return `\`${clock}\` ${body}`;
 }
 
 /**
- * The description of a vault message: the header, the entries and the count of
- * the entries that did not fit.
+ * The entries of a post grouped by direction: what came in, what went out and
+ * what moved between vaults, each group counted. A member asking "what came in
+ * today" reads one block instead of re-parsing thirty sentences.
  */
-export function vaultDescription(events: VaultEvent[]): string {
-  const shown = events.slice(0, MAX_EVENTS_PER_MESSAGE);
-  const left = events.length - shown.length;
+export function vaultBody(events: VaultEvent[]): string[] {
+  const lines: string[] = [];
+  for (const group of VAULT_GROUPS) {
+    const rows = events.filter((event) => event.kind === group.kind);
+    if (rows.length === 0) continue;
+    if (lines.length > 0) lines.push('');
+    lines.push(`**${group.label} · ${rows.length}**`);
+    lines.push(...rows.map(formatVaultLine));
+  }
 
-  const lines = [
-    `${ICONS.digest} ${events.length} new ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
+  return lines;
+}
+
+/**
+ * The net change recorded per vault tier, as a block above the entries.
+ *
+ * Every figure is the sum of the deltas the bot stored, labelled with the day
+ * the record starts; it is never presented as a vault balance.
+ */
+export function vaultRollupLines(rollup: VaultRollup): string[] {
+  if (rollup.since === null || rollup.tiers.length === 0) return [];
+
+  const day = rollup.since.toISOString().slice(5, 10);
+  const lines = [`**Net recorded since ${day}**`];
+
+  for (const tier of rollup.tiers) {
+    const items = tier.items.map(
+      (item) =>
+        `${item.net > 0 ? '+' : '-'}${Math.abs(item.net).toLocaleString('en-US')} ${item.itemName}`
+    );
+    const tail = tier.omitted > 0 ? ` · ${tier.omitted} more items` : '';
+    lines.push(`Vault ${tier.tier} · ${items.join(' · ')}${tail}`);
+  }
+
+  return lines;
+}
+
+/**
+ * The description of a vault message: the header, the recorded roll-up and the
+ * grouped entries.
+ */
+export function vaultDescription(events: VaultEvent[], rollup: VaultRollup): string {
+  const noun = events.length === 1 ? 'entry' : 'entries';
+  const rollupLines = vaultRollupLines(rollup);
+
+  return [
+    `${ICONS.vault} **${events.length}** new ${noun} · ${vaultWindow(events)}`,
     '',
-    ...shown.map(formatVaultLine),
-  ];
-
-  if (left > 0) lines.push('', `… and ${left} more`);
-
-  return lines.join('\n');
+    ...(rollupLines.length > 0 ? [...rollupLines, ''] : []),
+    ...vaultBody(events),
+  ].join('\n');
 }
 
 /**
@@ -208,6 +252,7 @@ export class VaultNotifier {
     await VaultLog.recordNewEvents(clanName, entries, since);
 
     const avatarUrl = client.user?.displayAvatarURL({ size: 128 }) ?? null;
+    const rollup = await VaultLog.rollup(clanName);
 
     let channels = 0;
     let events = 0;
@@ -218,18 +263,23 @@ export class VaultNotifier {
       const pending = await VaultLog.undeliveredFor(clanName, target.channelId, target.createdAt);
       if (pending.length === 0) continue;
 
+      // Only the batch that is actually printed is marked delivered: the rest
+      // posts on the next tick instead of vanishing behind a "more" line.
+      const batch = pending.slice(0, MAX_EVENTS_PER_MESSAGE);
+
       try {
         await channel.send({
-          embeds: [VaultNotifier.buildEmbed(clanName, pending, avatarUrl)],
+          embeds: [VaultNotifier.buildEmbed(clanName, batch, avatarUrl, rollup)],
           flags: SUPPRESS_NOTIFICATIONS,
         });
         await VaultLog.markDelivered(
           clanName,
-          pending.map((event) => event.eventKey),
+          batch.map((event) => event.eventKey),
           target.channelId
         );
+        await VaultLog.markPosted(target.guildId, target.channelId, clanName);
         channels += 1;
-        events += pending.length;
+        events += batch.length;
       } catch (err) {
         logger.error('clan vault post failed for a channel', {
           clanName,
@@ -281,13 +331,14 @@ export class VaultNotifier {
   private static buildEmbed(
     clanName: string,
     events: VaultEvent[],
-    avatarUrl: string | null
+    avatarUrl: string | null,
+    rollup: VaultRollup
   ): EmbedBuilder {
     return new EmbedBuilder()
       .setColor(COLORS.brand)
       .setAuthor(brandAuthor(avatarUrl))
       .setTitle(`Clan vault — ${clanName}`)
-      .setDescription(vaultDescription(events))
+      .setDescription(vaultDescription(events, rollup))
       .setFooter({ text: vaultFooter() });
   }
 

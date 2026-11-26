@@ -9,6 +9,7 @@ const { logger, safeReply, check, queryMock } = vi.hoisted(() => ({
 
 vi.mock('../utils/logger.js', () => ({ createLogger: () => logger }));
 vi.mock('../ui/reply.js', () => ({ safeReply }));
+import { ICONS } from '../ui/theme.js';
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../db/pool.js', () => ({ query: queryMock, pool: { connect: vi.fn() } }));
 
@@ -368,6 +369,6 @@ describe('/digest handle', () => {
 
     await handle(interaction);
 
-    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining('🚨') });
+    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining(ICONS.warning) });
   });
 });

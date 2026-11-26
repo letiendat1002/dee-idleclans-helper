@@ -5,6 +5,7 @@
 import { cacheService } from '../cache/CacheService.js';
 import { createLogger } from './logger.js';
 import { DeeError, ErrCodes } from '../utils/errors.js';
+import { ICONS } from '../ui/theme.js';
 
 const logger = createLogger('RATE');
 
@@ -53,7 +54,7 @@ export class RateLimiter {
       const seconds = Math.ceil((retryAfterMs ?? windowMs) / 1000);
       logger.warn('rate limited', { userId, command, retryAfterMs });
       throw new DeeError(
-        `⏱ Slow down. Try again in **${seconds}s**.`,
+        `${ICONS.clock} Slow down. Try again in **${seconds}s**.`,
         'E1',
         ErrCodes.RATE_LIMIT,
         true // ephemeral

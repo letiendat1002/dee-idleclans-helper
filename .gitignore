@@ -31,3 +31,6 @@ bot.log
 
 # graphify knowledge graph (rebuild with /graphify, never commit 1.5 MB)
 graphify-out/
+
+# impeccable audit/critique output (tooling scratch, never commit reports)
+.impeccable/

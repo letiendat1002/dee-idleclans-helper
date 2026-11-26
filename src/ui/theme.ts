@@ -34,20 +34,15 @@ export const COLORS = {
  * as raw markup. Titles therefore stay plain text.
  */
 export const ICONS = {
-  buy: '<:buy:1571074495412703386>',
   margin: '<:margin:1571074505571434526>',
-  depth: '<:depth:1571074510290034799>',
-  note: '<:note:1571074516853981214>',
   wiki: '<:wiki:1571074522071961653>',
   up: '<:up:1571074527557845084>',
   down: '<:down:1571074532511318036>',
   alert: '<:alert:1571074537351680000>',
-  watchlist: '<:watchlist:1571074542527578133>',
   digest: '<:digest:1571074547317346354>',
-  paused: '<:paused:1571074558000107611>',
   warning: '<:warning:1571074562421030936>',
   clock: '<:clock:1571074566833315913>',
-  lock: '<:lock:1571074571598041121>',
+  vault: '<:vault:1575508224940048526>',
 } as const;
 
 /** The brand name every surface shows. */

@@ -1,6 +1,6 @@
 {
   "name": "dee-idleclans-helper",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Dee IdleClans Helper \u2014 Idle Clans market facts for Discord.",
   "main": "dist/index.js",
   "scripts": {

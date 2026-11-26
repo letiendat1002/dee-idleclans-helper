@@ -14,7 +14,10 @@ no spacing control. The design below works inside those limits.
 Binding rules from `docs/CONVENTIONS.md` still win: no profit advice, no unmodelled formula,
 `0` means "no offer", every number is a sell price, and the assumptions line is mandatory.
 
-## Assessment of the current surfaces
+## Assessment of the surfaces before the design system
+
+Snapshot of 2026-11-2x, kept for the reasoning; the sections below are what ships. `/profile` and
+the plain-text `/unwatch` reply named here no longer exist.
 
 | Surface | Now | Problem |
 |---|---|---|
@@ -59,20 +62,19 @@ stay readable.
 
 | Token | Fluent asset | Used for |
 |---|---|---|
-| `buy` | Money bag | `Buy ready-made` field, market list |
-| `craft` | Hammer and wrench | `Craft it yourself`, showcase |
-| `margin` | Abacus | `Margin` field, `/help` market block |
-| `depth` | Bar chart | `Market depth` |
-| `note` | Memo | `Assumptions`, craft modifiers |
-| `wiki` | Link | item link, share block |
-| `up` / `down` | Chart increasing / decreasing | price direction, alert DM |
-| `alert` | Bell | alert surfaces, showcase |
-| `watchlist` | Clipboard | watchlist list and empty state |
-| `digest` | Newspaper | digest surfaces, `/help` server block |
-| `paused` | Pause button | disarmed alert |
-| `warning` | Warning | thin market, blocked DM, no sell order |
-| `clock` | Mantelpiece clock | fired alert, snapshot |
-| `lock` | Locked | level requirement |
+| `margin` | Abacus | `/help` market block |
+| `wiki` | Link | `/help` links block |
+| `up` / `down` | Chart increasing / decreasing | price direction: alert DM, digest, `/watch` |
+| `alert` | Bell | `/watch` + `/digest` hint, an armed watchlist row |
+| `digest` | Newspaper | `/help` server block, `/digest` confirmation |
+| `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
+| `warning` | Warning | every error reply, a blocked-DM row |
+| `clock` | Mantelpiece clock | rate limit, a fired watchlist row |
+
+Nine tokens, and every one is drawn on a surface that exists — `craft`, `buy`, `depth`, `note`,
+`watchlist`, `paused` and `lock` were uploaded for fields that the 2026-11-21 `/buy-or-craft`
+removal took with it, so they were deleted rather than left as documented dead weight. A token is
+added when its surface ships, not before.
 
 **Platform limit that shapes the layout:** Discord expands `<:name:id>` only in embed
 *descriptions* and *field names/values* — never in `title`, `author` or `footer`, where it shows
@@ -117,7 +119,9 @@ reads like a form letter, so a title names the surface or the subject instead (`
 `Market Watch — 08:26 UTC`, `Pine log — 24h`). Wording follows `docs/VOICE.md`.
 
 Footer is provenance, not metadata: `Sell prices · snapshot 05:56 UTC`. Item ids, guild ids and
-alert ids never appear in the UI; they belong in logs.
+alert ids never appear in the UI; they belong in logs. `/help` is the one documented exception: its
+footer carries `Made by HRDDee · 5 uses per minute (except /help) · digest and vault post publicly`
+because the reader who was just refused looks for the rule on that card.
 
 ## Per surface
 
@@ -215,18 +219,46 @@ second brand.
 
 - One embed per tick per subscribed channel; `/vault` accepts up to 5 channels per guild, and the
   clan log is fetched once per clan per tick and shared by every channel that follows it.
-- Title `Clan vault — <clan>`, one line per new entry, footer `clan log · last 14 days`.
+- Title `Clan vault — <clan>`; header `vault` token then `**12** new entries · 04:38–05:22 UTC`; footer
+  `clan log · last 14 days`.
+- The body is grouped by direction — `**In · 7**`, `**Out · 3**`, `**Moved · 2**` — so a member
+  asking "what came in today" reads one block instead of re-parsing thirty sentences. Each line
+  leads with its UTC date and time and bolds the item and quantity:
+  `` `11-25 04:38` alice added **5x Gold** to vault 1 ``. The date is always printed: a backlog
+  posted a day late would otherwise read as today. `/vault recent` renders the same body, so the
+  replay and the feed read alike.
+- One post prints at most 30 entries; a larger backlog posts the next 30 on the following tick
+  rather than a "… and N more" line the reader can never reach. `/vault recent` caps `limit` at 30
+  for the same reason.
+- Above the entries, `**Net recorded since 11-12**` sums the deltas the bot stored, per vault tier:
+  `Vault 2 · +300,710 Gold · +3 Pine log`, the three largest items by net, the rest counted. A move
+  subtracts from its source tier and adds to its target. This is a **recorded change, never a
+  balance** — the game publishes deltas only — so the label names the day the record starts. The
+  same block appears on the feed and on `/vault recent`.
 - No ping, no DM, no backfill: `vault_channels.created_at` is the line, so a channel added today
   starts at the next entry, not at the history.
 - An empty tick posts nothing. A channel the bot can no longer post in (left the guild, lost the
   permission) is removed from the table instead of being retried every tick.
 - A failed fetch logs and keeps the stored events; nothing is posted into the channel about it.
+- The footer is provenance only. It does not explain the API: "deltas only, the game publishes no
+  vault totals" was a disclaimer on every post, not a fact a reader needs.
+
+## Check before shipping a surface
+
+- One accent colour, by state; no hex outside `src/ui/theme.ts`.
+- Every embed has the author line, and no title repeats the brand.
+- Icons come from `ICONS`; Unicode emoji only in terminal logs, and never `<:name:id>` in a title, author or footer.
+- The footer is provenance (source and time), never policy, rate limits, ids or disclaimers — `/help` is the one exception named above.
+- Prices go through `formatMoney`; `0`/`null` prints as a sentence, never as a number.
+- The UI never says ask or bid; it says sell price and buy order.
+- An empty state is a muted embed that names the next step.
+- Copy obeys `docs/VOICE.md`.
 
 ## What this deliberately does not do
 
 - No thumbnails on the digest embeds — they would squeeze the evidence columns.
-- No per-row colours in the digest: an embed has one accent, so direction is carried by `📈/📉`
-  and the sign, which survives colour-blind readers and light/dark clients.
+- No per-row colours in the digest: an embed has one accent, so direction is carried by the `up` / `down`
+  tokens and the sign, which survives colour-blind readers and light/dark clients.
 - No new copy claims: every label still describes a market fact. The assumptions block keeps its
   full text; it is only visually quieter.
 - No chart library and no chart renderer. `/graph` used to POST a Chart.js config to QuickChart;

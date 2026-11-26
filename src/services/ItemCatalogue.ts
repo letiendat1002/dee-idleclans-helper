@@ -211,7 +211,8 @@ export class ItemCatalogue {
 
     ItemCatalogue.syncing = true;
     try {
-      await ItemCatalogue.sync();
+      const result = await ItemCatalogue.sync();
+      if (!result.changed) await ItemCatalogue.syncIfPricedItemIsMissing();
     } catch (err) {
       logger.error('catalogue sync failed', {
         error: err instanceof Error ? err.message : String(err),
@@ -221,6 +222,45 @@ export class ItemCatalogue {
     }
   }
 
+  /**
+   * Re-sync when a traded item is missing from the catalogue.
+   *
+   * The vendor can list an item without bumping the build version. The version
+   * gate in `sync()` would then keep it out of `items` for as long as the build
+   * stays put: its prices arrive (the collector polls the whole market) but its
+   * name, category and tradeable flag do not, so every surface hides it. One
+   * read of the newest snapshot detects that; a forced sync costs two vendor
+   * requests and only runs when a row is actually missing.
+   *
+   * shortcut: only the newest snapshot is read, so an item that is traded and
+   * then vanishes between two ticks is missed until the next build bump.
+   * Widen to `captured_at > NOW() - INTERVAL '1 day'` if that ever happens.
+   */
+  private static async syncIfPricedItemIsMissing(): Promise<void> {
+    const res = await query(
+      `SELECT DISTINCT s.item_id
+         FROM price_snapshots s
+        WHERE s.captured_at = (SELECT MAX(captured_at) FROM price_snapshots)
+          AND NOT EXISTS (SELECT 1 FROM items i WHERE i.item_id = s.item_id)`,
+      []
+    );
+    const missing = ((res as { rows?: Array<{ item_id?: number | string }> }).rows ?? []).map((r) =>
+      Number(r.item_id)
+    );
+    if (missing.length === 0) return;
+
+    logger.warn('priced items are not in the catalogue, forcing a sync', {
+      count: missing.length,
+      itemIds: missing.slice(0, 20),
+    });
+    const forced = await ItemCatalogue.sync(true);
+    logger.info('forced catalogue sync finished', {
+      changed: forced.changed,
+      version: forced.version,
+      items: forced.items,
+    });
+  }
+
   /** Clear the interval timer, if one is running. */
   private static clearTimer(): void {
     if (ItemCatalogue.timer) {
@@ -228,13 +268,13 @@ export class ItemCatalogue {
       ItemCatalogue.timer = null;
     }
   }
-  static async sync(): Promise<{ changed: boolean; version: string; items: number }> {
+  static async sync(force = false): Promise<{ changed: boolean; version: string; items: number }> {
     const { latestBuildVersion } = await getBuildVersions();
 
     const stored = await query('SELECT value FROM catalogue_meta WHERE key = $1', [VERSION_KEY]);
     const storedVersion = (stored as { rows?: Array<{ value?: string | null }> })?.rows?.[0]?.value ?? null;
 
-    if (storedVersion === latestBuildVersion) {
+    if (!force && storedVersion === latestBuildVersion) {
       const countRes = await query('SELECT COUNT(*)::int AS c FROM items', []);
       const count = (countRes as { rows?: Array<{ c?: number }> })?.rows?.[0]?.c ?? 0;
       return { changed: false, version: latestBuildVersion, items: count };
@@ -359,7 +399,7 @@ export class ItemCatalogue {
       }
     }
 
-    const escaped = q.replace(/[%_]/g, '\\$&');
+    const escaped = q.replace(/[\\%_]/g, '\\$&');
     const prefix = `${escaped}%`;
     const like = `%${escaped}%`;
 

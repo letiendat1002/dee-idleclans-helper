@@ -147,6 +147,14 @@ function stubPool(): void {
       return { rows: inserted, rowCount: inserted.length };
     }
 
+    if (sql.includes('ORDER BY happened_at ASC')) {
+      const [clanName] = params as string[];
+      const rows = eventRows
+        .filter((row) => row.clan_name === clanName)
+        .sort((a, b) => a.happened_at.getTime() - b.happened_at.getTime());
+      return { rows, rowCount: rows.length };
+    }
+
     if (sql.includes('DELETE FROM vault_events')) {
       const [days] = params as number[];
       const cutoff = new Date(PRUNE_NOW.getTime() - days * 86_400_000);
@@ -178,25 +186,25 @@ describe('parseVaultLine', () => {
   it('parses the new-format deposit', () => {
     const line = parseVaultLine('USERNAME added 300710x Gold (tier 2).', 'USERNAME');
 
-    expect(line).toEqual({ kind: 'deposit', quantity: 300710, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'deposit', quantity: 300710, itemName: 'Gold', fromTier: null, toTier: 2 });
   });
 
   it('parses the old-format deposit', () => {
     const line = parseVaultLine('USERNAME added 300710x Gold.', 'USERNAME');
 
-    expect(line).toEqual({ kind: 'deposit', quantity: 300710, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'deposit', quantity: 300710, itemName: 'Gold', fromTier: null, toTier: null });
   });
 
   it('parses a withdrawal with a tier', () => {
     const line = parseVaultLine('USERNAME withdrew 5x Gold from tier 3.', 'USERNAME');
 
-    expect(line).toEqual({ kind: 'withdraw', quantity: 5, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'withdraw', quantity: 5, itemName: 'Gold', fromTier: 3, toTier: null });
   });
 
   it('parses a tier move', () => {
     const line = parseVaultLine('USERNAME moved 7x Gold from tier 1 to tier 2.', 'USERNAME');
 
-    expect(line).toEqual({ kind: 'move', quantity: 7, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'move', quantity: 7, itemName: 'Gold', fromTier: 1, toTier: 2 });
   });
 
   it('keeps an item name that contains parentheses', () => {
@@ -209,6 +217,8 @@ describe('parseVaultLine', () => {
       kind: 'deposit',
       quantity: 12,
       itemName: 'Common enchantment scroll (defence)',
+      fromTier: null,
+      toTier: 1,
     });
   });
 
@@ -219,13 +229,13 @@ describe('parseVaultLine', () => {
   it('treats Gold as an item', () => {
     const line = parseVaultLine('USERNAME withdrew 1x Gold.', 'USERNAME');
 
-    expect(line).toEqual({ kind: 'withdraw', quantity: 1, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'withdraw', quantity: 1, itemName: 'Gold', fromTier: null, toTier: null });
   });
 
   it('takes the member of the entry over the name in the text', () => {
     const line = parseVaultLine('OTHER added 1x Gold.', 'MEMBER');
 
-    expect(line).toEqual({ kind: 'deposit', quantity: 1, itemName: 'Gold' });
+    expect(line).toEqual({ kind: 'deposit', quantity: 1, itemName: 'Gold', fromTier: null, toTier: null });
   });
 });
 
@@ -395,5 +405,84 @@ describe('VaultLog.pruneOlderThanDays', () => {
     expect(deleted).toBe(1);
     expect(eventRows).toHaveLength(0);
     expect(sqlCalls().some((call) => call.sql.includes('DELETE FROM vault_events'))).toBe(true);
+  });
+});
+
+/** One stored clan-log line, as the rollup reads it. */
+function storedEvent(
+  message: string,
+  kind: string,
+  itemName: string,
+  quantity: number,
+  happenedAt: string
+): EventRow {
+  return {
+    clan_name: 'AOE',
+    event_key: `${kind}-${itemName}-${quantity}-${happenedAt}`,
+    member_username: 'USERNAME',
+    message,
+    kind,
+    item_name: itemName,
+    quantity,
+    happened_at: new Date(happenedAt),
+  };
+}
+
+describe('VaultLog.rollup', () => {
+  it('sums the recorded deltas of each vault tier', async () => {
+    eventRows = [
+      storedEvent('USERNAME added 300710x Gold (tier 2).', 'deposit', 'Gold', 300710, '2026-11-02T10:00:00Z'),
+      storedEvent('USERNAME added 5x Pine log (tier 1).', 'deposit', 'Pine log', 5, '2026-11-02T10:05:00Z'),
+      storedEvent('USERNAME withdrew 2x Gold from tier 1.', 'withdraw', 'Gold', 2, '2026-11-02T10:10:00Z'),
+      storedEvent('USERNAME moved 3x Pine log from tier 1 to tier 2.', 'move', 'Pine log', 3, '2026-11-02T10:15:00Z'),
+      storedEvent('USERNAME joined the clan.', 'other', '', 0, '2026-11-02T10:20:00Z'),
+    ];
+
+    const rollup = await VaultLog.rollup('AOE');
+
+    expect(rollup.since?.toISOString()).toBe('2026-11-02T10:00:00.000Z');
+    expect(rollup.tiers).toEqual([
+      {
+        tier: 1,
+        items: [
+          { itemName: 'Gold', net: -2 },
+          { itemName: 'Pine log', net: 2 },
+        ],
+        omitted: 0,
+      },
+      {
+        tier: 2,
+        items: [
+          { itemName: 'Gold', net: 300710 },
+          { itemName: 'Pine log', net: 3 },
+        ],
+        omitted: 0,
+      },
+    ]);
+  });
+
+  it('drops an item that nets to zero and counts the items it did not print', async () => {
+    eventRows = [
+      storedEvent('USERNAME added 10x Oak log (tier 1).', 'deposit', 'Oak log', 10, '2026-11-02T10:00:00Z'),
+      storedEvent('USERNAME added 8x Willow log (tier 1).', 'deposit', 'Willow log', 8, '2026-11-02T10:01:00Z'),
+      storedEvent('USERNAME added 6x Maple log (tier 1).', 'deposit', 'Maple log', 6, '2026-11-02T10:02:00Z'),
+      storedEvent('USERNAME added 4x Teak log (tier 1).', 'deposit', 'Teak log', 4, '2026-11-02T10:03:00Z'),
+      storedEvent('USERNAME added 5x Iron ore (tier 1).', 'deposit', 'Iron ore', 5, '2026-11-02T10:04:00Z'),
+      storedEvent('USERNAME withdrew 5x Iron ore from tier 1.', 'withdraw', 'Iron ore', 5, '2026-11-02T10:05:00Z'),
+    ];
+
+    const rollup = await VaultLog.rollup('AOE');
+
+    expect(rollup.tiers).toHaveLength(1);
+    expect(rollup.tiers[0].items.map((item) => item.itemName)).toEqual([
+      'Oak log',
+      'Willow log',
+      'Maple log',
+    ]);
+    expect(rollup.tiers[0].omitted).toBe(1);
+  });
+
+  it('is empty before the bot has recorded anything', async () => {
+    expect(await VaultLog.rollup('AOE')).toEqual({ since: null, tiers: [] });
   });
 });
