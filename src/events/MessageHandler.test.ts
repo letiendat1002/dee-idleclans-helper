@@ -112,6 +112,10 @@ describe('MessageHandler', () => {
       await handler.handleMessage(message);
       await handler.handleMessage(message);
       expect(reply).toHaveBeenCalledTimes(1);
+      expect(logger.info).toHaveBeenCalledWith(
+        'showcase skipped: still cooling down',
+        expect.objectContaining({ sinceMs: 0 }),
+      );
 
       // 9.999 s is still inside the window: the boundary is not approximate.
       vi.advanceTimersByTime(9_999);

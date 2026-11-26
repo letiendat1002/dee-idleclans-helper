@@ -110,7 +110,7 @@ export class MessageHandler {
 
     const last = this.lastReplyAt.get(message.author.id);
     if (last !== undefined && now - last < COOLDOWN_MS) {
-      logger.debug('showcase skipped: still cooling down', {
+      logger.info('showcase skipped: still cooling down', {
         userId: message.author.id,
         sinceMs: now - last,
       });

@@ -57,6 +57,7 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | D17 | Prettier chưa áp dụng (repo chỉ có oxlint + `tsc`) | thấp | cây code hiện không được Prettier format; thêm vào sẽ tạo diff reformat toàn repo. Mở khi muốn khoá style: commit riêng chỉ chứa `npx prettier --write .` + `format:check` trong CI, không trộn với thay đổi logic |
 | D18 | Bảng `digest_channels`/`vault_channels`/`watchlists` không có cột phân biệt bot (`app_id`) | thấp, có điều kiện | hai bot trong cùng guild sẽ cùng đọc một subscription và cùng đăng bài (đã gặp 2026-11-24 với prod + dev). Ràng buộc "1 bot / guild" đã ghi ở `DISCORD-TESTING.md`; chỉ thêm cột khi thật sự muốn chạy nhiều bot một guild |
 | D19 | ~~`docs-private/` nằm ngoài git (không versioned)~~ **đóng 2026-11-24** | — | đã tạo repo private `letiendat1002/dee-idleclans-private` chứa `docs-private/`, `tasks/`, `ops/`; có hook chặn token/mật khẩu trước commit. Host path/ID vẫn chỉ sống ở đó |
+| D20 | **Track Market Insights (T11) parked** — engine pattern đọc thẳng DB (0 HTTP lúc phân tích), cadence theo channel, channel riêng `idle-market-insight`; design v4 xong, **chưa có code** | trung bình | Owner dừng lại 2026-11-26 vì có requirement khác ưu tiên trước. **Mở khi owner nói lại về Market Insights.** Spec: `docs/superpowers/specs/2026-11-26-market-insights-design.md` (**gitignored** — bản track + ledger ở notes repo của maintainer, `tasks/market-insights/`). Chốt trước khi code: interval default/floor, retention, seasonality gate, rename hay tạo mới channel |
 | ~~D9~~ | ~~`vault_events` ghi **trước** khi post: một batch lỗi Discord là mất luôn~~ — **đóng 2026-11-25** | — | Bảng `vault_deliveries` (migration 012) ghi `(clan, event_key, channel_id)` **sau** khi channel nhận message; tick sau đọc `undeliveredFor` nên post bị từ chối được thử lại, không mất. Prune dọn delivery khi event bị prune. Test: `retries an event the channel refused instead of losing it` |
 | D10 | `price_daily` có ngày dựng từ **một** poll (2026-11-12: 604 samples / 630 item); card daily không in `samples` | thấp | thêm `samples` vào footer hoặc ẩn ngày có < 5% số poll; đợi dữ liệu 1 ngày đủ trước khi quyết |
 | D11 | Catalogue trễ tối đa 30 phút (sync) nhưng không surface nào nói "catalogue lúc mấy giờ" | thấp | thêm `last_synced_at` vào `/help` hoặc footer `/price` khi rename item gây nhầm |
@@ -144,6 +145,16 @@ with the exact strings. Undo (channel sync, test messages) afterwards and say wh
 Work the tech-debt table in docs/DEFERRED.md §3 top to bottom, one item per commit, tests
 before/after, and move each finished row into the ROADMAP changelog. Start with D1 if we are
 planning more than one bot instance, otherwise D2 at the query boundary.
+```
+
+**Market Insights (mở T11/D20):**
+
+```
+Resume the Market Insights track. Read the private ledger for it first — it holds the decisions,
+the measured production numbers, the copy standard and the open questions — then read the spec it
+points to. Do not re-measure and do not re-open the research; ask me only the four open items:
+interval default and floor, retention, the seasonality gate, and whether the existing channel is
+renamed or replaced. Then write the implementation plan and stop before any code.
 ```
 
 **Marketing (mở §4):**
