@@ -129,6 +129,30 @@ and both volumes), confirmed the `0` rows (22 ask / 45 bid), the 676-vs-631 trad
 (stale digest refused, failed fetch kept the snapshot). `/price-list` in step 5 is not this bot's
 command: it belongs to the `Phoenix` bot in the test guild, and `AGENTS.md` named it wrongly.
 
+### T11 — Market Insights · active (design settled, no code yet)
+
+Goal: a pattern engine over our own database. It ingests, cleans and rolls up what we already
+store, then posts the strongest patterns on an interval — a separate job with separate state,
+posting to a separate channel, with the existing `idle-market` channel renamed to
+`idle-market-watch`.
+
+Decisions locked: analysis is DB-only, so the job makes zero HTTP calls and every printed number
+is reproducible in SQL; the cadence is per channel in a new `insight_channels` table, because the
+digest's cadence is per guild and cannot drive two channels at different rates; each pattern
+declares a baseline and a sample count and is ranked by surprise rather than by size
+(QuickInsights); seasonality stays silent until two years of history exist; no model ever produces
+a number.
+
+Copy is part of the contract (`VOICE.md`): sell price and buy order, two raw counts instead of a
+ratio, no column names, no scores in the body, the method in one footer line.
+
+The spec is `docs/superpowers/specs/2026-11-26-market-insights-design.md` — **gitignored**, so the
+tracked copy and the full ledger live in the maintainer's private notes repo
+(`tasks/market-insights/`).
+
+Open before any code: interval default and floor, retention, the seasonality gate, and whether the
+existing channel is renamed (it keeps its id) or replaced.
+
 ## 2. Measured facts (do not re-measure by guessing)
 
 | Fact | Value | Source |
@@ -173,14 +197,16 @@ the code is MIT. Read the private legal note on donations before touching anythi
 money — it holds the only **verified** list of rails a Vietnamese individual can actually withdraw
 from, and the wording that keeps a tip a gift instead of a charity campaign.
 
-Every track T1–T10 is closed. There is no active track: the next one starts when the owner names it, and
-until then the queued work is only the trigger list in `docs/DEFERRED.md` (D15 at 1 GB, the host
-maintenance window, the scheduled drill). If a restored todo list disagrees with this file, this file wins.
+Every track T1–T10 is closed. **T11 (Market Insights) is the one open track**: the design is
+settled and no code has been written. The queued work is otherwise the trigger list in
+`docs/DEFERRED.md` (D15 at 1 GB, the host maintenance window, the scheduled drill). If a restored
+todo list disagrees with this file, this file wins.
 
 ## 5. Progress log
 
 | Date | What landed | Evidence |
 | --- | --- | --- |
+| 2026-11-26 | **Track T11 Market Insights mở — design v4, chưa có code**: engine insight đọc thẳng DB (ingest → clean → detect → post), **0 HTTP call** lúc phân tích nên mọi số truy lại được bằng SQL; tách channel `idle-market-insight` + rename `idle-market` → `idle-market-watch`; cadence theo channel trong bảng mới `insight_channels` (digest cadence đang per guild, không dùng được cho 2 channel khác nhịp); pattern khai báo baseline + sample count, rank theo surprise (QuickInsights); seasonality gate 2 năm; copy theo `VOICE.md` (hai con số thay tỷ lệ, không tên cột, method ở footer) | Spec `docs/superpowers/specs/2026-11-26-market-insights-design.md` (**gitignored** — bản track nằm ở notes repo của maintainer, `tasks/market-insights/`); detector chạy thật trên production: dry sell side 1, off the board 2, book flipped 5+, pinned 2 (631 item/24h, 184 item có volume ≥100) |
 | 2026-11-26 | **Release `v1.5.2` — mention cooldown 60 s → 10 s, và lần bị bỏ qua có log**: owner báo ping lần đầu có card, lần sau im. Không phải crash: cooldown tính theo user id **xuyên channel** và nhánh skip `return` không log. Dựng timeline từ API Discord: mention `17:50:41.003Z` → reply `17:50:41.662Z`; mention `17:51:01.372Z` (channel khác, cách 19.4 s) → không reply; mention `17:56:28Z` → reply | PR #83 `c9a7dd5` (hằng số + `logger.debug` + test pin mốc 10 s và kịch bản 20 s), #84 (bump), #85 → `production`, deploy `d082d349` 4/4 healthy bot `1.5.2`, tag `v1.5.2` (Release object tự tạo), merge-back #86 `309f38a`; 410/410 test |
 | 2026-11-25 | **Release `v1.5.1` và hai đường ủng hộ**: `/help` trỏ Ko-fi (`ko-fi.com/letiendat1002`, thẻ/PayPal — người chơi không cần tài khoản GitHub), GitHub Sponsors ở README, mention card thêm `Source on GitHub`; footer `/help` hết `[Privacy](…)` literal (Discord vẽ footer là plain text) nên policy vào field `Links`; `FUNDING.yml` khai cả hai rail; B4 đóng | PR #78 `9efad14`, #79 `c2db959`, #80 → deploy `34315152` (4/4, schema `013`), tag `v1.5.1`, merge-back #81 `83b704a`, #82 `0f31f80`; `ko-fi.com/letiendat1002` trả 200, title `Support HRDDee`; 410/410 test |
 | 2026-11-25 | **Release `v1.5.0` — deploy không còn chết im lặng, và lockfile không lệch manifest**: `deploy.sh` gom `build_at()` dùng chung cho deploy và rollback, `build_at "$target" || rollback "the build failed"` (trước đó build fail chỉ làm unit exit, không DM); harness `scripts/deploy.failure.test.sh` (build/health/schema, stub docker+curl+npm) chạy trong CI; `version-guard` thêm bước so `package-lock.json` với manifest | PR #76 `454d7b8`, #77 `55606f5`, #73 `50dc545`, #74 `948f219` → deploy `948f219e`; trước fix harness báo `FAIL build: the webhook never said 'the build failed'`, sau fix 3/3 ok; host có `build_at` ×3 + `the build failed` ×1 |
