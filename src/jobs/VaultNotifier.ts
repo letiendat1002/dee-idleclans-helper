@@ -16,6 +16,7 @@ import {
   VaultLog,
   type VaultEvent,
   type VaultEventKind,
+  type VaultRollup,
   type VaultSubscription,
 } from '../services/VaultLog.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
@@ -74,20 +75,6 @@ export function vaultWindow(events: VaultEvent[]): string {
   return `${head}–${clock(last)} UTC`;
 }
 
-/**
- * The vault numbers a clan-log line names: ` (tier 1)` on a deposit,
- * ` from tier 1` on a withdrawal, ` from tier 1 to tier 2` on a move.
- */
-function vaultNumbers(message: string): { from?: number; to?: number } {
-  const match = /\s*(?:\(tier (\d+)\)|from tier (\d+) to tier (\d+)|from tier (\d+))\.?\s*$/.exec(
-    message
-  );
-  if (!match) return {};
-  if (match[1] !== undefined) return { to: Number(match[1]) };
-  if (match[2] !== undefined) return { from: Number(match[2]), to: Number(match[3]) };
-  return { from: Number(match[4]) };
-}
-
 /** The directions of a post, in the order a reader scans them. */
 const VAULT_GROUPS: ReadonlyArray<{ kind: VaultEventKind; label: string }> = [
   { kind: 'deposit', label: 'In' },
@@ -109,9 +96,8 @@ export function formatVaultLine(event: VaultEvent): string {
   const verb = event.kind === 'deposit' ? 'added' : event.kind === 'withdraw' ? 'withdrew' : 'moved';
   const quantity = event.quantity.toLocaleString('en-US');
   const line = `${event.memberUsername} ${verb} **${quantity}x ${event.itemName}**`;
-  const { from, to } = vaultNumbers(event.message);
-  const out = from === undefined ? '' : ` from vault ${from}`;
-  const into = to === undefined ? '' : ` to vault ${to}`;
+  const out = event.fromTier === null ? '' : ` from vault ${event.fromTier}`;
+  const into = event.toTier === null ? '' : ` to vault ${event.toTier}`;
   const clock = event.happenedAt.toISOString().slice(5, 16).replace('T', ' ');
 
   const body =
@@ -139,13 +125,41 @@ export function vaultBody(events: VaultEvent[]): string[] {
 }
 
 /**
- * The description of a vault message: the header, then the grouped entries.
+ * The net change recorded per vault tier, as a block above the entries.
+ *
+ * Every figure is the sum of the deltas the bot stored, labelled with the day
+ * the record starts; it is never presented as a vault balance.
  */
-export function vaultDescription(events: VaultEvent[]): string {
+export function vaultRollupLines(rollup: VaultRollup): string[] {
+  if (rollup.since === null || rollup.tiers.length === 0) return [];
+
+  const day = rollup.since.toISOString().slice(5, 10);
+  const lines = [`**Net recorded since ${day}**`];
+
+  for (const tier of rollup.tiers) {
+    const items = tier.items.map(
+      (item) =>
+        `${item.net > 0 ? '+' : '-'}${Math.abs(item.net).toLocaleString('en-US')} ${item.itemName}`
+    );
+    const tail = tier.omitted > 0 ? ` · ${tier.omitted} more items` : '';
+    lines.push(`Vault ${tier.tier} · ${items.join(' · ')}${tail}`);
+  }
+
+  return lines;
+}
+
+/**
+ * The description of a vault message: the header, the recorded roll-up and the
+ * grouped entries.
+ */
+export function vaultDescription(events: VaultEvent[], rollup: VaultRollup): string {
   const noun = events.length === 1 ? 'entry' : 'entries';
+  const rollupLines = vaultRollupLines(rollup);
+
   return [
     `${ICONS.digest} **${events.length}** new ${noun} · ${vaultWindow(events)}`,
     '',
+    ...(rollupLines.length > 0 ? [...rollupLines, ''] : []),
     ...vaultBody(events),
   ].join('\n');
 }
@@ -238,6 +252,7 @@ export class VaultNotifier {
     await VaultLog.recordNewEvents(clanName, entries, since);
 
     const avatarUrl = client.user?.displayAvatarURL({ size: 128 }) ?? null;
+    const rollup = await VaultLog.rollup(clanName);
 
     let channels = 0;
     let events = 0;
@@ -254,7 +269,7 @@ export class VaultNotifier {
 
       try {
         await channel.send({
-          embeds: [VaultNotifier.buildEmbed(clanName, batch, avatarUrl)],
+          embeds: [VaultNotifier.buildEmbed(clanName, batch, avatarUrl, rollup)],
           flags: SUPPRESS_NOTIFICATIONS,
         });
         await VaultLog.markDelivered(
@@ -315,13 +330,14 @@ export class VaultNotifier {
   private static buildEmbed(
     clanName: string,
     events: VaultEvent[],
-    avatarUrl: string | null
+    avatarUrl: string | null,
+    rollup: VaultRollup
   ): EmbedBuilder {
     return new EmbedBuilder()
       .setColor(COLORS.brand)
       .setAuthor(brandAuthor(avatarUrl))
       .setTitle(`Clan vault — ${clanName}`)
-      .setDescription(vaultDescription(events))
+      .setDescription(vaultDescription(events, rollup))
       .setFooter({ text: vaultFooter() });
   }
 

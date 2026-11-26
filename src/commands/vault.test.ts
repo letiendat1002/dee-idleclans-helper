@@ -355,7 +355,7 @@ describe('/vault handle', () => {
         clan_name: 'DeeCorp',
         event_key: 'k1',
         member_username: 'dee',
-        message: 'dee added 5x Gold.',
+        message: 'dee added 5x Gold (tier 1).',
         kind: 'deposit',
         item_name: 'Gold',
         quantity: 5,
@@ -365,7 +365,7 @@ describe('/vault handle', () => {
         clan_name: 'DeeCorp',
         event_key: 'k2',
         member_username: 'dee',
-        message: 'dee withdrew 2x Gold.',
+        message: 'dee withdrew 2x Gold from tier 1.',
         kind: 'withdraw',
         item_name: 'Gold',
         quantity: 2,
@@ -386,6 +386,7 @@ describe('/vault handle', () => {
     expect(embed?.description).toContain('entries · 10:10–10:12 UTC');
     expect(embed?.description).toContain('**In · 1**');
     expect(embed?.description).toContain('**Out · 1**');
+    expect(embed?.description).toContain('Vault 1 · +3 Gold');
     expect(embed?.footer?.text).toBe('clan log · last 14 days');
   });
 

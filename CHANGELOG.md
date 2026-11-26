@@ -19,6 +19,9 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 - `/vault remove` answers with the same success card as `/vault add`, `/vault recent` caps `limit`
   at 30 and labels the card `Newest N entries`, and `/vault list` counts distinct channels against
   the cap.
+- A vault card opens with the net change recorded per vault tier since the oldest stored entry,
+  capped to the three largest items per tier. It sums recorded deltas only, so it is never
+  presented as a vault balance.
 
 ### Fixed
 

@@ -226,6 +226,11 @@ second brand.
 - One post prints at most 30 entries; a larger backlog posts the next 30 on the following tick
   rather than a "… and N more" line the reader can never reach. `/vault recent` caps `limit` at 30
   for the same reason.
+- Above the entries, `**Net recorded since 11-12**` sums the deltas the bot stored, per vault tier:
+  `Vault 2 · +300,710 Gold · +3 Pine log`, the three largest items by net, the rest counted. A move
+  subtracts from its source tier and adds to its target. This is a **recorded change, never a
+  balance** — the game publishes deltas only — so the label names the day the record starts. The
+  same block appears on the feed and on `/vault recent`.
 - No ping, no DM, no backfill: `vault_channels.created_at` is the line, so a channel added today
   starts at the next entry, not at the history.
 - An empty tick posts nothing. A channel the bot can no longer post in (left the guild, lost the

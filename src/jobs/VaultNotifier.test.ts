@@ -21,7 +21,7 @@ vi.mock('../services/IdleClansApi.js', () => ({
 }));
 
 import type { ClanLogEntry } from '../services/IdleClansApi.js';
-import { VaultNotifier, formatVaultLine, vaultDescription } from './VaultNotifier.js';
+import { VaultNotifier, formatVaultLine, vaultDescription, vaultRollupLines } from './VaultNotifier.js';
 
 /** The guild the tests post to. */
 const GUILD = 'guild-1';
@@ -149,6 +149,12 @@ function stubPool(): void {
         if (!known) deliveryRows.push({ clan_name: clanName, event_key: eventKey, channel_id: channelId });
       }
       return { rows: [], rowCount: eventKeys.length };
+    }
+
+    if (sql.includes('ORDER BY happened_at ASC')) {
+      const [clanName] = params as string[];
+      const rows = eventRows.filter((row) => row.clan_name === clanName);
+      return { rows, rowCount: rows.length };
     }
 
     if (sql.includes('FROM vault_events e')) {
@@ -482,10 +488,12 @@ describe('vaultDescription', () => {
       kind: 'deposit' as const,
       itemName: 'Gold',
       quantity: index + 1,
+      fromTier: null,
+      toTier: null,
       happenedAt: new Date(`2026-11-02T10:${String(index).padStart(2, '0')}:00.000Z`),
     }));
 
-    const description = vaultDescription(events);
+    const description = vaultDescription(events, { since: null, tiers: [] });
 
     expect(description).toContain('**12** new entries · 10:00–10:11 UTC');
     expect(description).toContain('12x Gold');
@@ -502,6 +510,8 @@ describe('vaultDescription', () => {
         kind: 'deposit' as const,
         itemName: 'Gold',
         quantity: 5,
+        fromTier: null,
+        toTier: null,
         happenedAt: new Date('2026-11-02T10:00:00.000Z'),
       },
       {
@@ -512,6 +522,8 @@ describe('vaultDescription', () => {
         kind: 'withdraw' as const,
         itemName: 'Gold',
         quantity: 2,
+        fromTier: 1,
+        toTier: null,
         happenedAt: new Date('2026-11-02T10:01:00.000Z'),
       },
       {
@@ -522,21 +534,85 @@ describe('vaultDescription', () => {
         kind: 'move' as const,
         itemName: 'Gold',
         quantity: 1,
+        fromTier: 1,
+        toTier: 2,
         happenedAt: new Date('2026-11-02T10:02:00.000Z'),
       },
     ];
 
-    const description = vaultDescription(events);
+    const description = vaultDescription(events, { since: null, tiers: [] });
 
     expect(description).toContain('**In · 1**');
     expect(description).toContain('**Out · 1**');
     expect(description).toContain('**Moved · 1**');
     expect(description).not.toContain('more');
   });
+
+  it('puts the recorded roll-up above the entries', () => {
+    const events = [
+      {
+        clanName: 'AOE',
+        eventKey: 'key-1',
+        memberUsername: 'USERNAME',
+        message: 'USERNAME added 5x Gold (tier 1).',
+        kind: 'deposit' as const,
+        itemName: 'Gold',
+        quantity: 5,
+        fromTier: null,
+        toTier: 1,
+        happenedAt: new Date('2026-11-02T10:00:00.000Z'),
+      },
+    ];
+
+    const description = vaultDescription(events, {
+      since: new Date('2026-11-12T00:00:00Z'),
+      tiers: [{ tier: 1, items: [{ itemName: 'Gold', net: 5 }], omitted: 0 }],
+    });
+
+    expect(description.indexOf('**Net recorded since 11-12**')).toBeLessThan(
+      description.indexOf('**In · 1**')
+    );
+    expect(description).toContain('Vault 1 · +5 Gold');
+  });
+});
+
+describe('vaultRollupLines', () => {
+  it('names the net change per tier and the day the record starts', () => {
+    const lines = vaultRollupLines({
+      since: new Date('2026-11-12T00:00:00Z'),
+      tiers: [
+        {
+          tier: 1,
+          items: [
+            { itemName: 'Gold', net: -2 },
+            { itemName: 'Pine log', net: 2 },
+          ],
+          omitted: 0,
+        },
+        { tier: 2, items: [{ itemName: 'Gold', net: 300710 }], omitted: 4 },
+      ],
+    });
+
+    expect(lines).toEqual([
+      '**Net recorded since 11-12**',
+      'Vault 1 · -2 Gold · +2 Pine log',
+      'Vault 2 · +300,710 Gold · 4 more items',
+    ]);
+  });
+
+  it('is silent before anything was recorded', () => {
+    expect(vaultRollupLines({ since: null, tiers: [] })).toEqual([]);
+  });
 });
 
 /** One parsed vault event, as the log reader hands it over. */
-const event = (kind: 'deposit' | 'withdraw' | 'move', message: string, quantity: number) => ({
+const event = (
+  kind: 'deposit' | 'withdraw' | 'move',
+  message: string,
+  quantity: number,
+  fromTier: number | null = null,
+  toTier: number | null = null
+) => ({
   clanName: 'AOE',
   eventKey: `key-${kind}-${quantity}`,
   memberUsername: 'USERNAME',
@@ -544,22 +620,24 @@ const event = (kind: 'deposit' | 'withdraw' | 'move', message: string, quantity:
   kind,
   itemName: 'Gold',
   quantity,
+  fromTier,
+  toTier,
   happenedAt: new Date('2026-11-25T04:35:00.000Z'),
 });
 
 describe('formatVaultLine', () => {
   it('reads a deposit and a withdrawal with the same vault wording', () => {
-    expect(formatVaultLine(event('deposit', 'USERNAME added 69x Gold (tier 1).', 69))).toBe(
+    expect(formatVaultLine(event('deposit', 'USERNAME added 69x Gold (tier 1).', 69, null, 1))).toBe(
       '`11-25 04:35` USERNAME added **69x Gold** to vault 1'
     );
-    expect(formatVaultLine(event('withdraw', 'USERNAME withdrew 67x Gold from tier 1.', 67))).toBe(
-      '`11-25 04:35` USERNAME withdrew **67x Gold** from vault 1'
-    );
+    expect(
+      formatVaultLine(event('withdraw', 'USERNAME withdrew 67x Gold from tier 1.', 67, 1, null))
+    ).toBe('`11-25 04:35` USERNAME withdrew **67x Gold** from vault 1');
   });
 
   it('names both vaults of a move', () => {
     expect(
-      formatVaultLine(event('move', 'USERNAME moved 5x Gold from tier 1 to tier 2.', 5))
+      formatVaultLine(event('move', 'USERNAME moved 5x Gold from tier 1 to tier 2.', 5, 1, 2))
     ).toBe('`11-25 04:35` USERNAME moved **5x Gold** from vault 1 to vault 2');
   });
 

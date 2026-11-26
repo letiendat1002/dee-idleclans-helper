@@ -46,6 +46,8 @@ export interface VaultEvent {
   kind: VaultEventKind;
   itemName: string;
   quantity: number;
+  fromTier: number | null;
+  toTier: number | null;
   happenedAt: Date;
 }
 
@@ -54,7 +56,31 @@ export interface ParsedVaultLine {
   kind: 'deposit' | 'withdraw' | 'move';
   itemName: string;
   quantity: number;
+  fromTier: number | null;
+  toTier: number | null;
 }
+
+/** One item's net movement in one vault tier over the recorded window. */
+export interface VaultTierItem {
+  itemName: string;
+  net: number;
+}
+
+/** The recorded net change of one vault tier, capped to the items that matter. */
+export interface VaultTier {
+  tier: number;
+  items: VaultTierItem[];
+  omitted: number;
+}
+
+/** The net change recorded for a clan, and the moment the record starts. */
+export interface VaultRollup {
+  since: Date | null;
+  tiers: VaultTier[];
+}
+
+/** The most items one tier line prints before it counts the rest. */
+const MAX_TIER_ITEMS = 3;
 
 /**
  * `USERNAME added 300710x Gold (tier 2).` and the older `USERNAME added 300710x Gold.`
@@ -110,6 +136,7 @@ function toSubscription(row: VaultChannelDbRow): VaultSubscription {
 
 /** Turn a stored row into the event the callers use. */
 function toEvent(row: VaultEventDbRow): VaultEvent {
+  const tiers = parseVaultTiers(row.message ?? '');
   return {
     clanName: row.clan_name,
     eventKey: row.event_key,
@@ -118,6 +145,8 @@ function toEvent(row: VaultEventDbRow): VaultEvent {
     kind: row.kind as VaultEventKind,
     itemName: row.item_name ?? '',
     quantity: row.quantity ?? 0,
+    fromTier: tiers.fromTier,
+    toTier: tiers.toTier,
     happenedAt: toDate(row.happened_at),
   };
 }
@@ -139,6 +168,27 @@ function stripAuthor(message: string, memberUsername: string): string {
 }
 
 /**
+ * The tier numbers a clan-log line names: `(tier 1)` on a deposit, `from tier 1`
+ * on a withdrawal, `from tier 1 to tier 2` on a move.
+ *
+ * The suffix is anchored: an item name may carry parentheses of its own.
+ */
+export function parseVaultTiers(message: string): {
+  fromTier: number | null;
+  toTier: number | null;
+} {
+  const match = /\s*(?:\(tier (\d+)\)|from tier (\d+) to tier (\d+)|from tier (\d+))\.?\s*$/.exec(
+    message
+  );
+  if (!match) return { fromTier: null, toTier: null };
+  if (match[1] !== undefined) return { fromTier: null, toTier: Number(match[1]) };
+  if (match[2] !== undefined) {
+    return { fromTier: Number(match[2]), toTier: Number(match[3]) };
+  }
+  return { fromTier: Number(match[4]), toTier: null };
+}
+
+/**
  * Read a clan-log line.
  *
  * Returns null for a line the vault does not care about, such as a member who
@@ -146,15 +196,18 @@ function stripAuthor(message: string, memberUsername: string): string {
  */
 export function parseVaultLine(message: string, memberUsername: string): ParsedVaultLine | null {
   const line = stripAuthor(message ?? '', memberUsername ?? '').trim();
+  const tiers = parseVaultTiers(line);
 
   const move = MOVE_RE.exec(line);
-  if (move) return { kind: 'move', quantity: Number(move[1]), itemName: move[2] };
+  if (move) return { kind: 'move', quantity: Number(move[1]), itemName: move[2], ...tiers };
 
   const deposit = DEPOSIT_RE.exec(line);
-  if (deposit) return { kind: 'deposit', quantity: Number(deposit[1]), itemName: deposit[2] };
+  if (deposit) return { kind: 'deposit', quantity: Number(deposit[1]), itemName: deposit[2], ...tiers };
 
   const withdraw = WITHDRAW_RE.exec(line);
-  if (withdraw) return { kind: 'withdraw', quantity: Number(withdraw[1]), itemName: withdraw[2] };
+  if (withdraw) {
+    return { kind: 'withdraw', quantity: Number(withdraw[1]), itemName: withdraw[2], ...tiers };
+  }
 
   return null;
 }
@@ -194,6 +247,8 @@ function toParsedEvent(clanName: string, entry: ClanLogEntry): VaultEvent | null
     kind: parsed.kind,
     itemName: parsed.itemName,
     quantity: parsed.quantity,
+    fromTier: parsed.fromTier,
+    toTier: parsed.toTier,
     happenedAt,
   };
 }
@@ -395,6 +450,79 @@ export class VaultLog {
     )) as { rows: VaultEventDbRow[] };
 
     return res.rows.map(toEvent).reverse();
+  }
+
+  /**
+   * The net change recorded for one clan, per vault tier.
+   *
+   * It sums the entries the bot has stored, never a balance: the game
+   * publishes deltas only, so `since` is the oldest entry the table still
+   * holds and the caller labels the block with it.
+   */
+  static async rollup(clanName: string): Promise<VaultRollup> {
+    // shortcut: aggregate in TS over the 14-day table, move to a SQL GROUP BY
+    // with tier columns if a clan routinely holds thousands of rows.
+    const res = (await query(
+      `SELECT message, kind, item_name, quantity, happened_at
+       FROM vault_events WHERE clan_name = $1 ORDER BY happened_at ASC`,
+      [clanName]
+    )) as {
+      rows: Array<{
+        message: string | null;
+        kind: string;
+        item_name: string | null;
+        quantity: number | null;
+        happened_at: Date | string;
+      }>;
+    };
+
+    const rows = res.rows ?? [];
+    if (rows.length === 0) return { since: null, tiers: [] };
+
+    const byTier = new Map<number, Map<string, number>>();
+    const add = (tier: number | null, itemName: string, amount: number): void => {
+      if (tier === null || amount === 0) return;
+      const items = byTier.get(tier) ?? new Map<string, number>();
+      items.set(itemName, (items.get(itemName) ?? 0) + amount);
+      byTier.set(tier, items);
+    };
+
+    for (const row of rows) {
+      const { fromTier, toTier } = parseVaultTiers(row.message ?? '');
+      const quantity = row.quantity ?? 0;
+      const itemName = row.item_name ?? '';
+
+      if (row.kind === 'deposit') add(toTier, itemName, quantity);
+      else if (row.kind === 'withdraw') add(fromTier, itemName, -quantity);
+      else if (row.kind === 'move') {
+        add(fromTier, itemName, -quantity);
+        add(toTier, itemName, quantity);
+      }
+    }
+
+    const tiers: VaultTier[] = [...byTier.entries()]
+      .sort(([left], [right]) => left - right)
+      .map(([tier, items]) => {
+        const sorted = [...items.entries()]
+          .filter(([, net]) => net !== 0)
+          .sort(
+            ([leftName, leftNet], [rightName, rightNet]) =>
+              Math.abs(rightNet) - Math.abs(leftNet) || leftName.localeCompare(rightName)
+          );
+        const shown = sorted.slice(0, MAX_TIER_ITEMS).map(([itemName, net]) => ({ itemName, net }));
+        return { tier, items: shown, omitted: sorted.length - shown.length };
+      })
+      .filter((tier) => tier.items.length > 0);
+
+    const since = rows.reduce(
+      (oldest, row) => {
+        const moment = toDate(row.happened_at);
+        return moment < oldest ? moment : oldest;
+      },
+      toDate(rows[0].happened_at)
+    );
+
+    return { since, tiers };
   }
 
   /**

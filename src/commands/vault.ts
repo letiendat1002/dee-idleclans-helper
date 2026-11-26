@@ -34,7 +34,7 @@ import { safeReply } from '../ui/reply.js';
 import { canPost } from '../ui/channel.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 import { VaultLog, MAX_VAULT_CHANNELS_PER_GUILD } from '../services/VaultLog.js';
-import { vaultBody, vaultFooter, vaultWindow } from '../jobs/VaultNotifier.js';
+import { vaultBody, vaultFooter, vaultRollupLines, vaultWindow } from '../jobs/VaultNotifier.js';
 
 const logger = createLogger('VAULT');
 
@@ -224,9 +224,8 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
 /**
  * Show the newest entries of a clan, exactly as they appear in the posts.
  *
- * The posts are a feed: they carry the deltas of a window and never a vault
- * total, because the game publishes none. A member who needs one line verified
- * asks here and gets the rows, without scrolling a channel.
+ * The roll-up sums the entries the bot stored; it is a recorded change, never
+ * a vault balance, because the game publishes deltas only.
  */
 async function handleRecent(interaction: ChatInputCommandInteraction): Promise<void> {
   const clan = interaction.options.getString('clan', true).trim();
@@ -238,6 +237,8 @@ async function handleRecent(interaction: ChatInputCommandInteraction): Promise<v
   }
 
   const events = await VaultLog.recentFor(clan, limit);
+  const rollup = await VaultLog.rollup(clan);
+  const rollupLines = vaultRollupLines(rollup);
   const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
   const embed = new EmbedBuilder()
     .setColor(COLORS.brand)
@@ -249,6 +250,7 @@ async function handleRecent(interaction: ChatInputCommandInteraction): Promise<v
         : [
             `Newest **${events.length}** ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
             '',
+            ...(rollupLines.length > 0 ? [...rollupLines, ''] : []),
             ...vaultBody(events),
           ].join('\n')
     )
