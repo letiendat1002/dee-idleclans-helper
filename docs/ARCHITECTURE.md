@@ -82,7 +82,7 @@ Everything else runs inside the single `clientReady` handler
    them in `schema_migrations`. Idempotent; runs on every start.
 3. One log line per cached guild — this is what warms the guild and channel
    caches the pollers read.
-4. `registerCommands()` — PUTs the nine slash commands globally. Discord
+4. `registerCommands()` — PUTs the eight slash commands globally. Discord
    propagates in minutes; a command that fails to register is a deploy bug.
 5. The four jobs that need Discord, in one block: `ItemCatalogue.start(30 min)`
    (fetches the catalogue, derives recipe trees, deletes `dee:catalogue:index` so
