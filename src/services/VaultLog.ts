@@ -35,6 +35,7 @@ export interface VaultSubscription {
   clanName: string;
   createdBy: string;
   createdAt: Date;
+  lastPostedAt: Date | null;
 }
 
 /** One entry of the clan log, parsed. */
@@ -103,6 +104,7 @@ interface VaultChannelDbRow {
   clan_name: string;
   created_by: string | number;
   created_at: Date | string | null;
+  last_post_at?: Date | string | null;
 }
 
 /** A row of `vault_events` as Postgres returns it. */
@@ -131,6 +133,7 @@ function toSubscription(row: VaultChannelDbRow): VaultSubscription {
     clanName: row.clan_name,
     createdBy: String(row.created_by),
     createdAt: toDate(row.created_at),
+    lastPostedAt: row.last_post_at ? toDate(row.last_post_at) : null,
   };
 }
 
@@ -292,7 +295,8 @@ export class VaultLog {
 
     const rows = await VaultLog.readSubscription(guildId, channelId, clanName);
     return (
-      rows[0] ?? { guildId, channelId, clanName, createdBy: userId, createdAt: new Date() }
+      rows[0] ??
+      { guildId, channelId, clanName, createdBy: userId, createdAt: new Date(), lastPostedAt: null }
     );
   }
 
@@ -339,7 +343,7 @@ export class VaultLog {
   /** Return the channels of a guild that follow a clan vault. */
   static async listSubscriptions(guildId: string): Promise<VaultSubscription[]> {
     const res = (await query(
-      `SELECT guild_id, channel_id, clan_name, created_by, created_at
+      `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels WHERE guild_id = $1
        ORDER BY clan_name, created_at, channel_id`,
       [guildId]
@@ -360,7 +364,7 @@ export class VaultLog {
   /** Return every channel that follows the vault of one clan. */
   static async listTargetsForClan(clanName: string): Promise<VaultSubscription[]> {
     const res = (await query(
-      `SELECT guild_id, channel_id, clan_name, created_by, created_at
+      `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels WHERE clan_name = $1
        ORDER BY guild_id, channel_id`,
       [clanName]
@@ -570,6 +574,15 @@ export class VaultLog {
     );
   }
 
+  /** Record that a channel accepted a post, so `/vault list` can show it. */
+  static async markPosted(guildId: string, channelId: string, clanName: string): Promise<void> {
+    await query(
+      `UPDATE vault_channels SET last_post_at = NOW()
+       WHERE guild_id = $1 AND channel_id = $2 AND clan_name = $3`,
+      [guildId, channelId, clanName]
+    );
+  }
+
   static async pruneOlderThanDays(days: number): Promise<number> {
     const res = (await query(
       "DELETE FROM vault_events WHERE happened_at < NOW() - ($1::int * INTERVAL '1 day')",
@@ -597,7 +610,7 @@ export class VaultLog {
     clanName: string
   ): Promise<VaultSubscription[]> {
     const res = (await query(
-      `SELECT guild_id, channel_id, clan_name, created_by, created_at
+      `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels
        WHERE guild_id = $1 AND channel_id = $2 AND clan_name = $3`,
       [guildId, channelId, clanName]

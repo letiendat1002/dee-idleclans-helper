@@ -148,7 +148,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction, guild: Guild)
     .setTitle(`Clan vault on — #${cached.name}`)
     .setDescription(
       [
-        `${ICONS.digest} The vault of ${clan} posts in #${cached.name}. Posts arrive without a ping.`,
+        `${ICONS.vault} The vault of ${clan} posts in #${cached.name}. Posts arrive without a ping.`,
         '',
         `A server can follow at most ${MAX_CHANNELS} channels.`,
         'The game can deliver an entry about 30 minutes late.',
@@ -183,7 +183,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction, guild: Gui
     .setColor(COLORS.success)
     .setAuthor(brandAuthor(avatarUrl))
     .setTitle(`Clan vault off — #${name}`)
-    .setDescription(`${ICONS.digest} #${name} no longer follows the vault of ${clan}.`);
+    .setDescription(`${ICONS.vault} #${name} no longer follows the vault of ${clan}.`);
 
   await interaction.editReply({ embeds: [embed] });
 }
@@ -198,7 +198,11 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
 
   const lines = subscriptions.map((row) => {
     const name = guild.channels.cache.get(row.channelId)?.name ?? row.channelId;
-    return `#${name} · ${row.clanName}`;
+    const stamp =
+      row.lastPostedAt === null
+        ? 'nothing posted yet'
+        : `last post ${row.lastPostedAt.toISOString().slice(5, 16).replace('T', ' ')} UTC`;
+    return `#${name} · ${row.clanName} — ${stamp}`;
   });
 
   const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
@@ -208,7 +212,7 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
     .setTitle('Clan vault channels')
     .setDescription(
       [
-        `${channels.size} of ${MAX_CHANNELS} channels subscribed · ${clans.size} ${
+        `${ICONS.vault} ${channels.size} of ${MAX_CHANNELS} channels subscribed · ${clans.size} ${
           clans.size === 1 ? 'clan' : 'clans'
         }.`,
         '',
@@ -246,9 +250,9 @@ async function handleRecent(interaction: ChatInputCommandInteraction): Promise<v
     .setTitle(`Clan vault — ${clan}`)
     .setDescription(
       events.length === 0
-        ? `No entries recorded for ${clan}.`
+        ? `${ICONS.vault} No entries recorded for ${clan}.`
         : [
-            `Newest **${events.length}** ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
+            `${ICONS.vault} Newest **${events.length}** ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
             '',
             ...(rollupLines.length > 0 ? [...rollupLines, ''] : []),
             ...vaultBody(events),

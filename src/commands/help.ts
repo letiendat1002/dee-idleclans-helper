@@ -75,7 +75,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
           ].join('\n'),
         },
         {
-          name: `${ICONS.note} Clan vault`,
+          name: `${ICONS.vault} Clan vault`,
           value: [
             '`/vault add <clan> #channel` — follow the vault of a clan',
             '`/vault remove <clan> #channel` — stop following it',

@@ -69,6 +69,8 @@ stay readable.
 | `alert` | Bell | alert surfaces, showcase |
 | `watchlist` | Clipboard | watchlist list and empty state |
 | `digest` | Newspaper | digest surfaces, `/help` server block |
+| `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
+| `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
 | `paused` | Pause button | disarmed alert |
 | `warning` | Warning | thin market, blocked DM, no sell order, every error reply |
 | `clock` | Mantelpiece clock | fired alert, snapshot, rate limit |

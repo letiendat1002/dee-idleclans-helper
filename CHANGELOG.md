@@ -23,6 +23,12 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
   capped to the three largest items per tier. It sums recorded deltas only, so it is never
   presented as a vault balance.
 
+- `/vault list` shows when each channel last accepted a post (`never` until the first one), so a
+  subscription that looks dead can be told apart from a clan that is quiet. Migration `014` adds
+  `vault_channels.last_post_at`; it applies on start like every other migration.
+- The vault surfaces carry their own `vault` icon instead of borrowing the digest newspaper, and
+  `/help` names the clan block with the same icon.
+
 ### Fixed
 
 - A vault tick with more than 30 new entries marked the overflow delivered without printing it. Only

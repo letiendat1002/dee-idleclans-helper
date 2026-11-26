@@ -157,7 +157,7 @@ export function vaultDescription(events: VaultEvent[], rollup: VaultRollup): str
   const rollupLines = vaultRollupLines(rollup);
 
   return [
-    `${ICONS.digest} **${events.length}** new ${noun} · ${vaultWindow(events)}`,
+    `${ICONS.vault} **${events.length}** new ${noun} · ${vaultWindow(events)}`,
     '',
     ...(rollupLines.length > 0 ? [...rollupLines, ''] : []),
     ...vaultBody(events),
@@ -277,6 +277,7 @@ export class VaultNotifier {
           batch.map((event) => event.eventKey),
           target.channelId
         );
+        await VaultLog.markPosted(target.guildId, target.channelId, clanName);
         channels += 1;
         events += batch.length;
       } catch (err) {

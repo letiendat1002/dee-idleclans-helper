@@ -15,6 +15,7 @@ vi.mock('../db/pool.js', () => ({ query: queryMock, pool: { connect: vi.fn() } }
 import { ChannelType, MessageFlags, type APIEmbed, type ChatInputCommandInteraction } from 'discord.js';
 import { DeeError } from '../utils/errors.js';
 import { MAX_VAULT_CHANNELS_PER_GUILD } from '../services/VaultLog.js';
+import { ICONS } from '../ui/theme.js';
 import { handle } from './vault.js';
 
 /** One row of the fake `vault_channels` table. */
@@ -24,6 +25,7 @@ interface ChannelRow {
   clan_name: string;
   created_by: string;
   created_at: Date;
+  last_post_at?: Date;
 }
 
 /** The rows of the fake `vault_channels` table. */
@@ -338,6 +340,14 @@ describe('/vault handle', () => {
         created_by: 'user-1',
         created_at: CREATED_AT,
       },
+      {
+        guild_id: 'guild-1',
+        channel_id: 'channel-2',
+        clan_name: 'AOE',
+        created_by: 'user-1',
+        created_at: CREATED_AT,
+        last_post_at: new Date('2026-11-25T10:12:00Z'),
+      },
     ];
     const { interaction, editReply } = fake({ memberPermissions: true, subcommand: 'list' });
 
@@ -346,7 +356,9 @@ describe('/vault handle', () => {
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
     expect(embed?.title).toContain('Clan vault channels');
     expect(embed?.description).toContain('AOE');
-    expect(embed?.description).toContain(`1 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).toContain(`2 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).toContain('nothing posted yet');
+    expect(embed?.description).toContain('last post 11-25 10:12 UTC');
   });
 
   it('shows the newest entries of a clan, grouped by direction', async () => {
@@ -396,7 +408,7 @@ describe('/vault handle', () => {
     await handle(interaction);
 
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
-    expect(embed?.description).toBe('No entries recorded for AOE.');
+    expect(embed?.description).toBe(`${ICONS.vault} No entries recorded for AOE.`);
   });
 
   it('counts distinct channels, not subscriptions, against the cap', async () => {
