@@ -62,20 +62,19 @@ stay readable.
 
 | Token | Fluent asset | Used for |
 |---|---|---|
-| `buy` | Money bag | `Buy ready-made` field, market list |
-| `margin` | Abacus | `Margin` field, `/help` market block |
-| `depth` | Bar chart | `Market depth` |
-| `note` | Memo | `Assumptions`, craft modifiers |
-| `wiki` | Link | item link, share block |
-| `up` / `down` | Chart increasing / decreasing | price direction, alert DM |
-| `alert` | Bell | alert surfaces, showcase |
-| `watchlist` | Clipboard | watchlist list and empty state |
-| `digest` | Newspaper | digest surfaces, `/help` server block |
+| `margin` | Abacus | `/help` market block |
+| `wiki` | Link | `/help` links block |
+| `up` / `down` | Chart increasing / decreasing | price direction: alert DM, digest, `/watch` |
+| `alert` | Bell | `/watch` + `/digest` hint, an armed watchlist row |
+| `digest` | Newspaper | `/help` server block, `/digest` confirmation |
 | `vault` | Card file box | vault feed, `/vault recent`, `/vault list`, `/help` clan block |
-| `paused` | Pause button | disarmed alert |
-| `warning` | Warning | thin market, blocked DM, no sell order, every error reply |
-| `clock` | Mantelpiece clock | fired alert, snapshot, rate limit |
-| `lock` | Locked | level requirement |
+| `warning` | Warning | every error reply, a blocked-DM row |
+| `clock` | Mantelpiece clock | rate limit, a fired watchlist row |
+
+Nine tokens, and every one is drawn on a surface that exists — `craft`, `buy`, `depth`, `note`,
+`watchlist`, `paused` and `lock` were uploaded for fields that the 2026-11-21 `/buy-or-craft`
+removal took with it, so they were deleted rather than left as documented dead weight. A token is
+added when its surface ships, not before.
 
 **Platform limit that shapes the layout:** Discord expands `<:name:id>` only in embed
 *descriptions* and *field names/values* — never in `title`, `author` or `footer`, where it shows

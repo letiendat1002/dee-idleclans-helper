@@ -80,6 +80,21 @@ describe('UI conventions', () => {
     expect(offenders(/#[0-9a-fA-F]{6}\b/, ['src/ui/theme.ts'])).toEqual([]);
   });
 
+  it('ships no icon token that no surface draws', () => {
+    const theme = readFileSync('src/ui/theme.ts', 'utf8');
+    const start = theme.indexOf('export const ICONS');
+    const tokens = [...theme.slice(start, theme.indexOf('as const', start)).matchAll(/^ {2}([a-z]+):/gm)].map(
+      ([, token]) => token
+    );
+    const drawn = new Set(
+      sources()
+        .filter((path) => path !== 'src/ui/theme.ts')
+        .flatMap((path) => [...readFileSync(path, 'utf8').matchAll(/ICONS\.([a-z]+)/g)].map(([, token]) => token))
+    );
+
+    expect(tokens.filter((token) => !drawn.has(token))).toEqual([]);
+  });
+
   it('never puts an icon token in a title, an author line or a footer', () => {
     const call = /set(Title|Author|Footer)\(/;
     const next = /^\s*(\.set[A-Z]|\))/;
