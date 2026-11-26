@@ -324,7 +324,9 @@ describe('/vault handle', () => {
     await handle(interaction);
 
     expect(channelRows).toHaveLength(0);
-    expect(editReply).toHaveBeenCalledWith({ content: expect.stringContaining('AOE') });
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.title).toContain('Clan vault off');
+    expect(embed?.description).toContain('AOE');
   });
 
   it('lists the clan vault channels of the guild', async () => {
@@ -347,7 +349,7 @@ describe('/vault handle', () => {
     expect(embed?.description).toContain(`1 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
   });
 
-  it('shows the newest entries of a clan, with the window and the delta note', async () => {
+  it('shows the newest entries of a clan, grouped by direction', async () => {
     eventRows = [
       {
         clan_name: 'DeeCorp',
@@ -381,10 +383,10 @@ describe('/vault handle', () => {
 
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
     expect(embed?.title).toContain('DeeCorp');
-    expect(embed?.description).toContain('2 entries · 10:10–10:12 UTC');
-    expect(embed?.footer?.text).toBe(
-      'clan log · last 14 days · deltas only, the game publishes no vault totals'
-    );
+    expect(embed?.description).toContain('entries · 10:10–10:12 UTC');
+    expect(embed?.description).toContain('**In · 1**');
+    expect(embed?.description).toContain('**Out · 1**');
+    expect(embed?.footer?.text).toBe('clan log · last 14 days');
   });
 
   it('says so when a clan has no entry in the window', async () => {
@@ -393,6 +395,24 @@ describe('/vault handle', () => {
     await handle(interaction);
 
     const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
-    expect(embed?.description).toContain('No entries for AOE in the last 14 days.');
+    expect(embed?.description).toBe('No entries recorded for AOE.');
+  });
+
+  it('counts distinct channels, not subscriptions, against the cap', async () => {
+    channelRows = [
+      { guild_id: 'guild-1', channel_id: 'channel-1', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-1', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-2', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-2', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-3', clan_name: 'AOE', created_by: 'user-1', created_at: CREATED_AT },
+      { guild_id: 'guild-1', channel_id: 'channel-3', clan_name: 'TST', created_by: 'user-1', created_at: CREATED_AT },
+    ];
+    const { interaction, editReply } = fake({ memberPermissions: true, subcommand: 'list' });
+
+    await handle(interaction);
+
+    const embed = editReply.mock.calls[0][0].embeds?.[0].toJSON();
+    expect(embed?.description).toContain(`3 of ${MAX_VAULT_CHANNELS_PER_GUILD} channels subscribed`);
+    expect(embed?.description).not.toContain(`6 of`);
   });
 });

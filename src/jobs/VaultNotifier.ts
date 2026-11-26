@@ -12,7 +12,12 @@
 import { EmbedBuilder, type Client, type SendableChannels } from 'discord.js';
 import { createLogger } from '../utils/logger.js';
 import { getClanLogs } from '../services/IdleClansApi.js';
-import { VaultLog, type VaultEvent, type VaultSubscription } from '../services/VaultLog.js';
+import {
+  VaultLog,
+  type VaultEvent,
+  type VaultEventKind,
+  type VaultSubscription,
+} from '../services/VaultLog.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 import { canPost } from '../ui/channel.js';
 
@@ -42,12 +47,13 @@ export interface VaultRunResult {
 }
 
 /**
- * The footer of every vault message: where the lines come from, and what the
- * game does not publish. A reader who expects a vault total has to be told
- * here, because the API has no endpoint for one.
+ * The footer of every vault message: where the lines come from.
+ *
+ * It is provenance, not an API disclaimer: a reader who wants a vault total
+ * asks the game, and the post does not apologise for what the feed is not.
  */
 export function vaultFooter(): string {
-  return `clan log · last ${RETENTION_DAYS} days · deltas only, the game publishes no vault totals`;
+  return `clan log · last ${RETENTION_DAYS} days`;
 }
 
 /**
@@ -82,42 +88,66 @@ function vaultNumbers(message: string): { from?: number; to?: number } {
   return { from: Number(match[4]) };
 }
 
+/** The directions of a post, in the order a reader scans them. */
+const VAULT_GROUPS: ReadonlyArray<{ kind: VaultEventKind; label: string }> = [
+  { kind: 'deposit', label: 'In' },
+  { kind: 'withdraw', label: 'Out' },
+  { kind: 'move', label: 'Moved' },
+  { kind: 'other', label: 'Other' },
+];
+
 /**
  * The line of one entry in one shape, whatever grammar the game used: a deposit
  * reads `to vault 1`, a withdrawal `from vault 1`, a move `from vault 1 to vault 2`.
+ *
+ * The UTC date and time lead so a line can be checked against the game's own
+ * log: a clock alone would read as today even when a backlog is a day old.
  */
 export function formatVaultLine(event: VaultEvent): string {
   if (event.kind === 'other') return event.message;
 
   const verb = event.kind === 'deposit' ? 'added' : event.kind === 'withdraw' ? 'withdrew' : 'moved';
   const quantity = event.quantity.toLocaleString('en-US');
-  const line = `${event.memberUsername} ${verb} ${quantity}x ${event.itemName}`;
+  const line = `${event.memberUsername} ${verb} **${quantity}x ${event.itemName}**`;
   const { from, to } = vaultNumbers(event.message);
   const out = from === undefined ? '' : ` from vault ${from}`;
   const into = to === undefined ? '' : ` to vault ${to}`;
+  const clock = event.happenedAt.toISOString().slice(5, 16).replace('T', ' ');
 
-  if (event.kind === 'withdraw') return line + out;
-  if (event.kind === 'move') return line + out + into;
-  return line + into;
+  const body =
+    event.kind === 'withdraw' ? line + out : event.kind === 'move' ? line + out + into : line + into;
+
+  return `\`${clock}\` ${body}`;
 }
 
 /**
- * The description of a vault message: the header, the entries and the count of
- * the entries that did not fit.
+ * The entries of a post grouped by direction: what came in, what went out and
+ * what moved between vaults, each group counted. A member asking "what came in
+ * today" reads one block instead of re-parsing thirty sentences.
+ */
+export function vaultBody(events: VaultEvent[]): string[] {
+  const lines: string[] = [];
+  for (const group of VAULT_GROUPS) {
+    const rows = events.filter((event) => event.kind === group.kind);
+    if (rows.length === 0) continue;
+    if (lines.length > 0) lines.push('');
+    lines.push(`**${group.label} · ${rows.length}**`);
+    lines.push(...rows.map(formatVaultLine));
+  }
+
+  return lines;
+}
+
+/**
+ * The description of a vault message: the header, then the grouped entries.
  */
 export function vaultDescription(events: VaultEvent[]): string {
-  const shown = events.slice(0, MAX_EVENTS_PER_MESSAGE);
-  const left = events.length - shown.length;
-
-  const lines = [
-    `${ICONS.digest} ${events.length} new ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
+  const noun = events.length === 1 ? 'entry' : 'entries';
+  return [
+    `${ICONS.digest} **${events.length}** new ${noun} · ${vaultWindow(events)}`,
     '',
-    ...shown.map(formatVaultLine),
-  ];
-
-  if (left > 0) lines.push('', `… and ${left} more`);
-
-  return lines.join('\n');
+    ...vaultBody(events),
+  ].join('\n');
 }
 
 /**
@@ -218,18 +248,22 @@ export class VaultNotifier {
       const pending = await VaultLog.undeliveredFor(clanName, target.channelId, target.createdAt);
       if (pending.length === 0) continue;
 
+      // Only the batch that is actually printed is marked delivered: the rest
+      // posts on the next tick instead of vanishing behind a "more" line.
+      const batch = pending.slice(0, MAX_EVENTS_PER_MESSAGE);
+
       try {
         await channel.send({
-          embeds: [VaultNotifier.buildEmbed(clanName, pending, avatarUrl)],
+          embeds: [VaultNotifier.buildEmbed(clanName, batch, avatarUrl)],
           flags: SUPPRESS_NOTIFICATIONS,
         });
         await VaultLog.markDelivered(
           clanName,
-          pending.map((event) => event.eventKey),
+          batch.map((event) => event.eventKey),
           target.channelId
         );
         channels += 1;
-        events += pending.length;
+        events += batch.length;
       } catch (err) {
         logger.error('clan vault post failed for a channel', {
           clanName,

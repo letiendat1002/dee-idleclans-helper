@@ -34,16 +34,15 @@ import { safeReply } from '../ui/reply.js';
 import { canPost } from '../ui/channel.js';
 import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
 import { VaultLog, MAX_VAULT_CHANNELS_PER_GUILD } from '../services/VaultLog.js';
-import { formatVaultLine, vaultFooter, vaultWindow } from '../jobs/VaultNotifier.js';
+import { vaultBody, vaultFooter, vaultWindow } from '../jobs/VaultNotifier.js';
 
 const logger = createLogger('VAULT');
 
 /** The most channels one guild may follow with the clan vault. */
 const MAX_CHANNELS = MAX_VAULT_CHANNELS_PER_GUILD;
 
-/** What the bot reads and how late an entry can be. */
-const SOURCE_NOTE =
-  'The bot reads the public clan log of the game: a 14-day window, and an entry can arrive up to ~30 minutes late.';
+/** The most entries one card prints, the same cap the feed uses. */
+const MAX_ENTRIES = 30;
 
 export const builder = new SlashCommandBuilder()
   .setName('vault')
@@ -101,9 +100,9 @@ export const builder = new SlashCommandBuilder()
       .addIntegerOption((opt) =>
         opt
           .setName('limit')
-          .setDescription('How many entries to show (1-50, default 20)')
+          .setDescription('How many entries to show (1-30, default 20)')
           .setMinValue(1)
-          .setMaxValue(50)
+          .setMaxValue(MAX_ENTRIES)
       )
   );
 
@@ -149,10 +148,10 @@ async function handleAdd(interaction: ChatInputCommandInteraction, guild: Guild)
     .setTitle(`Clan vault on — #${cached.name}`)
     .setDescription(
       [
-        `${ICONS.digest} The vault of ${clan} posts in #${cached.name}. It never pushes a notification.`,
+        `${ICONS.digest} The vault of ${clan} posts in #${cached.name}. Posts arrive without a ping.`,
         '',
-        `A server can subscribe at most ${MAX_CHANNELS} channels.`,
-        SOURCE_NOTE,
+        `A server can follow at most ${MAX_CHANNELS} channels.`,
+        'The game can deliver an entry about 30 minutes late.',
       ].join('\n')
     );
 
@@ -179,7 +178,14 @@ async function handleRemove(interaction: ChatInputCommandInteraction, guild: Gui
   }
 
   const name = guild.channels.cache.get(channelId)?.name ?? channelId;
-  await interaction.editReply({ content: `Clan vault off — #${name} no longer follows ${clan}.` });
+  const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.success)
+    .setAuthor(brandAuthor(avatarUrl))
+    .setTitle(`Clan vault off — #${name}`)
+    .setDescription(`${ICONS.digest} #${name} no longer follows the vault of ${clan}.`);
+
+  await interaction.editReply({ embeds: [embed] });
 }
 
 /**
@@ -188,6 +194,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction, guild: Gui
 async function handleList(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
   const subscriptions = await VaultLog.listSubscriptions(guild.id);
   const clans = new Set(subscriptions.map((row) => row.clanName));
+  const channels = new Set(subscriptions.map((row) => row.channelId));
 
   const lines = subscriptions.map((row) => {
     const name = guild.channels.cache.get(row.channelId)?.name ?? row.channelId;
@@ -201,13 +208,13 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
     .setTitle('Clan vault channels')
     .setDescription(
       [
-        `${subscriptions.length} of ${MAX_CHANNELS} channels subscribed · ${clans.size} ${
+        `${channels.size} of ${MAX_CHANNELS} channels subscribed · ${clans.size} ${
           clans.size === 1 ? 'clan' : 'clans'
         }.`,
         '',
-        ...(lines.length === 0 ? ['No channel follows a clan vault yet.'] : lines),
-        '',
-        SOURCE_NOTE,
+        ...(lines.length === 0
+          ? ['No channel follows a clan vault yet. Follow one with `/vault add`.']
+          : lines),
       ].join('\n')
     );
 
@@ -237,14 +244,13 @@ async function handleRecent(interaction: ChatInputCommandInteraction): Promise<v
     .setAuthor(brandAuthor(avatarUrl))
     .setTitle(`Clan vault — ${clan}`)
     .setDescription(
-      [
-        events.length === 0
-          ? `No entries for ${clan} in the last 14 days.`
-          : `${events.length} ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
-        ...(events.length === 0 ? [] : ['', ...events.map(formatVaultLine)]),
-        '',
-        SOURCE_NOTE,
-      ].join('\n')
+      events.length === 0
+        ? `No entries recorded for ${clan}.`
+        : [
+            `Newest **${events.length}** ${events.length === 1 ? 'entry' : 'entries'} · ${vaultWindow(events)}`,
+            '',
+            ...vaultBody(events),
+          ].join('\n')
     )
     .setFooter({ text: vaultFooter() });
 

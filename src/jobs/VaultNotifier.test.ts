@@ -313,7 +313,7 @@ describe('VaultNotifier.runClan', () => {
     expect((sends.get('channel-1') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
   });
 
-  it('caps a digest at thirty lines and says how many were left out', async () => {
+  it('caps a post at thirty lines and posts the rest on the next tick', async () => {
     subscribe('channel-1', 'AOE', new Date('2026-11-01T00:00:00Z'));
     getClanLogsMock.mockResolvedValue(
       Array.from(
@@ -326,12 +326,17 @@ describe('VaultNotifier.runClan', () => {
       )
     );
     const { client, sends } = fakeClient([{ id: 'channel-1' }]);
+    const send = sends.get('channel-1') as ReturnType<typeof vi.fn>;
 
-    await VaultNotifier.runClan(client, 'AOE');
+    expect(await VaultNotifier.runClan(client, 'AOE')).toEqual({ channels: 1, events: 30 });
+    const first = sentEmbed(send);
+    expect(first.description).toContain('**30** new entries · 10:00–10:29 UTC');
+    expect(first.description).not.toContain('more');
+    expect(deliveryRows).toHaveLength(30);
 
-    const embed = sentEmbed(sends.get('channel-1') as ReturnType<typeof vi.fn>);
-    expect(embed.description).toContain('32 new entries · 10:00–10:31 UTC');
-    expect(embed.description).toContain('… and 2 more');
+    expect(await VaultNotifier.runClan(client, 'AOE')).toEqual({ channels: 1, events: 2 });
+    expect(sentEmbed(send, 1).description).toContain('**2** new entries · 10:30–10:31 UTC');
+    expect(deliveryRows).toHaveLength(32);
   });
 
   it('removes a channel the bot cannot post in', async () => {
@@ -482,12 +487,12 @@ describe('vaultDescription', () => {
 
     const description = vaultDescription(events);
 
-    expect(description).toContain('12 new entries · 10:00–10:11 UTC');
+    expect(description).toContain('**12** new entries · 10:00–10:11 UTC');
     expect(description).toContain('12x Gold');
-    expect(description).not.toContain('more');
+    expect(description).toContain('**In · 12**');
   });
 
-  it('names no leftover count when every entry fits', () => {
+  it('groups the entries by direction', () => {
     const events = [
       {
         clanName: 'AOE',
@@ -499,43 +504,68 @@ describe('vaultDescription', () => {
         quantity: 5,
         happenedAt: new Date('2026-11-02T10:00:00.000Z'),
       },
+      {
+        clanName: 'AOE',
+        eventKey: 'key-2',
+        memberUsername: 'USERNAME',
+        message: 'USERNAME withdrew 2x Gold from tier 1.',
+        kind: 'withdraw' as const,
+        itemName: 'Gold',
+        quantity: 2,
+        happenedAt: new Date('2026-11-02T10:01:00.000Z'),
+      },
+      {
+        clanName: 'AOE',
+        eventKey: 'key-3',
+        memberUsername: 'USERNAME',
+        message: 'USERNAME moved 1x Gold from tier 1 to tier 2.',
+        kind: 'move' as const,
+        itemName: 'Gold',
+        quantity: 1,
+        happenedAt: new Date('2026-11-02T10:02:00.000Z'),
+      },
     ];
 
-    expect(vaultDescription(events)).not.toContain('and 0 more');
+    const description = vaultDescription(events);
+
+    expect(description).toContain('**In · 1**');
+    expect(description).toContain('**Out · 1**');
+    expect(description).toContain('**Moved · 1**');
+    expect(description).not.toContain('more');
   });
 });
 
-describe('formatVaultLine', () => {
-  /** One parsed vault event, as the log reader hands it over. */
-  const event = (kind: 'deposit' | 'withdraw' | 'move', message: string, quantity: number) => ({
-    clanName: 'AOE',
-    eventKey: `key-${kind}-${quantity}`,
-    memberUsername: 'USERNAME',
-    message,
-    kind,
-    itemName: 'Gold',
-    quantity,
-    happenedAt: new Date('2026-11-25T04:35:00.000Z'),
-  });
+/** One parsed vault event, as the log reader hands it over. */
+const event = (kind: 'deposit' | 'withdraw' | 'move', message: string, quantity: number) => ({
+  clanName: 'AOE',
+  eventKey: `key-${kind}-${quantity}`,
+  memberUsername: 'USERNAME',
+  message,
+  kind,
+  itemName: 'Gold',
+  quantity,
+  happenedAt: new Date('2026-11-25T04:35:00.000Z'),
+});
 
+describe('formatVaultLine', () => {
   it('reads a deposit and a withdrawal with the same vault wording', () => {
     expect(formatVaultLine(event('deposit', 'USERNAME added 69x Gold (tier 1).', 69))).toBe(
-      'USERNAME added 69x Gold to vault 1'
+      '`11-25 04:35` USERNAME added **69x Gold** to vault 1'
     );
     expect(formatVaultLine(event('withdraw', 'USERNAME withdrew 67x Gold from tier 1.', 67))).toBe(
-      'USERNAME withdrew 67x Gold from vault 1'
+      '`11-25 04:35` USERNAME withdrew **67x Gold** from vault 1'
     );
   });
 
   it('names both vaults of a move', () => {
     expect(
       formatVaultLine(event('move', 'USERNAME moved 5x Gold from tier 1 to tier 2.', 5))
-    ).toBe('USERNAME moved 5x Gold from vault 1 to vault 2');
+    ).toBe('`11-25 04:35` USERNAME moved **5x Gold** from vault 1 to vault 2');
   });
 
   it('leaves the location out when the game named none', () => {
     expect(formatVaultLine(event('deposit', 'USERNAME added 5x Gold.', 5))).toBe(
-      'USERNAME added 5x Gold'
+      '`11-25 04:35` USERNAME added **5x Gold**'
     );
   });
 });
