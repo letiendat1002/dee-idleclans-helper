@@ -60,6 +60,7 @@ describe('/help', () => {
     expect(text).toContain('/unwatch');
     expect(text).toContain('/watchlist');
     expect(text).toContain('/digest');
+    expect(text).toContain('/insight');
     expect(text).not.toContain('/profile');
     expect(text).toContain('/price');
     expect(text).toContain('average traded price over 24h, 7d, 30d or 1y');
@@ -69,7 +70,7 @@ describe('/help', () => {
     expect(text).toContain('https://letiendat1002.github.io/dee-idleclans-helper/privacy.html');
     expect(text).toContain('https://letiendat1002.github.io/dee-idleclans-helper/terms.html');
     expect(embed?.footer?.text).toContain('Made by HRDDee');
-    expect(embed?.footer?.text).toContain('5 uses per minute (except /help) · digest and vault post publicly');
+    expect(embed?.footer?.text).toContain('5 uses per minute (except /help) · digest, insights and vault post publicly');
     // A footer renders as plain text: markdown there reaches the reader as brackets.
     expect(embed?.footer?.text).not.toContain('](');
     expect(JSON.stringify(embed)).toContain('[Support on Ko-fi](https://ko-fi.com/letiendat1002)');
