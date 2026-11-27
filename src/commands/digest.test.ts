@@ -184,14 +184,14 @@ beforeEach(() => {
 });
 
 describe('/digest handle', () => {
-  it('answers a rate-limit error ephemerally', async () => {
+  it('acknowledges before the limiter, then answers a refusal', async () => {
     check.mockRejectedValueOnce(new DeeError('⏱ Slow down', 'E1', 'E1_004'));
     const { interaction, deferReply } = fake();
 
     await handle(interaction);
 
+    expect(deferReply).toHaveBeenCalledTimes(1);
     expect(safeReply).toHaveBeenCalledWith(interaction, { content: '⏱ Slow down', flags: 64 });
-    expect(deferReply).not.toHaveBeenCalled();
   });
 
   it('runs even when the member has no Manage Server, because Discord owns command access', async () => {
