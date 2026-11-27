@@ -159,6 +159,11 @@ export class MarketInsights {
           flags: SUPPRESS_NOTIFICATIONS,
         });
         await InsightSettings.markSent(subscription.guildId, subscription.channelId);
+        logger.info('insight posted', {
+          channelId: subscription.channelId,
+          posted: insights.length,
+          ids: insights.map((row) => row.id),
+        });
       } catch (err) {
         logger.error('insight post failed for a channel', {
           channelId: subscription.channelId,
