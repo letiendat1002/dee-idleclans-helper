@@ -60,6 +60,8 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
   const userId = interaction.user.id;
 
   try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     await rateLimiter.check(userId, 'watchlist');
   } catch (err) {
     if (err instanceof DeeError) {
@@ -68,8 +70,6 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     }
     throw err;
   }
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const rows = await WatchlistService.list(userId);

@@ -33,6 +33,8 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
   const rawItem = interaction.options.getString('item', true);
 
   try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     await rateLimiter.check(userId, 'unwatch');
   } catch (err) {
     if (err instanceof DeeError) {
@@ -41,8 +43,6 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     }
     throw err;
   }
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const itemId = Number(rawItem);

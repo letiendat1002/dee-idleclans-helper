@@ -41,14 +41,14 @@ beforeEach(() => {
 });
 
 describe('/unwatch handle', () => {
-  it('answers a rate-limit error ephemerally without deferring', async () => {
+  it('acknowledges before the limiter, then answers a refusal', async () => {
     check.mockRejectedValueOnce(new DeeError('⏱ Slow down', 'E1', 'E1_004'));
     const interaction = fakeInteraction();
 
     await handle(interaction);
 
+    expect(interaction.deferReply).toHaveBeenCalledTimes(1);
     expect(safeReply).toHaveBeenCalledWith(interaction, { content: '⏱ Slow down', flags: 64 });
-    expect(interaction.deferReply).not.toHaveBeenCalled();
   });
 
   it('rejects a non-integer item id before any lookup', async () => {
