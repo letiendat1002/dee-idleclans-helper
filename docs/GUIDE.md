@@ -45,6 +45,7 @@ channels, delete messages or manage roles.
 |---|---|
 | `#market-digest` (or any text channel) | `/digest add` |
 | `#clan-vault` (or any text channel) | `/vault add` |
+| `#market-insight` (or any text channel) | `/insight add` |
 
 The bot must be able to **View Channel** and **Send Messages** in that channel —
 a per-channel overwrite later can take that away without any integration
@@ -133,6 +134,21 @@ The bot reads the game's public clan log: a **14-day window**, and an entry can
 arrive up to about **30 minutes late**. Who can change it is set in
 **Server Settings > Integrations** (default: Manage Server).
 
+### `/insight` — a market where nobody is selling
+
+| Subcommand | Does |
+|---|---|
+| `add channel:<#channel>` | subscribe a channel (max **1 per server**) |
+| `remove channel:<#channel>` | unsubscribe |
+| `list` | show the subscription and interval |
+| `interval hours:<n>` | how often a post may happen: 1, 2, 4, 6, 12 or 24 (default 4) |
+
+Posts when an item's **sell side has been empty for a day or more**: the last
+sell price and the day the offers stopped. It is a rate cap, not a schedule — no
+finding, no post — and it never pushes a notification. Who can change it is set
+in **Server Settings > Integrations** (default: Manage Server); anyone can read
+`list`.
+
 ### `/help`
 
 Lists the commands and the invite link. Also answers an `@mention` with the same
@@ -147,7 +163,9 @@ overview.
 | Commands per user per minute | 5, per command |
 | Digest channels per server | 1 |
 | Vault channels per server | 5 |
+| Insight channels per server | 1 |
 | Digest cadence | any quarter hour, 15 min – 24 h |
+| Insight cadence | 1, 2, 4, 6, 12 or 24 h (default 4) |
 | Snapshot freshness | ~2 minutes |
 | Alert check | every 2 minutes |
 | Vault log window | 14 days, entries up to ~30 min late |
@@ -157,7 +175,7 @@ overview.
 ## 5. Data and privacy
 
 Stored: server id, channel id, user id, item ids, your alert thresholds and the
-digest/vault subscriptions. Not stored: message content, usernames, inventories
+digest, vault and insight subscriptions. Not stored: message content, usernames, inventories
 or anything about your game account. Price data is public market data. Removing a
 subscription deletes its row; alerts are deleted by `/unwatch`.
 

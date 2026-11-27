@@ -18,6 +18,7 @@ shows: the **sell price** a buyer pays, the **buy order** a seller receives, the
 | `/graph` | the sell price over the last 24 hours, 7 days or 30 days |
 | `/watch`, `/unwatch`, `/watchlist` | DM me when the sell price drops or the buy order rises |
 | `/digest` | post the market summary to a channel on a cadence |
+| `/insight` | post an item whose sell side has been empty for a day or more |
 | `/vault` | post clan vault activity to a channel |
 | `/help` | the summary, in one message |
 

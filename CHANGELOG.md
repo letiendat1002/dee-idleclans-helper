@@ -10,6 +10,28 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-27
+
+### Added
+
+- `/insight` posts an item whose sell side has been empty for a day or more, at most every 4 hours
+  by default. It is a rate cap, not a schedule — no finding, no post — and it never pushes a
+  notification. Migration `015` adds `insight_channels`, `insights` and `book_hourly`;
+  `book_hourly` is rolled up from `price_snapshots` on the first run (30 days) and then hourly in
+  the job's own tick. The flip and the range edge were measured below the design's 90%
+  persistence gate and do not ship (`docs/DEFERRED.md` D21).
+
+### Fixed
+
+- `/insight` acknowledges the click before its first query, so a slow Redis round-trip no longer
+  spends Discord's 3s budget. Measured on DIH Dev: 3.39s between the click and the acknowledgement,
+  and the user saw "The application did not respond".
+- `/price`, `/graph`, `/unwatch`, `/watchlist`, `/digest`, `/vault` and the share buttons acknowledge
+  before the rate limiter, so a slow Redis can no longer spend Discord's 3s budget on them either;
+  `/graph`'s range menu reports a refusal in a follow-up so a refused click cannot replace the
+  chart. `/watch` still acknowledges after the limiter because a deferred interaction cannot open a
+  modal (`docs/DEFERRED.md` D23).
+
 ## [1.6.0] - 2026-11-26
 
 ### Changed

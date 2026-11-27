@@ -67,6 +67,22 @@ Ba biến trong `.env.dev` làm việc tách stack, đừng bỏ cái nào:
 | `ENV_FILE=.env.dev` | container nạp env của app dev | container nạp `.env` → **chạy token production**, trả lời đôi |
 | `POSTGRES_DB=idleclans_dev` | tên DB trong container dev | dev ghi vào DB `idleclans` của stack dev (rỗng), dump restore lệch chỗ |
 
+Biến thứ năm quyết định card có hiện đúng như production không: `ICONS_JSON` (xem §3.1).
+
+### 3.1 Emoji của application dev
+
+Application emoji thuộc đúng **một** application, nên bot dev không render được id của production:
+card hiện `:digest:` dạng chữ thay vì ảnh. Upload cùng bộ tên — `margin`, `wiki`, `up`, `down`,
+`alert`, `digest`, `warning`, `clock`, `vault` — vào application dev rồi đặt trong `.env.dev`:
+
+```bash
+ICONS_JSON={"margin":"<id>","wiki":"<id>","up":"<id>","down":"<id>","alert":"<id>","digest":"<id>","warning":"<id>","clock":"<id>","vault":"<id>"}
+```
+
+Ảnh lấy nguyên từ app production (`GET https://cdn.discordapp.com/emojis/<id>.png?size=128`) rồi
+`POST /applications/<dev-app-id>/emojis` với `{"name":..., "image":"data:image/png;base64,..."}`.
+Thiếu biến này bot vẫn chạy — nó dùng id production và chỉ mất phần ảnh.
+
 Nạp dữ liệu thật vào DB dev từ dump mới nhất:
 
 ```bash

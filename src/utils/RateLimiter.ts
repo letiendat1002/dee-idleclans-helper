@@ -26,6 +26,7 @@ export const LIMITS = {
   unwatch: { max: 5, windowMs: 60_000 },
   watchlist: { max: 5, windowMs: 60_000 },
   digest: { max: 5, windowMs: 60_000 },
+  insight: { max: 5, windowMs: 60_000 },
   vault: { max: 5, windowMs: 60_000 },
   share: { max: 5, windowMs: 60_000 },
 } as const;

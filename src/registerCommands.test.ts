@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe('registerCommands', () => {
-  it('registers the eight commands globally and clears every joined guild', async () => {
+  it('registers the nine commands globally and clears every joined guild', async () => {
     await registerCommands(['guild-1', 'guild-2']);
 
     expect(put).toHaveBeenCalledTimes(3);
@@ -47,6 +47,7 @@ describe('registerCommands', () => {
       'graph',
       'price',
       'digest',
+      'insight',
       'vault',
       'help',
     ]);
@@ -59,7 +60,7 @@ describe('registerCommands', () => {
   it('logs both registrations', async () => {
     await registerCommands(['guild-1']);
 
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Registered 8 commands'));
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Registered 9 commands'));
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('1 guild'), { guildIds: ['guild-1'] });
   });
 });

@@ -35,14 +35,17 @@ import {
   handleShareButton as handlePriceShare,
 } from './commands/price.js';
 import { builder as digestBuilder, handle as digestHandle, autocomplete as digestAutocomplete } from './commands/digest.js';
+import { builder as insightBuilder, handle as insightHandle, autocomplete as insightAutocomplete } from './commands/insight.js';
 import { builder as vaultBuilder, handle as vaultHandle, autocomplete as vaultAutocomplete } from './commands/vault.js';
 import { builder as helpBuilder, handle as helpHandle } from './commands/help.js';
 import { MessageHandler } from './events/MessageHandler.js';
 import { AlertDispatcher } from './jobs/AlertDispatcher.js';
 import { MarketDigest } from './jobs/MarketDigest.js';
+import { MarketInsights } from './jobs/MarketInsights.js';
 import { VaultNotifier } from './jobs/VaultNotifier.js';
 import { ItemCatalogue } from './services/ItemCatalogue.js';
 import { DigestSettings } from './services/DigestSettings.js';
+import { InsightSettings } from './services/InsightSettings.js';
 import { VaultLog } from './services/VaultLog.js';
 import { beat } from './utils/heartbeat.js';
 
@@ -70,6 +73,7 @@ const commandMap: Record<string, CommandHandler> = {
   'graph': { builder: graphBuilder, handle: graphHandle, autocomplete: graphAutocomplete },
   'price': { builder: priceBuilder, handle: priceHandle, autocomplete: priceAutocomplete },
   'digest': { builder: digestBuilder, handle: digestHandle, autocomplete: digestAutocomplete },
+  'insight': { builder: insightBuilder, handle: insightHandle, autocomplete: insightAutocomplete },
   'vault': { builder: vaultBuilder, handle: vaultHandle, autocomplete: vaultAutocomplete },
   'help': { builder: helpBuilder, handle: helpHandle },
 };
@@ -110,6 +114,13 @@ client.on(Events.ChannelDelete, (channel) => {
 
   void VaultLog.removeChannelById(channel.id).catch((err: unknown) => {
     logger.error('Failed to drop the clan vault subscription of a deleted channel', {
+      channelId: channel.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+
+  void InsightSettings.removeChannelById(channel.id).catch((err: unknown) => {
+    logger.error('Failed to drop the insight subscription of a deleted channel', {
       channelId: channel.id,
       error: err instanceof Error ? err.message : String(err),
     });
@@ -168,6 +179,7 @@ client.once('clientReady', async () => {
     await ItemCatalogue.start(30 * 60_000);
     await AlertDispatcher.start(client, 120_000);
     await MarketDigest.start(client, 60_000);
+    await MarketInsights.start(client);
     await VaultNotifier.start(client);
   } catch (err) {
     logger.error('Job startup failed', { error: err });

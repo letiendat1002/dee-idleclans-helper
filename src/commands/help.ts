@@ -71,7 +71,10 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
             '`/digest remove` — unsubscribe a channel',
             '`/digest list` — the digest channels of this server',
             '`/digest interval <hours> [minutes]` — how often the digest posts, 15 minutes to once a day',
-            'Access is set in Server Settings > Integrations · one channel per server',
+            '`/insight add #channel` — subscribe a channel to the market insights',
+            '`/insight remove` · `/insight list` — the insight channel of this server',
+            '`/insight interval <hours>` — how often insights may post, 1 to 24 hours',
+            'Access is set in Server Settings > Integrations · one channel per server for each',
           ].join('\n'),
         },
         {
@@ -100,7 +103,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
       // showed as literal brackets. The links live in the field; the footer is
       // one plain line.
       .setFooter({
-        text: 'Made by HRDDee · 5 uses per minute (except /help) · digest and vault post publicly',
+        text: 'Made by HRDDee · 5 uses per minute (except /help) · digest, insights and vault post publicly',
       });
 
     await safeReply(interaction, { embeds: [embed], flags: 64 });

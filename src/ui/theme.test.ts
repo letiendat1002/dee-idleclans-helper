@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   BRAND_NAME,
   COLORS,
   ICONS,
+  appIconIds,
   brandAuthor,
+  iconToken,
   formatMoney,
   formatUtcClock,
   priceFooter,
@@ -72,5 +74,39 @@ describe('theme', () => {
   it('gives every icon its own glyph', () => {
     const values = Object.values(ICONS);
     expect(new Set(values).size).toBe(values.length);
+  });
+});
+
+describe('iconToken', () => {
+  it('renders the id this application uploaded when the deployment names one', () => {
+    expect(iconToken('digest', '111', { digest: '1575806155525984343' })).toBe('<:digest:1575806155525984343>');
+  });
+
+  it('falls back to the production id when the deployment names none', () => {
+    expect(iconToken('digest', '111', {})).toBe('<:digest:111>');
+  });
+
+  it('keeps the token shape even for a name the deployment does not have', () => {
+    expect(iconToken('vault', '222', { digest: '1575806155525984343' })).toBe('<:vault:222>');
+  });
+});
+
+describe('appIconIds', () => {
+  it('reads a name-to-id map and drops anything that is not a snowflake', () => {
+    expect(appIconIds('{"digest":"1575806155525984343","wiki":"nope","up":42}')).toEqual({
+      digest: '1575806155525984343',
+    });
+  });
+
+  it('treats an unset value as no override', () => {
+    expect(appIconIds(undefined)).toEqual({});
+    expect(appIconIds('')).toEqual({});
+  });
+
+  it('warns once and ignores a broken value, so a typo cannot break a card', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(appIconIds('{not json')).toEqual({});
+    expect(warn).toHaveBeenCalledWith('[ICONS] ICONS_JSON is not valid JSON; using the production ids');
+    warn.mockRestore();
   });
 });
