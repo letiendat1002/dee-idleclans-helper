@@ -7,8 +7,8 @@
  * must be able to rebuild the hour it missed, and a recomputed hour must not
  * double-count.
  *
- * The first run backfills the whole raw window, because the six-day baselines
- * would otherwise stay silent for the first week of the feature.
+ * The first run backfills the whole raw window, so the detector has the hours
+ * before a dry spell instead of only the spell itself.
  */
 import { query } from '../db/pool.js';
 import { createLogger } from '../utils/logger.js';

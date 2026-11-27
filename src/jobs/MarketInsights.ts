@@ -33,15 +33,8 @@ const MAX_STANZAS = 3;
 /** Month names, because `toLocaleDateString` differs by runtime. */
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** The method line each pattern declares in the footer. */
-const METHODS: Record<string, string> = {
-  dry_sell_side: 'book medians over 24h against the previous six days',
-  book_flipped: 'listed volume for today against the previous six days',
-  pinned_at_edge: 'sell price against its own six-day range',
-};
-
-/** The generic footer method when a post mixes patterns. */
-const MIXED_METHOD = 'book medians over 24h against the previous six days';
+/** The method line the footer declares: what the finding was measured on. */
+const METHOD = 'hourly book, sell side empty for 24h or more';
 
 /** `26 Nov`, in UTC. */
 function dayMonth(value: Date | string): string {
@@ -56,58 +49,17 @@ function cadence(minutes: number): string {
   return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
 }
 
-/** A count with grouped thousands: `106,915`. */
-function units(value: number): string {
-  return Math.round(value).toLocaleString('en-US');
-}
-
-/** A signed weekly move: `unchanged over the week`, `up 12% over the week`. */
-function weeklyPhrase(change: number | null | undefined): string {
-  if (change === null || change === undefined || !Number.isFinite(change)) return 'no weekly comparison yet';
-  if (Math.abs(change) < 2) return 'unchanged over the week';
-  return `${change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(change))}% over the week`;
-}
-
 /** One finding as the three lines the card shows. */
 export function stanza(insight: Insight): string {
   const body = insight.body;
-
-  if (insight.pattern === 'dry_sell_side') {
-    const hours = body.hours ?? 0;
-    const headline =
-      hours >= 24
-        ? `**Off the board since ${dayMonth(body.lastOfferAt ?? insight.firedAt)}**`
-        : `**No sell orders for ${hours} hours**`;
-    const price = body.ask === null || body.ask === undefined ? 'no sell price' : `last sell price ${formatMoney(body.ask)}`;
-    const until = body.lastOfferAt
-      ? `Had sell orders until ${dayMonth(body.lastOfferAt)}, ${formatUtcClock(new Date(body.lastOfferAt))} UTC.`
-      : 'Had sell orders earlier in the window.';
-    return [headline, `${body.name} · ${price}`, until].join('\n');
-  }
-
-  if (insight.pattern === 'book_flipped') {
-    const askWanted = body.askWanted ?? 0;
-    const bidWanted = body.bidWanted ?? 0;
-    const ratio = body.ratio ?? 0;
-    const headline =
-      body.direction === 'bid_heavy'
-        ? `**${ratio} times more wanted than for sale**`
-        : `**${ratio} times more for sale than wanted**`;
-    const price = body.ask === null || body.ask === undefined ? 'no sell price' : `sell price ${formatMoney(body.ask)}`;
-    return [
-      headline,
-      `${body.name} · ${price}, ${weeklyPhrase(body.weekChangePct)}`,
-      `${units(askWanted)} units for sale against ${units(bidWanted)} wanted. Previous six days: ${units(body.prevAsk ?? 0)} for sale against ${units(body.prevBid ?? 0)} wanted.`,
-    ].join('\n');
-  }
-
-  const headline = body.direction === 'low' ? '**Lowest sell price in 7 days**' : '**Highest sell price in 7 days**';
-  const price = body.ask === null || body.ask === undefined ? 'no sell price' : `sell price ${formatMoney(body.ask)}`;
-  const typical = body.typical === null || body.typical === undefined ? 'no typical price yet' : formatMoney(body.typical);
+  const price = body.ask === null || body.ask === undefined ? 'no sell price' : `last sell price ${formatMoney(body.ask)}`;
+  const until = body.lastOfferAt
+    ? `Had sell orders until ${dayMonth(body.lastOfferAt)}, ${formatUtcClock(new Date(body.lastOfferAt))} UTC.`
+    : 'Had sell orders earlier in the window.';
   return [
-    headline,
+    `**Off the board since ${dayMonth(body.lastOfferAt ?? insight.firedAt)}**`,
     `${body.name} · ${price}`,
-    `Typical price over the last 24 hours was ${typical}. ${units(body.units ?? 0)} units for sale.`,
+    until,
   ].join('\n');
 }
 
@@ -118,16 +70,13 @@ export function buildEmbed(
   snapshotAt: Date,
   avatarUrl: string | null
 ): EmbedBuilder {
-  const methods = new Set(insights.map((row) => METHODS[row.pattern] ?? MIXED_METHOD));
-  const method = methods.size === 1 ? [...methods][0] : MIXED_METHOD;
-
   return new EmbedBuilder()
     .setColor(COLORS.brand)
     .setAuthor(brandAuthor(avatarUrl))
     .setTitle(`Market Insight — ${dayMonth(snapshotAt)}`)
     .setDescription(insights.map(stanza).join('\n\n'))
     .setFooter({
-      text: `Snapshot ${formatUtcClock(snapshotAt)} UTC · every ${cadence(intervalMin)} · ${method}`,
+      text: `Snapshot ${formatUtcClock(snapshotAt)} UTC · every ${cadence(intervalMin)} · ${METHOD}`,
     });
 }
 
