@@ -74,6 +74,15 @@ describe('detectDrySellSide', () => {
     expect(detectDrySellSide(gapped)).toBeNull();
   });
 
+  it('still fires when the feed had no sell price to remember', () => {
+    const match = detectDrySellSide(
+      series(48, (i) => ({ askVolume: i < 13 ? 0 : 500, ask: null, askLow: null, askHigh: null }))
+    );
+
+    expect(match?.body.ask).toBeNull();
+    expect(match?.body.hours).toBe(13);
+  });
+
   it('never counts an hour with no snapshot', () => {
     const match = detectDrySellSide(series(48, (i) => ({ askVolume: i < 5 ? 0 : 500, samples: i < 5 ? 0 : 30 })));
 
@@ -100,6 +109,24 @@ describe('detectBookFlipped', () => {
     expect(match?.body.ratio).toBe(10);
     expect(match?.body.prevAsk).toBe(14_400);
     expect(match?.body.prevBid).toBe(129_600);
+  });
+
+  it('scales significance by the baseline spread when the baseline moved', () => {
+    // A three-step cycle: the hourly imbalance takes three magnitudes, so the
+    // baseline's MAD is not zero and significance uses the division, not the constant.
+    const cycle = [0.2, 0.6, 0.9];
+    const wobbling = series(7 * 24, (hoursFromEnd) => {
+      if (Math.floor(hoursFromEnd / 24) === 0) return { askVolume: 10_000, bidVolume: 1_000 };
+      const imbalance = cycle[hoursFromEnd % cycle.length];
+      return { askVolume: Math.round((1 - imbalance) * 500), bidVolume: Math.round((1 + imbalance) * 500) };
+    });
+
+    const match = detectBookFlipped(wobbling);
+
+    expect(match).not.toBeNull();
+    // A flat baseline would clamp at 0.25; a wobbling one is far more surprising.
+    expect(match?.significance).toBeGreaterThan(0.3);
+    expect(match?.significance).toBeLessThanOrEqual(1);
   });
 
   it('does not fire on a mild imbalance', () => {
@@ -171,6 +198,16 @@ describe('detectPinnedAtEdge', () => {
     });
 
     expect(detectPinnedAtEdge(flat)).toBeNull();
+  });
+
+  it('stays silent when the previous six days had no sell price', () => {
+    const empty = series(7 * 24, (i) =>
+      Math.floor(i / 24) === 0
+        ? { ask: 160, askLow: 150, askHigh: 160 }
+        : { ask: null, askLow: null, askHigh: null, askVolume: 0, bidVolume: 0 }
+    );
+
+    expect(detectPinnedAtEdge(empty)).toBeNull();
   });
 
   it('ignores a move below 25%', () => {
