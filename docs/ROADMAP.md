@@ -197,15 +197,19 @@ the code is MIT. Read the private legal note on donations before touching anythi
 money — it holds the only **verified** list of rails a Vietnamese individual can actually withdraw
 from, and the wording that keeps a tip a gift instead of a charity campaign.
 
-Every track T1–T10 is closed. **T11 (Market Insights) is the one open track**: the design is
-settled and no code has been written. The queued work is otherwise the trigger list in
-`docs/DEFERRED.md` (D15 at 1 GB, the host maintenance window, the scheduled drill). If a restored
-todo list disagrees with this file, this file wins.
+Every track T1–T10 is closed. **T11 (Market Insights) is the one open track**: PR1 (the book side,
+`/insight`) is on `develop` and unreleased; only the dry sell side cleared the design's calibration
+gate, and the flip and the range edge are parked in `docs/DEFERRED.md` (D21) until their
+persistence clears 90%. The queued work is otherwise the trigger list in `docs/DEFERRED.md`
+(D15 at 1 GB, the host maintenance window, the scheduled drill). If a restored todo list disagrees
+with this file, this file wins.
 
 ## 5. Progress log
 
 | Date | What landed | Evidence |
 | --- | --- | --- |
+| 2026-11-27 | **T11 PR1 — `/insight` và book rollup lên `develop`, chưa release**: 3 detector (dry sell side, book flipped, pinned at edge), queue `insights` claim-trước-khi-post + cooldown 72h, `book_hourly` rollup từ `price_history`, `/insight add\|remove\|list\|interval` (rate cap 240 phút, floor 60), migration `015` | PR #102 (`2db9104` → `develop`), `check`+`scan`+CodeQL+GitGuardian xanh, 500/500 test; coverage 87,33 / 75,25 / 89,51 / 88,49 |
+| 2026-11-27 | **Calibration gate loại 2/3 pattern**: replay 8 ngày production (638 item, 125 853 giờ) đo persistence +6h — dry 94% (0,88 accepted/ngày) pass, flip 81% và pinned 78% fail dù đã siết ngưỡng, thêm cửa sổ xác nhận 6h và đo lại đúng statistic của card. Dry nâng 12h → 24h; flip + pinned gỡ khỏi engine (D21); sửa `SELECT item_id` và impact tính theo cả window (item dry có 0 ask volume trong 24h, nếu tính 24h thì mọi finding score 0) | gate log `npx tsx scripts/insight-replay.ts <export> --days 8`; 496/496 test |
 | 2026-11-26 | **Release `v1.6.0` — vault feed đọc như sổ cái, và mọi surface vẽ bằng icon của app**: post vault nhóm theo chiều (`In`/`Out`/`Moved`), mỗi dòng mang ngày giờ UTC và item in đậm, footer `clan log · last 14 days`; card mở bằng net-change từng tier (chỉ cộng delta đã ghi, không giả làm số dư); `/vault list` có stamp `last_post_at` (migration `014`, nullable nên hiện `never` tới post đầu) để phân biệt clan im với feed chết; `/vault recent` cap 30 với nhãn `Newest N entries`; `/vault remove` dùng chung card với `/vault add`; tick >30 entry chỉ mark phần đã đăng; error reply dùng icon app thay emoji Unicode; item có giá mà catalogue chưa có vẫn hiện và search escape `%`/`_`; bộ icon còn 9 token, guard thứ 8 chặn token không surface nào vẽ | PR #98 (bump), #99 → `production`, deploy `46f93b7d` 4/4 healthy bot `1.6.0`, tag `v1.6.0`, merge-back #100; 426/426 test |
 | 2026-11-26 | **Track T11 Market Insights mở — design v4, chưa có code**: engine insight đọc thẳng DB (ingest → clean → detect → post), **0 HTTP call** lúc phân tích nên mọi số truy lại được bằng SQL; tách channel `idle-market-insight` + rename `idle-market` → `idle-market-watch`; cadence theo channel trong bảng mới `insight_channels` (digest cadence đang per guild, không dùng được cho 2 channel khác nhịp); pattern khai báo baseline + sample count, rank theo surprise (QuickInsights); seasonality gate 2 năm; copy theo `VOICE.md` (hai con số thay tỷ lệ, không tên cột, method ở footer) | Spec `docs/superpowers/specs/2026-11-26-market-insights-design.md` (**gitignored** — bản track nằm ở notes repo của maintainer, `tasks/market-insights/`); detector chạy thật trên production: dry sell side 1, off the board 2, book flipped 5+, pinned 2 (631 item/24h, 184 item có volume ≥100) |
 | 2026-11-26 | **Release `v1.5.2` — mention cooldown 60 s → 10 s, và lần bị bỏ qua có log**: owner báo ping lần đầu có card, lần sau im. Không phải crash: cooldown tính theo user id **xuyên channel** và nhánh skip `return` không log. Dựng timeline từ API Discord: mention `17:50:41.003Z` → reply `17:50:41.662Z`; mention `17:51:01.372Z` (channel khác, cách 19.4 s) → không reply; mention `17:56:28Z` → reply | PR #83 `c9a7dd5` (hằng số + `logger.debug` + test pin mốc 10 s và kịch bản 20 s), #84 (bump), #85 → `production`, deploy `d082d349` 4/4 healthy bot `1.5.2`, tag `v1.5.2` (Release object tự tạo), merge-back #86 `309f38a`; 410/410 test |

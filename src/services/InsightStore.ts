@@ -8,9 +8,7 @@
  */
 import { query } from '../db/pool.js';
 import {
-  detectBookFlipped,
   detectDrySellSide,
-  detectPinnedAtEdge,
   pickDiverse,
   toFinding,
   type BookHour,
@@ -116,10 +114,10 @@ export class InsightStore {
          FROM book_hourly WHERE hour >= $1 ORDER BY item_id, hour`,
         [from]
       ),
-      query<{ id: number; name: string }>('SELECT id, name FROM items WHERE tradeable'),
+      query<{ item_id: number; name: string }>('SELECT item_id, name FROM items WHERE tradeable'),
     ]);
 
-    const nameById = new Map(names.rows.map((row) => [Number(row.id), row.name]));
+    const nameById = new Map(names.rows.map((row) => [Number(row.item_id), row.name]));
     const seriesById = new Map<number, BookHour[]>();
     for (const row of hours.rows) {
       const itemId = Number(row.item_id);
@@ -148,7 +146,9 @@ export class InsightStore {
       if (recent.length < MIN_HOURS) continue;
       const samples = recent.reduce((sum, hour) => sum + hour.samples, 0);
       if (samples < MIN_SAMPLES) continue;
-      const volume = recent.reduce((sum, hour) => sum + hour.askVolume, 0);
+      // Weight comes from the whole window, not the last 24h: a dry item has zero
+      // ask volume there by construction, which would score every finding zero.
+      const volume = series.reduce((sum, hour) => sum + hour.askVolume, 0);
       eligible.push({ itemId, series, volume, impact: 0 });
     }
 
@@ -161,17 +161,11 @@ export class InsightStore {
     let queued = 0;
     for (const entry of eligible) {
       const name = nameById.get(entry.itemId) ?? '';
-      const matches = [
-        detectDrySellSide(entry.series),
-        detectBookFlipped(entry.series),
-        detectPinnedAtEdge(entry.series),
-      ].filter((match) => match !== null);
+      const match = detectDrySellSide(entry.series);
+      if (match === null) continue;
 
-      for (const match of matches) {
-        const finding = toFinding(match, entry.itemId, entry.impact, name, now);
-        const inserted = await InsightStore.insert(finding);
-        if (inserted) queued += 1;
-      }
+      const finding = toFinding(match, entry.itemId, entry.impact, name, now);
+      if (await InsightStore.insert(finding)) queued += 1;
     }
 
     return { scanned: true, queued };

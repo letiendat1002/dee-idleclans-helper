@@ -35,15 +35,25 @@ function hour(
   };
 }
 
-/** 24 hourly rows ending at NEWEST, shaped by `askVolume(hoursFromEnd)`. */
-function day(itemId: number, askVolume: (hoursFromEnd: number) => string, ask = '500'): Array<Record<string, unknown>> {
-  return Array.from({ length: 24 }, (_, index) => {
-    const hoursFromEnd = 23 - index;
+/** `count` hourly rows ending at NEWEST, shaped by `askVolume(hoursFromEnd)`. */
+function span(
+  itemId: number,
+  count: number,
+  askVolume: (hoursFromEnd: number) => string,
+  ask = '500'
+): Array<Record<string, unknown>> {
+  return Array.from({ length: count }, (_, index) => {
+    const hoursFromEnd = count - 1 - index;
     return hour(itemId, NEWEST.getTime() - hoursFromEnd * HOUR_MS, {
       ask,
       ask_volume: askVolume(hoursFromEnd),
     });
   });
+}
+
+/** 24 hourly rows ending at NEWEST: one day. */
+function day(itemId: number, askVolume: (hoursFromEnd: number) => string, ask = '500'): Array<Record<string, unknown>> {
+  return span(itemId, 24, askVolume, ask);
 }
 
 /**
@@ -55,7 +65,7 @@ function day(itemId: number, askVolume: (hoursFromEnd: number) => string, ask = 
 function route(options: {
   newest?: Date | null;
   rows?: Array<Record<string, unknown>>;
-  names?: Array<{ id: number; name: string }>;
+  names?: Array<{ item_id: number; name: string }>;
   inserted?: number;
   queued?: Array<Record<string, unknown>>;
   claimed?: number;
@@ -110,15 +120,15 @@ describe('InsightStore.produce', () => {
     route({
       rows: [
         // The high-volume item, dry for the last 13 hours.
-        ...day(1, (i) => (i < 13 ? '0' : '5000')),
+        ...span(1, 48, (i) => (i < 25 ? '0' : '5000')),
         // A steady item: no pattern, but it sets the volume floor.
         ...day(2, () => '1000'),
         // Not tradeable: never scored.
         ...day(3, () => '1000'),
       ],
       names: [
-        { id: 1, name: 'Elite hammer' },
-        { id: 2, name: 'Grapes' },
+        { item_id: 1, name: 'Elite hammer' },
+        { item_id: 2, name: 'Grapes' },
       ],
     });
 
@@ -129,18 +139,22 @@ describe('InsightStore.produce', () => {
     expect(sql).toContain('ON CONFLICT (pattern, item_id) WHERE status = \'queued\' DO NOTHING');
     expect(params[0]).toBe(1);
     expect(params[1]).toBe('dry_sell_side');
-    expect(params[2]).toBe('dry');
+    expect(params[2]).toBe('off_board');
     // Highest volume of the two eligible items, so impact is 1 and the score is not zero.
     expect(params[3] as number).toBeGreaterThan(0);
     expect(params[3] as number).toBeLessThanOrEqual(1);
-    expect(JSON.parse(params[4] as string)).toMatchObject({ name: 'Elite hammer', hours: 13 });
+    expect(JSON.parse(params[4] as string)).toMatchObject({ name: 'Elite hammer', hours: 25 });
+
+    // `items` is keyed `item_id`; `SELECT id` would throw at runtime and the mock cannot see it.
+    const namesQuery = queryMock.mock.calls.find(([sql]) => String(sql).includes('FROM items'));
+    expect(namesQuery?.[0]).toContain('SELECT item_id, name FROM items');
     expect(params[7]).toBe(72 * HOUR_MS);
   });
 
   it('skips an item without a day of coverage', async () => {
     route({
       rows: day(1, () => '0').slice(0, 5),
-      names: [{ id: 1, name: 'Elite hammer' }],
+      names: [{ item_id: 1, name: 'Elite hammer' }],
     });
 
     await expect(InsightStore.produce(NOW)).resolves.toEqual({ scanned: true, queued: 0 });
@@ -150,14 +164,14 @@ describe('InsightStore.produce', () => {
   it('skips an item with too few snapshots', async () => {
     const rows = day(1, (i) => (i < 13 ? '0' : '5000')).map((row) => ({ ...row, samples: 1 }));
 
-    route({ rows, names: [{ id: 1, name: 'Elite hammer' }] });
+    route({ rows, names: [{ item_id: 1, name: 'Elite hammer' }] });
 
     await expect(InsightStore.produce(NOW)).resolves.toEqual({ scanned: true, queued: 0 });
     expect(inserts()).toHaveLength(0);
   });
 
   it('does not rescan an hour it already scanned', async () => {
-    route({ rows: day(1, (i) => (i < 13 ? '0' : '5000')), names: [{ id: 1, name: 'Elite hammer' }] });
+    route({ rows: span(1, 48, (i) => (i < 25 ? '0' : '5000')), names: [{ item_id: 1, name: 'Elite hammer' }] });
 
     await InsightStore.produce(NOW);
     const insertsBefore = inserts().length;
@@ -168,8 +182,8 @@ describe('InsightStore.produce', () => {
 
   it('counts only the findings the queue accepted', async () => {
     route({
-      rows: day(1, (i) => (i < 13 ? '0' : '5000')),
-      names: [{ id: 1, name: 'Elite hammer' }],
+      rows: span(1, 48, (i) => (i < 25 ? '0' : '5000')),
+      names: [{ item_id: 1, name: 'Elite hammer' }],
       inserted: 0,
     });
 
@@ -182,7 +196,7 @@ describe('InsightStore.claim', () => {
     id,
     item_id: String(itemId),
     pattern,
-    state: 'dry',
+    state: 'off_board',
     score,
     body: JSON.stringify({ name: 'Item', ask: 100 }),
     fired_at: NOW.toISOString(),
@@ -190,11 +204,11 @@ describe('InsightStore.claim', () => {
   });
 
   it('marks the picked rows sent before the post and parses their bodies', async () => {
-    route({ queued: [queuedRow('1', 11, 'dry_sell_side', '0.9'), queuedRow('2', 12, 'book_flipped', '0.5')] });
+    route({ queued: [queuedRow('1', 11, 'dry_sell_side', '0.9'), queuedRow('2', 12, 'dry_sell_side', '0.5')] });
 
     const claimed = await InsightStore.claim('20', 3);
 
-    expect(claimed.map((row) => row.pattern)).toEqual(['dry_sell_side', 'book_flipped']);
+    expect(claimed.map((row) => row.pattern)).toEqual(['dry_sell_side', 'dry_sell_side']);
     expect(claimed[0].body.name).toBe('Item');
     expect(claimed[0].itemId).toBe(11);
 
@@ -211,7 +225,7 @@ describe('InsightStore.claim', () => {
 
   it('never claims the same item twice', async () => {
     route({
-      queued: [queuedRow('1', 11, 'dry_sell_side', '0.9'), queuedRow('2', 11, 'book_flipped', '0.8')],
+      queued: [queuedRow('1', 11, 'dry_sell_side', '0.9'), queuedRow('2', 11, 'dry_sell_side', '0.8')],
     });
 
     const claimed = await InsightStore.claim('20', 3);
