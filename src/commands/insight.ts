@@ -25,7 +25,6 @@ import {
 import { rateLimiter } from '../utils/RateLimiter.js';
 import { DeeError, formatUnexpectedError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
-import { safeReply } from '../ui/reply.js';
 import { canPost } from '../ui/channel.js';
 import { COLORS, ICONS, brandAuthor, formatUtcClock } from '../ui/theme.js';
 import { InsightSettings, MAX_CHANNELS_PER_GUILD } from '../services/InsightSettings.js';
@@ -218,23 +217,15 @@ async function handleInterval(interaction: ChatInputCommandInteraction, guild: G
 export async function handle(interaction: ChatInputCommandInteraction): Promise<void> {
   const userId = interaction.user.id;
 
-  try {
-    await rateLimiter.check(userId, 'insight');
-  } catch (err) {
-    if (err instanceof DeeError) {
-      await safeReply(interaction, { content: err.message, flags: 64 });
-      return;
-    }
-    throw err;
-  }
-
   if (!interaction.inCachedGuild()) return;
+
+  // ACK before any I/O: Discord drops an unanswered interaction 3s after the click.
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = interaction.guild;
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
   try {
+    await rateLimiter.check(userId, 'insight');
     const subcommand = interaction.options.getSubcommand();
 
     if (subcommand === 'add') {
