@@ -80,14 +80,14 @@ beforeEach(() => {
 });
 
 describe('/watchlist handle', () => {
-  it('answers a rate-limit error ephemerally', async () => {
+  it('acknowledges before the limiter, then answers a refusal', async () => {
     check.mockRejectedValueOnce(new DeeError('⏱ Slow down', 'E1', 'E1_004'));
     const { interaction, deferReply } = fakeHandle();
 
     await handle(interaction);
 
+    expect(deferReply).toHaveBeenCalledTimes(1);
     expect(safeReply).toHaveBeenCalledWith(interaction, { content: '⏱ Slow down', flags: 64 });
-    expect(deferReply).not.toHaveBeenCalled();
   });
 
   it('says so when the user has no alert', async () => {

@@ -57,8 +57,8 @@ export async function postToChannel(
   const userId = interaction.user.id;
 
   try {
-    await rateLimiter.check(userId, bucket);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await rateLimiter.check(userId, bucket);
 
     if (Date.now() - (lastPosted.get(`${userId}:${key}`) ?? 0) < COOLDOWN_MS) {
       await interaction.editReply({ content: 'Posted that one a moment ago.' });

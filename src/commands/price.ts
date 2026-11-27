@@ -112,6 +112,8 @@ async function renderPriceCard(item: ItemRow, avatarUrl: string | null): Promise
 export async function handle(interaction: ChatInputCommandInteraction): Promise<void> {
   const userId = interaction.user.id;
 
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   try {
     await rateLimiter.check(userId, 'price');
   } catch (err) {
@@ -121,8 +123,6 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     }
     throw err;
   }
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const itemId = Number(interaction.options.getString('item', true));

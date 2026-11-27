@@ -325,13 +325,13 @@ describe('/graph item', () => {
     expect(editReply.mock.calls[0][0].content).toBe('Pick an item from the list.');
   });
 
-  it('answers a rate-limited user ephemerally without deferring', async () => {
+  it('acknowledges before the limiter, then answers a refusal', async () => {
     check.mockRejectedValue(new DeeError('Slow down.', 'E1', ErrCodes.RATE_LIMIT));
     const { interaction, deferReply } = fakeHandle();
 
     await handle(interaction);
 
-    expect(deferReply).not.toHaveBeenCalled();
+    expect(deferReply).toHaveBeenCalledTimes(1);
     expect(safeReply).toHaveBeenCalledWith(interaction, { content: 'Slow down.', flags: 64 });
   });
 

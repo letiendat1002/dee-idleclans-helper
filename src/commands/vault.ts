@@ -266,6 +266,14 @@ async function handleRecent(interaction: ChatInputCommandInteraction): Promise<v
 export async function handle(interaction: ChatInputCommandInteraction): Promise<void> {
   const userId = interaction.user.id;
 
+  // Outside a cached server there is nothing to configure: the command
+  // answers nothing.
+  if (!interaction.inCachedGuild()) return;
+
+  const guild = interaction.guild;
+
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   try {
     await rateLimiter.check(userId, 'vault');
   } catch (err) {
@@ -275,14 +283,6 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     }
     throw err;
   }
-
-  // Outside a cached server there is nothing to configure: the command
-  // answers nothing.
-  if (!interaction.inCachedGuild()) return;
-
-  const guild = interaction.guild;
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const subcommand = interaction.options.getSubcommand();

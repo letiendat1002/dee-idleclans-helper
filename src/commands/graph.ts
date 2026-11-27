@@ -249,8 +249,8 @@ export async function handleRangeMenu(interaction: StringSelectMenuInteraction):
   const range = parseRange(interaction.values[0]);
 
   try {
-    await rateLimiter.check(userId, 'graph');
     await interaction.deferUpdate();
+    await rateLimiter.check(userId, 'graph');
 
     const item = Number.isInteger(itemId) ? await ItemCatalogue.getById(itemId) : null;
     if (!item) {
@@ -268,11 +268,11 @@ export async function handleRangeMenu(interaction: StringSelectMenuInteraction):
     });
   } catch (err) {
     if (err instanceof DeeError) {
-      await safeReply(interaction, { content: err.message, flags: 64 });
+      await interaction.followUp({ content: err.message, flags: 64 });
       return;
     }
     logger.error('/graph range failed', { userId, error: err });
-    await safeReply(interaction, { content: formatUnexpectedError('/graph', err), flags: 64 });
+    await interaction.followUp({ content: formatUnexpectedError('/graph', err), flags: 64 });
   }
 }
 
@@ -293,6 +293,8 @@ export async function handleShareButton(interaction: ButtonInteraction): Promise
 export async function handle(interaction: ChatInputCommandInteraction): Promise<void> {
   const userId = interaction.user.id;
 
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   try {
     await rateLimiter.check(userId, 'graph');
   } catch (err) {
@@ -302,8 +304,6 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     }
     throw err;
   }
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const itemId = Number(interaction.options.getString('item', true));
