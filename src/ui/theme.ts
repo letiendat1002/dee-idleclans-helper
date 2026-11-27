@@ -33,16 +33,46 @@ export const COLORS = {
  * names/values — never in a title, author line or footer, where it would show
  * as raw markup. Titles therefore stay plain text.
  */
+
+/**
+ * Icon ids uploaded to this application.
+ *
+ * An application emoji belongs to exactly one Discord application, so a test
+ * bot cannot render the production ids: it uploads the same artwork and names
+ * them in `ICONS_JSON` (`{"digest":"123"}`). Unset, the production ids hold.
+ */
+export function appIconIds(raw: string | undefined): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    const snowflakes = Object.entries(parsed as Record<string, unknown>).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string' && /^\d{17,20}$/.test(entry[1])
+    );
+    return Object.fromEntries(snowflakes);
+  } catch {
+    console.warn('[ICONS] ICONS_JSON is not valid JSON; using the production ids');
+    return {};
+  }
+}
+
+const APP_ICON_IDS = appIconIds(process.env.ICONS_JSON);
+
+/** One icon token: this app's upload when it has one, the production token otherwise. */
+export function iconToken(name: string, productionId: string, ids: Record<string, string> = APP_ICON_IDS): string {
+  return `<:${name}:${ids[name] ?? productionId}>`;
+}
+
 export const ICONS = {
-  margin: '<:margin:1571074505571434526>',
-  wiki: '<:wiki:1571074522071961653>',
-  up: '<:up:1571074527557845084>',
-  down: '<:down:1571074532511318036>',
-  alert: '<:alert:1571074537351680000>',
-  digest: '<:digest:1571074547317346354>',
-  warning: '<:warning:1571074562421030936>',
-  clock: '<:clock:1571074566833315913>',
-  vault: '<:vault:1575508224940048526>',
+  margin: iconToken('margin', '1571074505571434526'),
+  wiki: iconToken('wiki', '1571074522071961653'),
+  up: iconToken('up', '1571074527557845084'),
+  down: iconToken('down', '1571074532511318036'),
+  alert: iconToken('alert', '1571074537351680000'),
+  digest: iconToken('digest', '1571074547317346354'),
+  warning: iconToken('warning', '1571074562421030936'),
+  clock: iconToken('clock', '1571074566833315913'),
+  vault: iconToken('vault', '1575508224940048526'),
 } as const;
 
 /** The brand name every surface shows. */
