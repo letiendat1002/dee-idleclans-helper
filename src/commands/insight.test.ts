@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ChannelType, type ChatInputCommandInteraction } from 'discord.js';
+import { ChannelType, MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 
 const {
   checkMock,
@@ -8,7 +8,6 @@ const {
   listChannelsMock,
   setIntervalMinutesMock,
   canPostMock,
-  safeReplyMock,
 } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   addChannelMock: vi.fn(),
@@ -16,12 +15,10 @@ const {
   listChannelsMock: vi.fn(),
   setIntervalMinutesMock: vi.fn(),
   canPostMock: vi.fn(),
-  safeReplyMock: vi.fn(),
 }));
 
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check: checkMock } }));
 vi.mock('../ui/channel.js', () => ({ canPost: canPostMock }));
-vi.mock('../ui/reply.js', () => ({ safeReply: safeReplyMock }));
 vi.mock('../services/InsightSettings.js', () => ({
   MAX_CHANNELS_PER_GUILD: 1,
   InsightSettings: {
@@ -217,12 +214,16 @@ describe('/insight interval', () => {
 });
 
 describe('/insight refusals', () => {
-  it('answers a refused rate limit in an ephemeral reply', async () => {
+  it('acknowledges before the limiter and answers a refusal in that reply', async () => {
     checkMock.mockRejectedValue(new DeeError('Too many calls.', 'E1', 'RATE_LIMIT'));
+    const call = interaction('list');
 
-    await handle(interaction('list'));
+    await handle(call);
 
-    expect(safeReplyMock).toHaveBeenCalledTimes(1);
+    expect((call.deferReply as unknown as { mock: { calls: Array<[unknown]> } }).mock.calls).toEqual([
+      [{ flags: MessageFlags.Ephemeral }],
+    ]);
+    expect(await repliedText(call)).toContain('Too many calls.');
   });
 
   it('stays quiet outside a guild', async () => {

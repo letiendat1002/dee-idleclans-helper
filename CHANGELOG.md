@@ -19,6 +19,12 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
   the job's own tick. The flip and the range edge were measured below the design's 90%
   persistence gate and do not ship (`docs/DEFERRED.md` D21).
 
+### Fixed
+
+- `/insight` acknowledges the click before its first query, so a slow Redis round-trip no longer
+  spends Discord's 3s budget. Measured on DIH Dev: 3.39s between the click and the acknowledgement,
+  and the user saw "The application did not respond".
+
 ## [1.6.0] - 2026-11-26
 
 ### Changed
