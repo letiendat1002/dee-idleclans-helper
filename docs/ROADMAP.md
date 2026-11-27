@@ -129,7 +129,7 @@ and both volumes), confirmed the `0` rows (22 ask / 45 bid), the 676-vs-631 trad
 (stale digest refused, failed fetch kept the snapshot). `/price-list` in step 5 is not this bot's
 command: it belongs to the `Phoenix` bot in the test guild, and `AGENTS.md` named it wrongly.
 
-### T11 — Market Insights · active (design settled, no code yet)
+### T11 — Market Insights · shipped in v1.7.0 (2026-11-27)
 
 Goal: a pattern engine over our own database. It ingests, cleans and rolls up what we already
 store, then posts the strongest patterns on an interval — a separate job with separate state,
@@ -197,11 +197,12 @@ the code is MIT. Read the private legal note on donations before touching anythi
 money — it holds the only **verified** list of rails a Vietnamese individual can actually withdraw
 from, and the wording that keeps a tip a gift instead of a charity campaign.
 
-Every track T1–T10 is closed. **T11 (Market Insights) is the one open track**: PR1 (the book side,
-`/insight`) is on `develop` and unreleased; only the dry sell side cleared the design's calibration
-gate, and the flip and the range edge are parked in `docs/DEFERRED.md` (D21) until their
-persistence clears 90%. The queued work is otherwise the trigger list in `docs/DEFERRED.md`
-(D15 at 1 GB, the host maintenance window, the scheduled drill). If a restored todo list disagrees
+Every track T1–T11 is closed. **T11 shipped as `v1.7.0`** (2026-11-27): `/insight` plus the
+five-minute job, migration `015`, deployed as `b212b2e5` and live on production — only the dry sell
+side cleared the 90% gate; the flip and the range edge are parked in `docs/DEFERRED.md` (D21), and
+the trade side was measured and closed (D22: volume spike 45%, price move 66% persistence). The
+queued work is otherwise the trigger list in `docs/DEFERRED.md` (D15 at 1 GB, the host maintenance
+window, the scheduled drill). If a restored todo list disagrees
 with this file, this file wins.
 
 ## 5. Progress log
