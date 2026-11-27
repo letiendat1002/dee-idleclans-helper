@@ -10,6 +10,15 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Added
+
+- `/insight` posts a book state that an item has not shown in six days, at most every 4 hours by
+  default: the sell side empty for 12 hours or more (phrased as off the board past 24), the book
+  flipped against its own six-day median, or a sell price pinned at the edge of its usual range.
+  It is a rate cap, not a schedule — no finding, no post — and it never pushes a notification.
+  Migration `015` adds `insight_channels`, `insights` and `book_hourly`; `book_hourly` is rolled
+  up from `price_history` on the first run (30 days) and then hourly in the job's own tick.
+
 ## [1.6.0] - 2026-11-26
 
 ### Changed

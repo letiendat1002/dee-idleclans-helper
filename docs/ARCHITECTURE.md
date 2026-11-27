@@ -15,7 +15,7 @@ Idle Clans API over outbound HTTPS only.
 ```
    Discord ──gw/rest──▶ ┌──────────────────────────────────────┐
                         │ dee-idleclans-helper  (node, 512 MB) │
-                        │ 8 slash commands, 4 jobs (no poller) │
+                        │ 9 slash commands, 5 jobs (no poller) │
                         └───────────┬──────────────┬───────────┘
                                     │              │
    Idle Clans API ──https──▶ ┌──────▼──────────────▼───────────┐
@@ -82,12 +82,13 @@ Everything else runs inside the single `clientReady` handler
    them in `schema_migrations`. Idempotent; runs on every start.
 3. One log line per cached guild — this is what warms the guild and channel
    caches the pollers read.
-4. `registerCommands()` — PUTs the eight slash commands globally. Discord
+4. `registerCommands()` — PUTs the nine slash commands globally. Discord
    propagates in minutes; a command that fails to register is a deploy bug.
 5. The four jobs that need Discord, in one block: `ItemCatalogue.start(30 min)`
    (fetches the catalogue, derives recipe trees, deletes `dee:catalogue:index` so
    the next autocomplete rebuilds it from Postgres), `AlertDispatcher.start(120 s)`,
-   `MarketDigest.start(60 s tick)`, `VaultNotifier.start(5 min)`.
+   `MarketDigest.start(60 s tick)`, `VaultNotifier.start(5 min)`,
+   `MarketInsights.start(5 min tick)` (rolls the book up in the same tick).
 6. `beat()` now, then every minute — the bot's own heartbeat.
 
 Market collection is not among them. `src/collector.ts` runs the same image from a
@@ -127,8 +128,8 @@ interaction
   → editReply / safeReply (handles 10062 Unknown interaction)
 ```
 
-Only the two commands that write server-wide configuration (`/digest`, `/vault`)
-check the guild and the permission. Read-only commands (`/price`, `/graph`,
+Only the three commands that write server-wide configuration (`/digest`,
+`/insight`, `/vault`) check the guild, so they never answer in a DM. Read-only commands (`/price`, `/graph`,
 `/watch`, `/unwatch`, `/watchlist`, `/help`) answer anywhere,
 including DMs — a member who can see the bot can ask it a question about a price.
 
@@ -139,11 +140,12 @@ including DMs — a member who can see the bot can ask it a question about a pri
 | `/watch` | — | `watchlists` | none |
 | `/unwatch`, `/watchlist` | `watchlists` | `watchlists` | none |
 | `/digest add\|remove\|list\|interval` | `digest_channels` | `digest_channels` | **Discord** (default Manage Server) |
+| `/insight add\|remove\|list\|interval` | `insight_channels` | `insight_channels` | **Discord** (default Manage Server) |
 | `/vault add\|remove\|list` | `vault_channels` | `vault_channels` | **Discord** (default Manage Server) |
 | `/help` | — | — | none |
 
 Server-wide configuration is a server decision, and the server makes it in
-Discord: both commands are registered with `ManageGuild` as their default, and
+Discord: those commands are registered with `ManageGuild` as their default, and
 an admin narrows or widens that per role and per channel in Server Settings →
 Integrations. The handlers do not re-check the permission. An earlier build did,
 as the fix for a defect where the *bot's* permissions were read instead of the

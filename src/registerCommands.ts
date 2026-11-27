@@ -6,6 +6,7 @@ import { builder as watchlistBuilder } from './commands/watchlist.js';
 import { builder as graphBuilder } from './commands/graph.js';
 import { builder as priceBuilder } from './commands/price.js';
 import { builder as digestBuilder } from './commands/digest.js';
+import { builder as insightBuilder } from './commands/insight.js';
 import { builder as vaultBuilder } from './commands/vault.js';
 import { builder as helpBuilder } from './commands/help.js';
 import { createLogger } from './utils/logger.js';
@@ -24,6 +25,7 @@ const commands = [
   graphBuilder,
   priceBuilder,
   digestBuilder,
+  insightBuilder,
   vaultBuilder,
   helpBuilder,
 ].map((b) => b.toJSON());
