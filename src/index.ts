@@ -33,6 +33,7 @@ import {
   handle as priceHandle,
   autocomplete as priceAutocomplete,
   handleShareButton as handlePriceShare,
+  handleWatchButton as handlePriceWatch,
 } from './commands/price.js';
 import { builder as digestBuilder, handle as digestHandle, autocomplete as digestAutocomplete } from './commands/digest.js';
 import { builder as insightBuilder, handle as insightHandle, autocomplete as insightAutocomplete } from './commands/insight.js';
@@ -218,6 +219,11 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.isButton() && interaction.customId.startsWith('price:share:')) {
     await handlePriceShare(interaction);
+    return;
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith('price:watch:')) {
+    await handlePriceWatch(interaction);
     return;
   }
 

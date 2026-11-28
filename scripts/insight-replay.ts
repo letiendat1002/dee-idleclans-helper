@@ -137,7 +137,12 @@ function blank(): Stat {
 }
 
 /** Replay every closed hour of the measured window. */
-function replay(byItem: Map<number, BookHour[]>, hours: number[], measuredFrom: number): Map<PatternKey, Stat> {
+function replay(
+  byItem: Map<number, BookHour[]>,
+  hours: number[],
+  measuredFrom: number,
+  minAskVolume = 0
+): Map<PatternKey, Stat> {
   const stats = new Map<PatternKey, Stat>([['dry_sell_side', blank()]]);
 
   /** Last hour each item was reported, so the 72h cooldown is honoured. */
@@ -165,6 +170,11 @@ function replay(byItem: Map<number, BookHour[]>, hours: number[], measuredFrom: 
       const recent = series.slice(cursor.day + 1, cursor.end + 1);
       if (recent.length < MIN_HOURS) continue;
       if (recent.reduce((sum, hour) => sum + hour.samples, 0) < MIN_SAMPLES) continue;
+
+      if (minAskVolume > 0) {
+        const asked = windowSeries.reduce((sum, hour) => sum + hour.askVolume, 0);
+        if (asked < minAskVolume) continue;
+      }
 
       const match = detectDrySellSide(windowSeries);
       if (match === null) continue;
@@ -199,18 +209,20 @@ function replay(byItem: Map<number, BookHour[]>, hours: number[], measuredFrom: 
 }
 
 /** The window the script replays and its argument. */
-function parseArgs(arguments_: string[]): { file: string; days: number } {
+function parseArgs(arguments_: string[]): { file: string; days: number; minAskVolume: number } {
   const file = arguments_[0];
   if (!file) {
-    console.error('usage: tsx scripts/insight-replay.ts <book-hourly.jsonl> [--days 8]');
+    console.error('usage: tsx scripts/insight-replay.ts <book-hourly.jsonl> [--days 8] [--min-ask-volume 20]');
     process.exit(2);
   }
   const flag = arguments_.indexOf('--days');
   const days = flag === -1 ? 8 : Number(arguments_[flag + 1]);
-  return { file, days };
+  const volumeFlag = arguments_.indexOf('--min-ask-volume');
+  const minAskVolume = volumeFlag === -1 ? 0 : Number(arguments_[volumeFlag + 1]);
+  return { file, days, minAskVolume };
 }
 
-const { file, days } = parseArgs(process.argv.slice(2));
+const { file, days, minAskVolume } = parseArgs(process.argv.slice(2));
 const byItem = load(file);
 const allHours = [
   ...new Set([...byItem.values()].flatMap((series) => series.map((hour) => hour.hour.getTime()))),
@@ -223,13 +235,14 @@ if (allHours.length === 0) {
 
 const newest = allHours[allHours.length - 1];
 const measuredFrom = newest - days * 24 * HOUR_MS;
-const stats = replay(byItem, allHours, measuredFrom);
+const stats = replay(byItem, allHours, measuredFrom, minAskVolume);
 
 const measuredDays = (newest - Math.max(measuredFrom, allHours[0])) / (24 * HOUR_MS);
 console.log(
   `window ${new Date(Math.max(measuredFrom, allHours[0])).toISOString().slice(0, 16)}Z .. ` +
     `${new Date(newest).toISOString().slice(0, 16)}Z · ${measuredDays.toFixed(1)} days · ` +
-    `${byItem.size} items · ${allHours.length} closed hours`
+    `${byItem.size} items · ${allHours.length} closed hours` +
+    (minAskVolume > 0 ? ` · ask volume floor ${minAskVolume}/7d` : '')
 );
 console.log('');
 console.log('pattern            firings/day  accepted/day   all firings  posted   gate   rarity now → measured');

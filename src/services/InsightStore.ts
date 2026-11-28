@@ -37,6 +37,15 @@ const MIN_SAMPLES = 30;
 /** The fewest hours with data an item needs in 24h to be eligible. */
 const MIN_HOURS = 12;
 
+/**
+ * The fewest units offered over the whole window for a card to be worth posting.
+ *
+ * Measured on eight days of production book: without it 1.38 cards a day, a third
+ * of them items offering two or six units in a week; with it at 20, 0.63 a day and
+ * every posted finding still held 92% of the time.
+ */
+const MIN_ASK_VOLUME = 20;
+
 /** A row of `book_hourly` as Postgres returns it. */
 interface HourRow {
   item_id: number;
@@ -149,6 +158,7 @@ export class InsightStore {
       // Weight comes from the whole window, not the last 24h: a dry item has zero
       // ask volume there by construction, which would score every finding zero.
       const volume = series.reduce((sum, hour) => sum + hour.askVolume, 0);
+      if (volume < MIN_ASK_VOLUME) continue;
       eligible.push({ itemId, series, volume, impact: 0 });
     }
 

@@ -8,10 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 A release is cut from `[Unreleased]` after the host has deployed the commit and
 the health gate has passed; the tag is `v` plus the version in `package.json`.
 
-## [Unreleased]
+Changes to this repo's docs (GUIDE, UI-DESIGN, VOICE, ROADMAP) are named on a
+`Docs:` line under the version that ships them. The private notes repo is never
+referenced here; it keeps its own history.
+
+## [1.7.1] - 2026-11-28
+
+### Added
+
+- `/price` carries a **Watch price** button beside **Post to channel**. It opens the
+  `/watch` form already pointed at that item with its current sell price filled in, so
+  setting an alert no longer means retyping the item name.
 
 ### Changed
 
+- The insight feed ignores items nobody offers: a card needs at least 20 units on the
+  sell side over its seven-day window. Measured on eight days of production book, the
+  feed posted 1.38 cards a day without the floor — a third of them items offering two or
+  six units a week — and 0.63 a day with it, with every posted finding still holding 92%
+  of the time (`docs/DEFERRED.md` D24).
 - The insight card leads with the fact a reader wants — `No sell orders for 3 days · Elite hammer`
   — instead of the internal state name `Off the board`, and its second line is the last sell order
   with its price, units and UTC timestamp (`last sell order 500,000g · 64 units · 23 Nov, 22:00 UTC`).
@@ -19,6 +34,15 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
   provenance only. `/insight add` no longer calls the finding a "book state" and no longer tells a
   reader who just subscribed to create a channel first; `/insight list` shows how many findings are
   waiting.
+
+### Fixed
+
+- A vault line no longer prints a count marker in front of a currency: gold reads
+  `**6,969,696 Gold**`, while items keep theirs (`**5x Shark tooth**`).
+
+Docs: `docs/DEFERRED.md` D24 (thin-item floor, closed with its measurement),
+`docs/ROADMAP.md` row for this release, `docs/UI-DESIGN.md` and `docs/VOICE.md` for the
+insight card wording.
 
 ## [1.7.0] - 2026-11-27
 

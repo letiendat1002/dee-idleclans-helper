@@ -95,7 +95,8 @@ export function formatVaultLine(event: VaultEvent): string {
 
   const verb = event.kind === 'deposit' ? 'added' : event.kind === 'withdraw' ? 'withdrew' : 'moved';
   const quantity = event.quantity.toLocaleString('en-US');
-  const line = `${event.memberUsername} ${verb} **${quantity}x ${event.itemName}**`;
+  const counted = event.itemName.toLowerCase() === 'gold' ? quantity : `${quantity}x`;
+  const line = `${event.memberUsername} ${verb} **${counted} ${event.itemName}**`;
   const out = event.fromTier === null ? '' : ` from vault ${event.fromTier}`;
   const into = event.toTier === null ? '' : ` to vault ${event.toTier}`;
   const clock = event.happenedAt.toISOString().slice(5, 16).replace('T', ' ');

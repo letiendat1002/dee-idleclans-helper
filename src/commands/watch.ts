@@ -44,7 +44,7 @@ export const builder = new SlashCommandBuilder()
  * The threshold is pre-filled with the current ask, so the common alert — "tell
  * me when it falls" — needs one number typed.
  */
-function buildModal(itemId: number, itemName: string, currentAsk: number | null): ModalBuilder {
+export function buildModal(itemId: number, itemName: string, currentAsk: number | null): ModalBuilder {
   const prefill = currentAsk === null || currentAsk <= 0 ? '' : String(Math.round(currentAsk));
 
   return new ModalBuilder()
