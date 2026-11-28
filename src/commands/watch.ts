@@ -94,8 +94,10 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    const quotes = await SnapshotStore.latestQuotes();
-    const ask = quotes.get(item.itemId)?.ask ?? null;
+    // one item, not every item: `latestQuotes()` scans the whole table and measured
+    // 2.9 s on a 2.8 M-row dev table, past the 3 s the command has before it answers.
+    const quote = await SnapshotStore.latestQuote(item.itemId);
+    const ask = quote?.ask ?? null;
 
     // a deferred interaction cannot open a modal: Discord rejects it as
     // already acknowledged, so the modal answers the command directly
@@ -147,8 +149,10 @@ export async function handleWatchModal(interaction: ModalSubmitInteraction): Pro
       threshold
     );
 
-    const quotes = await SnapshotStore.latestQuotes();
-    const ask = quotes.get(itemId)?.ask ?? null;
+    // one item, not every item: the modal submit must answer inside 3 s and the
+    // full-table scan measured 2.9 s, so the success reply arrived expired.
+    const quote = await SnapshotStore.latestQuote(itemId);
+    const ask = quote?.ask ?? null;
 
     const snapshotAt = await SnapshotStore.latestSnapshotAt();
     const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;

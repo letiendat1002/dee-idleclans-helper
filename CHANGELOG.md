@@ -40,6 +40,15 @@ referenced here; it keeps its own history.
 
 - A vault line no longer prints a count marker in front of a currency: gold reads
   `**6,969,696 Gold**`, while items keep theirs (`**5x Shark tooth**`).
+- A vault window that covers two UTC days prints both dates
+  (`2026-11-26 10:40–2026-11-28 07:46 UTC`), so it no longer reads as if it ended
+  before it started.
+- **Watch price** answers inside Discord's three-second window: the click reads its own item
+  instead of every quoted item, so the form opens rather than timing out. Saving the form
+  replies in time too, instead of leaving the alert created but the confirmation replaced by
+  `Something went wrong. Try again.`
+- A Watch click that arrives too late to open a form is dropped quietly. It used to raise an
+  unhandled client error and take the whole bot down with it.
 
 ### Internal
 
@@ -47,6 +56,7 @@ referenced here; it keeps its own history.
   assertions are gone (`docs/DEFERRED.md` D2).
 - `/help` names the time the catalogue was last checked against the game build, so an item renamed
   in the last 30 minutes is not read as a stale bot (D11).
+- A failed interaction reply is logged as a client error instead of ending the process.
 
 Docs: `docs/GUIDE.md` and `docs/DISCORD-TESTING.md` for the two `/price` buttons and the
 muted-card rule, `docs/CONVENTIONS.md` for what `ui/share.ts` now holds and for §9 now pointing

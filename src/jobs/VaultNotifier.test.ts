@@ -21,7 +21,7 @@ vi.mock('../services/IdleClansApi.js', () => ({
 }));
 
 import type { ClanLogEntry } from '../services/IdleClansApi.js';
-import { VaultNotifier, formatVaultLine, vaultDescription, vaultRollupLines } from './VaultNotifier.js';
+import { VaultNotifier, formatVaultLine, vaultDescription, vaultRollupLines, vaultWindow } from './VaultNotifier.js';
 
 /** The guild the tests post to. */
 const GUILD = 'guild-1';
@@ -475,6 +475,24 @@ describe('VaultNotifier.runClan', () => {
     expect(getClanLogsMock).toHaveBeenCalledWith('TST');
     expect((sends.get('channel-1') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
     expect((sends.get('channel-2') as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(1);
+  });
+});
+
+describe('vaultWindow', () => {
+  function eventAt(iso: string) {
+    return { happenedAt: new Date(iso) } as Parameters<typeof vaultWindow>[0][number];
+  }
+
+  it('prints only the clock when both entries fall on one UTC day', () => {
+    expect(vaultWindow([eventAt('2026-11-02T10:00:00Z'), eventAt('2026-11-02T10:38:00Z')])).toBe(
+      '10:00–10:38 UTC'
+    );
+  });
+
+  it('prints the end date too when the span crosses a UTC midnight', () => {
+    expect(vaultWindow([eventAt('2026-11-26T10:40:00Z'), eventAt('2026-11-28T07:46:00Z')])).toBe(
+      '2026-11-26 10:40–2026-11-28 07:46 UTC'
+    );
   });
 });
 

@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { logger, safeReply, check, getById, latestQuote, latestQuotes, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds, getPriceAverages } = vi.hoisted(
+const { logger, safeReply, check, getById, latestQuote, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds, getPriceAverages } = vi.hoisted(
   () => ({
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     safeReply: vi.fn(),
     check: vi.fn(),
     getById: vi.fn(),
     latestQuote: vi.fn(),
-    latestQuotes: vi.fn(),
     latestSnapshotAt: vi.fn(),
     latestQuoteAt: vi.fn(),
     recentlySeenItemIds: vi.fn(),
@@ -20,7 +19,7 @@ vi.mock('../ui/reply.js', () => ({ safeReply }));
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getById } }));
 vi.mock('../services/SnapshotStore.js', () => ({
-  SnapshotStore: { latestQuote, latestQuotes, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds },
+  SnapshotStore: { latestQuote, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds },
 }));
 vi.mock('../services/IdleClansApi.js', () => ({ getPriceAveragesCached: getPriceAverages }));
 
@@ -361,7 +360,7 @@ describe('/price watch button', () => {
   }
 
   it('opens the watch modal on this item, pre-filled with its sell price', async () => {
-    latestQuotes.mockResolvedValue(new Map([[46, { ask: 148 }]]));
+    latestQuote.mockResolvedValue({ ask: 148 });
     const { interaction, showModal } = fakeClick('price:watch:46');
 
     await handleWatchButton(interaction);
@@ -373,6 +372,16 @@ describe('/price watch button', () => {
     const json = modal.toJSON();
     expect(json.custom_id).toBe('watch:46');
     expect(json.components[1].components[0].value).toBe('148');
+  });
+
+  it('drops a modal Discord no longer accepts instead of throwing', async () => {
+    latestQuote.mockResolvedValue({ ask: 148 });
+    const { interaction, showModal } = fakeClick('price:watch:46');
+    showModal.mockRejectedValueOnce(new Error('Unknown interaction'));
+
+    await expect(handleWatchButton(interaction)).resolves.toBeUndefined();
+
+    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('answers ephemerally when the item left the catalogue', async () => {

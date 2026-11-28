@@ -191,8 +191,11 @@ short history is visible instead of implied.
 | `/graph item` | pick `7 days` | same message re-rendered: `Teak log — 7d`, `(edited)`, one chart, no second message |
 | `/graph item` | click the button | `Posted in general.` + public card `requested by @HRD Dee` |
 
-**Watch price button — added 2026-11-28, not yet driven live.** The ca below has not been run;
-the payload was only proved by sending the component row through the dev bot and reading it back.
+**Watch price button — driven live on the dev guild 2026-11-28.** The card carried both buttons
+(`Post to channel`, `Watch price`); the click opened the form titled `Teak log` with `66` in the
+threshold field and an empty direction field whose placeholder is `below`; saving it answered
+`Alert armed — Teak log`, the item showed up in `/watchlist`, and `/unwatch` removed it. Still
+unrun: the six-clicks-in-a-minute limiter ca and the no-quote card.
 
 | Surface | Action | Expected |
 |---|---|---|

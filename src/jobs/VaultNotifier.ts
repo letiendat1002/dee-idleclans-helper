@@ -69,10 +69,13 @@ export function vaultWindow(events: VaultEvent[]): string {
   const first = events[0].happenedAt;
   const last = events[events.length - 1].happenedAt;
   const clock = (moment: Date) => moment.toISOString().slice(11, 16);
-  const spansDays = first.toISOString().slice(0, 10) !== last.toISOString().slice(0, 10);
-  const head = spansDays ? `${first.toISOString().slice(0, 10)} ${clock(first)}` : clock(first);
+  const day = (moment: Date) => moment.toISOString().slice(0, 10);
+  const spansDays = day(first) !== day(last);
+  const head = spansDays ? `${day(first)} ${clock(first)}` : clock(first);
+  // the end date belongs here too: `2026-11-26 10:40–07:46 UTC` reads backwards.
+  const tail = spansDays ? `${day(last)} ${clock(last)}` : clock(last);
 
-  return `${head}–${clock(last)} UTC`;
+  return `${head}–${tail} UTC`;
 }
 
 /** The directions of a post, in the order a reader scans them. */
