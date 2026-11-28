@@ -74,6 +74,11 @@ jobs:
       - name: Deploy failure paths behave
         run: bash scripts/deploy.failure.test.sh
 
+      # The dev stack boots the same compose file as production; these guards are
+      # what stops the production application from starting on a laptop.
+      - name: Dev stack guards behave
+        run: bash scripts/dev-stack.test.sh
+
       - run: npm ci
 
       # Before the database work: a leaked credential or an operator path must

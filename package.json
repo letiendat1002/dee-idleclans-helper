@@ -11,6 +11,7 @@
     "coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "dev": "tsx watch src/index.ts",
+    "dev:stack": "bash scripts/dev-stack.sh",
     "migrate": "tsx src/db/migrate.ts",
     "start": "node dist/index.js"
   },

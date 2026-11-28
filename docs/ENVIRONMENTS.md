@@ -43,10 +43,16 @@ dẫn chính xác, unit và stack rollback trên laptop nằm trong `docs-privat
 ## 3. Chạy dev trên laptop
 
 ```bash
-docker compose --env-file .env.dev -p dih-dev up -d --build
+npm run dev:stack -- --build
 docker compose -p dih-dev ps
 docker compose -p dih-dev logs -f bot collector
 ```
+
+`npm run dev:stack` là đường duy nhất nên dùng: nó luôn truyền `--env-file .env.dev` và `-p` theo
+`STACK_PREFIX`, và từ chối khởi động khi `.env.dev` trỏ sai `ENV_FILE`, thiếu prefix, hoặc mang
+`DISCORD_CLIENT_ID` của production. Lý do có script này: 2026-11-28 một lần `docker compose -p dih-dev
+up` thiếu `--env-file .env.dev` đã boot token production trên laptop, dựng stack tên production và
+đăng ký lại command của production (`scripts/dev-stack.test.sh` giữ từng nhánh từ chối).
 
 `STACK_PREFIX=dih-dev` (đặt trong `.env.dev`) đổi tên container, network và volume, nên stack dev
 không đụng stack production nếu cả hai cùng chạy trên một máy. Mặc định không đặt biến này thì tên
