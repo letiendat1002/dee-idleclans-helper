@@ -41,6 +41,7 @@ describe('detectDrySellSide', () => {
     expect(match?.state).toBe('off_board');
     expect(match?.body.hours).toBe(25);
     expect(match?.body.lastOfferAt).toBe(new Date(END.getTime() - 25 * HOUR_MS).toISOString());
+    expect(match?.body.lastOfferVolume).toBe(500);
     // 25 of the 48 hours that make a spell maximally significant.
     expect(match?.significance).toBeCloseTo(25 / 48, 5);
   });

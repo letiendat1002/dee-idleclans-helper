@@ -55,6 +55,8 @@ export interface InsightBody {
   ask: number | null;
   hours?: number;
   lastOfferAt?: string;
+  /** Units on sale in the last hour that had offers: how thin the book was before it emptied. */
+  lastOfferVolume?: number;
 }
 
 /** What the detector returns, before the cross-item impact is known. */
@@ -101,7 +103,7 @@ function lastAsk(series: BookHour[]): number | null {
  */
 export function detectDrySellSide(series: BookHour[]): Match | null {
   let hours = 0;
-  let lastOfferAt: Date | null = null;
+  let lastOffer: BookHour | null = null;
 
   for (let i = series.length - 1; i >= 0; i -= 1) {
     const hour = series[i];
@@ -109,19 +111,25 @@ export function detectDrySellSide(series: BookHour[]): Match | null {
     if (next && next.hour.getTime() - hour.hour.getTime() > HOUR_MS + 1) break;
     if (hour.samples === 0) break;
     if (hour.askVolume > 0) {
-      lastOfferAt = hour.hour;
+      lastOffer = hour;
       break;
     }
     hours += 1;
   }
 
-  if (hours < DRY_MIN_HOURS || lastOfferAt === null) return null;
+  if (hours < DRY_MIN_HOURS || lastOffer === null) return null;
 
   return {
     pattern: 'dry_sell_side',
     state: 'off_board',
     significance: clamp01(hours / 48),
-    body: { name: '', ask: lastAsk(series), hours, lastOfferAt: lastOfferAt.toISOString() },
+    body: {
+      name: '',
+      ask: lastAsk(series),
+      hours,
+      lastOfferAt: lastOffer.hour.toISOString(),
+      lastOfferVolume: lastOffer.askVolume,
+    },
   };
 }
 

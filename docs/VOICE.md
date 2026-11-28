@@ -23,6 +23,10 @@ jargon; they stay in the code and the database, never on screen. "Buy price" is 
 as the price you pay when buying, which is the sell price. An average of traded prices is a
 **trade avg**, labelled so it cannot be mistaken for a sell price.
 
+A book with nothing on sale is **no sell orders**, and the insight card leads with how long it has
+been empty (`No sell orders for 38 hours`). `Off the board` is the database state name and "last
+offer" is also avoided: the screen word is **sell order**.
+
 ## Banned shapes
 
 These are the tells that made the old copy read as generated:

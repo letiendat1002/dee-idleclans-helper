@@ -33,9 +33,6 @@ const MAX_STANZAS = 3;
 /** Month names, because `toLocaleDateString` differs by runtime. */
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** The method line the footer declares: what the finding was measured on. */
-const METHOD = 'hourly book, sell side empty for 24h or more';
-
 /** `26 Nov`, in UTC. */
 function dayMonth(value: Date | string): string {
   const date = new Date(value);
@@ -49,18 +46,28 @@ function cadence(minutes: number): string {
   return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
 }
 
-/** One finding as the three lines the card shows. */
+/** `25 hours`, `4 days`: a duration the reader does not have to divide. */
+function duration(hours: number): string {
+  if (hours < 48) return `${hours} hours`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
+}
+
+/** One finding: the fact as its headline, then the item and its last sell order. */
 export function stanza(insight: Insight): string {
   const body = insight.body;
-  const price = body.ask === null || body.ask === undefined ? 'no sell price' : `last sell price ${formatMoney(body.ask)}`;
-  const until = body.lastOfferAt
-    ? `Had sell orders until ${dayMonth(body.lastOfferAt)}, ${formatUtcClock(new Date(body.lastOfferAt))} UTC.`
-    : 'Had sell orders earlier in the window.';
-  return [
-    `**Off the board since ${dayMonth(body.lastOfferAt ?? insight.firedAt)}**`,
-    `${body.name} · ${price}`,
-    until,
-  ].join('\n');
+  const head = body.hours
+    ? `**No sell orders for ${duration(body.hours)}** · ${body.name}`
+    : `**No sell orders** · ${body.name}`;
+
+  const parts: string[] = [];
+  if (body.ask !== null && body.ask !== undefined) parts.push(`last sell order ${formatMoney(body.ask)}`);
+  if (body.lastOfferVolume) parts.push(`${body.lastOfferVolume} units`);
+  if (body.lastOfferAt) {
+    parts.push(`${dayMonth(body.lastOfferAt)}, ${formatUtcClock(new Date(body.lastOfferAt))} UTC`);
+  }
+
+  return parts.length > 0 ? [head, `-# ${parts.join(' · ')}`].join('\n') : head;
 }
 
 /** Build the one embed of a post. */
@@ -70,14 +77,18 @@ export function buildEmbed(
   snapshotAt: Date,
   avatarUrl: string | null
 ): EmbedBuilder {
+  const scope = [
+    'Items with no sell orders for 24 hours or more',
+    'ranked by market volume',
+    `at most every ${cadence(intervalMin)}`,
+  ].join(' · ');
+
   return new EmbedBuilder()
     .setColor(COLORS.brand)
     .setAuthor(brandAuthor(avatarUrl))
     .setTitle(`Market Insight — ${dayMonth(snapshotAt)}`)
-    .setDescription(insights.map(stanza).join('\n\n'))
-    .setFooter({
-      text: `Snapshot ${formatUtcClock(snapshotAt)} UTC · every ${cadence(intervalMin)} · ${METHOD}`,
-    });
+    .setDescription(`-# ${scope}\n\n${insights.map(stanza).join('\n\n')}`)
+    .setFooter({ text: `Sell prices · hourly book · snapshot ${formatUtcClock(snapshotAt)} UTC` });
 }
 
 export class MarketInsights {

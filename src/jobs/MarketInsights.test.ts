@@ -56,16 +56,39 @@ function insight(overrides: Partial<Insight> = {}): Insight {
 }
 
 describe('stanza', () => {
-  it('names the day the sell side went quiet, the last price and the timestamp', () => {
+  it('leads with how long the sell side has been empty, then the last sell order', () => {
     const text = stanza(
-      insight({ body: { name: 'Elite hammer', ask: 500_000, hours: 38, lastOfferAt: '2026-11-24T13:31:00Z' } })
+      insight({
+        body: {
+          name: 'Elite hammer',
+          ask: 500_000,
+          hours: 38,
+          lastOfferAt: '2026-11-24T13:31:00Z',
+          lastOfferVolume: 64,
+        },
+      })
     );
 
-    expect(text).toContain('Off the board since 24 Nov');
+    expect(text).toContain('No sell orders for 38 hours');
     expect(text).toContain('Elite hammer');
-    expect(text).toContain('500,000g');
-    expect(text).toContain('Had sell orders until 24 Nov, 13:31 UTC');
-    expect(text).not.toContain('38 hours');
+    expect(text).toContain('last sell order 500,000g');
+    expect(text).toContain('64 units');
+    expect(text).toContain('24 Nov, 13:31 UTC');
+    expect(text).not.toContain('Off the board');
+  });
+
+  it('says days once the spell passes two of them', () => {
+    const text = stanza(
+      insight({ body: { name: 'Elite hammer', ask: 1_000, hours: 92, lastOfferAt: '2026-11-23T13:00:00Z' } })
+    );
+
+    expect(text).toContain('No sell orders for 3 days');
+  });
+
+  it('drops the duration rather than print a wrong one', () => {
+    expect(stanza(insight({ body: { name: 'Elite hammer', ask: null } }))).toContain(
+      '**No sell orders** · Elite hammer'
+    );
   });
 });
 
@@ -78,9 +101,10 @@ describe('buildEmbed', () => {
     expect(embed.title).toContain('Market Insight');
     expect(embed.title).toContain('27 Nov');
     expect(embed.author?.name).toBe('Dee IdleClans Helper');
-    expect(embed.footer?.text).toContain('Snapshot 04:05 UTC');
-    expect(embed.footer?.text).toContain('every 4 hours');
-    expect(embed.footer?.text).toContain('hourly book, sell side empty for 24h or more');
+    expect(embed.description).toContain('24 hours or more');
+    expect(embed.description).toContain('at most every 4 hours');
+    expect(embed.footer?.text).toContain('snapshot 04:05 UTC');
+    expect(embed.footer?.text).toContain('hourly book');
     expect(embed.thumbnail).toBeUndefined();
     expect(embed.fields).toBeUndefined();
   });
@@ -96,10 +120,10 @@ describe('buildEmbed', () => {
     expect(description).toContain('\n\n');
   });
 
-  it('scales the footer cadence to the interval', () => {
-    const footer = buildEmbed([insight()], 1440, snapshotAt, null).toJSON().footer?.text ?? '';
+  it('scales the stated cadence to the interval', () => {
+    const description = buildEmbed([insight()], 1440, snapshotAt, null).toJSON().description ?? '';
 
-    expect(footer).toContain('every 24 hours');
+    expect(description).toContain('at most every 24 hours');
   });
 });
 
@@ -243,11 +267,10 @@ describe('MarketInsights.tick', () => {
 });
 
 describe('stanza with a half-empty body', () => {
-  it('never prints a price the book did not have', () => {
+  it('keeps the headline and drops a meta line it cannot fill', () => {
     const text = stanza(insight({ body: { name: 'Elite hammer', ask: null, hours: 38 } }));
 
-    expect(text).toContain('no sell price');
-    expect(text).toContain('Had sell orders earlier in the window.');
+    expect(text).toContain('No sell orders for 38 hours');
+    expect(text).not.toContain('-#');
   });
-
 });

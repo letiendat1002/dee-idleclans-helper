@@ -158,6 +158,15 @@ because the reader who was just refused looks for the rule on that card.
   the snapshot minute, the same source as the footer, so the two never disagree. The fence was
   removed on purpose: inside one, `<:name:id>` prints as raw markup and `**bold**` as asterisks,
   so the aligned columns cost the icons and the emphasis. The rows are allowed to sit ragged.
+- **insight post (scheduled)** — brand colour; author line; title `Market Insight — 27 Nov`; one
+  `-#` scope line states what the card is (`Items with no sell orders for 24 hours or more · ranked
+  by market volume · at most every 4 hours`), then up to three findings of two lines each: the bold
+  headline is the fact and the item (`**No sell orders for 92 hours** · Elite hammer`), the `-#`
+  meta line is the last sell order (`last sell order 500,000g · 64 units · 23 Nov, 22:00 UTC`).
+  Duration leads because that is the question a reader has; `Off the board` is the database state
+  name and never reaches the screen. Footer = `Sell prices · hourly book · snapshot 14:24 UTC`:
+  provenance only, because the cadence belongs in the scope line. No thumbnail — three stanzas
+  already fill a phone screen.
 - **alert DM** — title carries direction and item: `Price Alert — <item>` with the icon set in the
   description; the crossing price is the first line in bold; average, range and volume as the
   evidence line; trade averages on their own line; re-arm rule last in muted italics. Footer =

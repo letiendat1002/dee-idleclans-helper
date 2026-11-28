@@ -28,6 +28,7 @@ import { createLogger } from '../utils/logger.js';
 import { canPost } from '../ui/channel.js';
 import { COLORS, ICONS, brandAuthor, formatUtcClock } from '../ui/theme.js';
 import { InsightSettings, MAX_CHANNELS_PER_GUILD } from '../services/InsightSettings.js';
+import { InsightStore } from '../services/InsightStore.js';
 
 const logger = createLogger('INSIGHT');
 
@@ -131,11 +132,10 @@ async function handleAdd(interaction: ChatInputCommandInteraction, guild: Guild)
     .setTitle(`Insights on — #${cached.name}`)
     .setDescription(
       [
-        `${ICONS.digest} Book states post in #${cached.name}, at most every ${formatInterval(channel.intervalMin)}. It never pushes a notification.`,
+        `${ICONS.digest} Insights post in #${cached.name}, at most every ${formatInterval(channel.intervalMin)}. They never push a notification.`,
         'No finding, no post: silence means nothing crossed its threshold.',
         '',
         `A server can subscribe at most ${countLabel(MAX_CHANNELS)}.`,
-        'The bot cannot create channels — create one first and run this command again.',
       ].join('\n')
     );
 
@@ -166,6 +166,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction, guild: Gui
 async function handleList(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
   const channels = await InsightSettings.listChannels(guild.id);
   const avatarUrl = interaction.client.user?.displayAvatarURL({ size: 128 }) ?? null;
+  const waiting = channels.length === 0 ? 0 : await InsightStore.queuedCount();
 
   const lines = channels.map((channel) => {
     const name = guild.channels.cache.get(channel.channelId)?.name ?? channel.channelId;
@@ -183,7 +184,11 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
     .setDescription(
       channels.length === 0
         ? 'No channel receives insights yet. Run `/insight add #channel` to pick one.'
-        : [`${countLabel(channels.length)} subscribed.`, '', ...lines].join('\n')
+        : [
+            `${countLabel(channels.length)} subscribed · ${waiting} ${waiting === 1 ? 'finding' : 'findings'} waiting.`,
+            '',
+            ...lines,
+          ].join('\n')
     );
 
   await interaction.editReply({ embeds: [embed] });
