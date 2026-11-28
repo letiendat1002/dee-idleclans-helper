@@ -250,6 +250,20 @@ describe('ItemCatalogue.sync', () => {
     vi.resetAllMocks();
   });
 
+  it('records when the catalogue last matched the game build', async () => {
+    vi.mocked(getBuildVersions).mockResolvedValue({ latestBuildVersion: '1.6800' });
+    vi.mocked(query).mockImplementation(async (sql: string) =>
+      sql.includes('catalogue_meta')
+        ? { rows: [{ value: '1.6800' }], rowCount: 1 }
+        : { rows: [], rowCount: 0 }
+    );
+    ItemCatalogue.lastSyncedAt = null;
+
+    await ItemCatalogue.sync();
+
+    expect(ItemCatalogue.lastSyncedAt).toBeInstanceOf(Date);
+  });
+
   it('sync returns changed:false when the build version matches', async () => {
     vi.mocked(getBuildVersions).mockResolvedValue({ latestBuildVersion: '1.6800' });
     vi.mocked(query).mockImplementation(async (sql: string) =>

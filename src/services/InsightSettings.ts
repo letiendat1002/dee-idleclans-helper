@@ -96,10 +96,10 @@ export class InsightSettings {
 
   /** Unsubscribe one channel of a guild; the guild is part of the condition. */
   static async removeChannel(guildId: string, channelId: string): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM insight_channels WHERE guild_id = $1 AND channel_id = $2',
       [guildId, channelId]
-    )) as { rowCount: number | null };
+    );
     return res.rowCount ?? 0;
   }
 
@@ -133,10 +133,10 @@ export class InsightSettings {
       );
     }
 
-    const res = (await query(
+    const res = await query(
       'UPDATE insight_channels SET interval_min = $3 WHERE guild_id = $1 AND channel_id = $2',
       [guildId, channelId, minutes]
-    )) as { rowCount: number | null };
+    );
 
     if ((res.rowCount ?? 0) === 0) {
       throw new DeeError('That channel does not receive insights.', 'E1', ErrCodes.INVALID_INPUT);
@@ -155,9 +155,7 @@ export class InsightSettings {
 
   /** Drop every row of a deleted channel, whatever guild it belonged to. */
   static async removeChannelById(channelId: string): Promise<number> {
-    const res = (await query('DELETE FROM insight_channels WHERE channel_id = $1', [channelId])) as {
-      rowCount: number | null;
-    };
+    const res = await query('DELETE FROM insight_channels WHERE channel_id = $1', [channelId]);
     return res.rowCount ?? 0;
   }
 

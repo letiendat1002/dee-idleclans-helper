@@ -416,13 +416,13 @@ export class MarketDigest {
     signals: PriceSignal[],
     now: Date
   ): Promise<PriceSignal[]> {
-    const res = (await query(
+    const res = await query<{ item_id: number; direction: string }>(
       `SELECT item_id, direction FROM alert_cooldowns
        WHERE guild_id = $1 AND last_signal_at >= $2`,
       [guildId, new Date(now.getTime() - COOLDOWN_MS)]
-    )) as { rows: Array<{ item_id: number; direction: string }> };
+    );
 
-    const cooling = new Set((res.rows ?? []).map((row) => `${row.item_id}:${row.direction}`));
+    const cooling = new Set(res.rows.map((row) => `${row.item_id}:${row.direction}`));
 
     return signals.filter((signal) => !cooling.has(`${signal.itemId}:${signal.direction}`));
   }

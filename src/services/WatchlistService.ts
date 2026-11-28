@@ -79,7 +79,7 @@ export class WatchlistService {
     direction: WatchDirection,
     threshold: number
   ): Promise<WatchlistRow> {
-    const res = (await query(
+    const res = await query<WatchlistDbRow>(
       `INSERT INTO watchlists (discord_user_id, guild_id, item_id, direction, threshold)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (discord_user_id, item_id, direction)
@@ -89,7 +89,7 @@ export class WatchlistService {
                      delivered = TRUE
        RETURNING ${COLUMNS}`,
       [userId, guildId, itemId, direction, threshold]
-    )) as { rows: WatchlistDbRow[] };
+    );
 
     return toRow(res.rows[0]);
   }
@@ -98,22 +98,22 @@ export class WatchlistService {
    * Return the rows of one user, armed or not.
    */
   static async list(userId: string): Promise<WatchlistRow[]> {
-    const res = (await query(
+    const res = await query<WatchlistDbRow>(
       `SELECT ${COLUMNS} FROM watchlists WHERE discord_user_id = $1 ORDER BY created_at, id`,
       [userId]
-    )) as { rows: WatchlistDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toRow);
+    return res.rows.map(toRow);
   }
 
   /**
    * Remove every alert of the user for an item and return how many rows went.
    */
   static async remove(userId: string, itemId: number): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM watchlists WHERE discord_user_id = $1 AND item_id = $2',
       [userId, itemId]
-    )) as { rowCount: number | null };
+    );
 
     return res.rowCount ?? 0;
   }
@@ -125,10 +125,10 @@ export class WatchlistService {
    * row of another user is none of the caller's business.
    */
   static async removeById(id: number, userId: string): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM watchlists WHERE id = $1 AND discord_user_id = $2',
       [id, userId]
-    )) as { rowCount: number | null };
+    );
 
     return res.rowCount ?? 0;
   }
@@ -140,10 +140,10 @@ export class WatchlistService {
    * re-arms when the price comes back to the other side of the threshold.
    */
   static async listAll(): Promise<WatchlistRow[]> {
-    const res = (await query(
+    const res = await query<WatchlistDbRow>(
       `SELECT ${COLUMNS} FROM watchlists ORDER BY id`
-    )) as { rows: WatchlistDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toRow);
+    return res.rows.map(toRow);
   }
 }

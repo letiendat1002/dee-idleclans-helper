@@ -33,8 +33,7 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | G3 | 6 invocation **hợp lệ** trong 1 phút (bucket) | **đóng 2026-11-21**: probe trong container gọi limiter 6 lần — 5 pass, lần 6 trả `Slow down` kèm log `[RATE]`; cùng nhánh được phủ trong `RateLimiter.test.ts` | — |
 | G4 | CI ≠ docker image (alpine/Dockerfile drift) | **đóng 2026-11-21**: image tự compile từ `src` (multi-stage), không còn đường ship `dist` cũ của host | smoke sau G1 vẫn nên chạy `docker compose build bot` |
 | G5 | Migration chạy trong bot lúc boot, lỗi chỉ ghi log | health gate không thấy migration fail | đã ghi trong checklist release riêng của operator §1 (review tay từng migration). **Quyết định 2026-11-21: giữ nguyên** — đây là lựa chọn có chủ đích (`ARCHITECTURE.md` §3: process sống để log/heartbeat thấy), `deploy.sh` đã có schema gate so `schema_migrations`; đổi sang `exit 1` là thay đổi thiết kế, không phải fix |
-| G6 | Graphify labels thiếu (75 community, 23 nhãn đã lưu) | index dùng được, nhãn xấu; không có LLM key | `graphify label . --missing-only` khi có key — không đáng mua key chỉ vì việc này |
-| G7 | Không có test tự động cho `scripts/deploy.sh`, `scripts/backup-db.sh` | hai script quyết định deploy/backup, chỉ chạy tay | dry-run có kiểm soát khi release; đừng viết test giả cho shell |
+| G7 | `scripts/backup-db.sh` không có test tự động (2026-11-28: **`scripts/deploy.sh` đã có** `scripts/deploy.failure.test.sh`, CI chạy ở `tests.yml:75` — dòng cũ ghi sai cả hai) | script quyết định backup, chỉ chạy 2 lần/ngày trên host | dry-run có kiểm soát mỗi release; nếu muốn test thật thì dựng stub như `deploy.failure.test.sh`, đừng viết test giả |
 | G8 | ~~Chưa có 24 h phủ đủ nhịp poll~~ — **đóng 2026-11-25** | **đo lại trên host:** 453 458 dòng trong 24.0 h (11-24 03:10Z → 11-25 03:08Z), **0 khoảng trống > 20 phút**, gap lớn nhất **6 phút** (đúng cửa sổ deploy 1.3.0). Trước đó trên laptop: 45% nhịp 2 phút, 5 gap > 20 phút | số đã ghi `ROADMAP.md` §2; không cần mở lại trừ khi host ngủ/đổi lịch |
 
 | G9 | Dev stack đã được bấm thử lệnh thật | **đóng 2026-11-22**: `/help` trả embed Commands (Market `/price`, `/graph`), `/price Spruce log` trả `27g · 27,334 units` / buy `25g · 4,182 units` / `snapshot 13:41 UTC`, `/graph` 24h → menu 7 days → về 24h đổi tại chỗ | — |
@@ -46,11 +45,10 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | # | Debt | Mức | Ghi chú |
 |---|---|---|---|
 | D1 | Rate window (Redis) + cooldown share (RAM) giả định **một process** | trung bình | lên multi-instance thì chuyển cả hai sang Redis; luật đã ghi `CONVENTIONS.md` §6.5 |
-| D2 | 131 chỗ `as` còn lại (đã bỏ 3 ở `ItemCatalogue`) | thấp | bỏ dần ở biên query bằng `query<Row>`; không làm một đợt riêng |
 | D3 | `statement_timeout` 15s chưa đo với backfill lớn | thấp | theo dõi log `canceling statement due to statement timeout` |
 | D4 | ~~CI không chạy `npm run coverage`~~ — **đóng 2026-11-24 (v1.0.3)** | thấp | CI chạy `npm run coverage` và `vitest.config.ts` giữ ngưỡng 84/71/85/85, đặt dưới mức thực tế để chặn tụt chứ không phải mục tiêu |
 | D5 | `.env` nằm ở nhiều chỗ: checkout workspace (stack đang chạy), checkout deploy riêng (chép tay mode 600), và `.env.dev` cho app dev | thấp, dễ sai | mỗi lần rotate phải sửa đúng file của stack đang chạy; `.env.dev` là app khác nên token khác. Kiểm bằng token prefix khi nghi ngờ (không chép prefix vào repo) |
-| D6 | T4 "docs consolidation" queued (11 docs; `AGENTS.md` còn lặp `CONVENTIONS.md`) | trung bình | không chặn release |
+| D6 | T4 "docs consolidation" queued (11 docs). **2026-11-28: phần lặp thật nằm ở `CONVENTIONS.md` §9 ↔ `DEFERRED.md`, không phải `AGENTS.md`** (file đó chỉ là bản đồ + con trỏ) — §9 đã gộp còn 2 sự thật agent cần | trung bình | không chặn release |
 | D7 | ~~`systemError` là export không dùng~~ — **đóng 2026-11-24** | trivial | không còn trong `src/`; oxlint (`no-unused-vars`) giữ loại này khỏi quay lại |
 | D8 | Depth strip cho chart 24h (dải low/high mỗi cột) | thấp | **Lý do cũ hết hiệu lực 2026-11-23**: bucket history của vendor có sẵn `low`/`high`/`avg`/`volume`, không cần `price_snapshots`. Chart v3 chỉ vẽ avg + volume; thêm dải là vẽ thêm hai polyline trong `chartHistory.ts`. Mở lại khi owner muốn thấy độ rộng giá trong một bucket |
 
@@ -63,7 +61,6 @@ rotate, và không tạo mục riêng cho nó ở đây.
 | ~~D23~~ | ~~**7 command còn ACK sau `rateLimiter.check`**~~ — **đóng 2026-11-27** | — | đã ACK trước mọi I/O ở `/price`, `/graph`, `/unwatch`, `/watchlist`, `/digest`, `/vault` và nút share (PR #110); range menu `deferUpdate` trước rồi báo từ chối bằng follow-up nên không xoá chart. `/watch` là ngoại lệ có lý do: nó mở modal, mà một interaction đã defer thì Discord không cho mở modal — rủi ro còn lại chỉ ở riêng lệnh này |
 | ~~D9~~ | ~~`vault_events` ghi **trước** khi post: một batch lỗi Discord là mất luôn~~ — **đóng 2026-11-25** | — | Bảng `vault_deliveries` (migration 012) ghi `(clan, event_key, channel_id)` **sau** khi channel nhận message; tick sau đọc `undeliveredFor` nên post bị từ chối được thử lại, không mất. Prune dọn delivery khi event bị prune. Test: `retries an event the channel refused instead of losing it` |
 | D10 | `price_daily` có ngày dựng từ **một** poll (2026-11-12: 604 samples / 630 item); card daily không in `samples` | thấp | thêm `samples` vào footer hoặc ẩn ngày có < 5% số poll; đợi dữ liệu 1 ngày đủ trước khi quyết |
-| D11 | Catalogue trễ tối đa 30 phút (sync) nhưng không surface nào nói "catalogue lúc mấy giờ" | thấp | thêm `last_synced_at` vào `/help` hoặc footer `/price` khi rename item gây nhầm |
 | D12 | Budget 5/phút dùng chung cho lệnh lệch chi phí | thấp | **Đã bớt lệch 2026-11-23**: `/graph` không còn gọi renderer ngoài, chi phí giờ là một lần đọc history (cache riêng 10/phút, TTL 2–120 phút), nên lần đổi range thứ hai vào cùng period là 0 request. Vẫn đọc log `[RATE]` vài tuần trước khi tách dòng `graph: { max: 3 }` |
 | D13 | `autocomplete` của `/digest` và `/vault` không kiểm tra quyền | thấp, chấp nhận | chúng chỉ liệt kê kênh/clan của chính server, mà mọi member đã thấy trong danh sách kênh; thêm một lần gọi quyền mỗi lần gõ không bảo vệ thêm gì |
 | ~~D14~~ | ~~Chart daily chỉ có 6–7 ngày~~ | **đóng 2026-11-23** | Panel traded riêng đã có: `/graph` v3 vẽ đúng series history (avg traded price + volume), 4 range 24h/7d/30d/1y, nhãn `traded` — không trộn trục ask. Luật cũ vẫn giữ: **không backfill `price_daily`** từ endpoint này (giá khớp ≠ ask); `price_daily` chỉ phục vụ alert/digest. Chi tiết bucket + giới hạn ở `CHART.md` |
@@ -83,12 +80,10 @@ riêng**; mỗi mục có trigger rõ để quay lại, và số đo đủ để
 | # | Quyết định 2026-11-25 | Mở lại khi |
 |---|---|---|
 | D1 | Giữ một process. Multi-instance là thay đổi thiết kế (rate window + cooldown sang Redis), không phải fix | có nhu cầu chạy ≥2 instance |
-| D2 | Không làm một đợt. Chỉ bỏ `as` ở biên query khi đang sửa chính file đó | file có `as` được chạm vì việc khác |
 | D3 | `statement_timeout` 15 s giữ nguyên. Log `canceling statement due to statement timeout` là tín hiệu duy nhất | log đó xuất hiện |
 | D5 | Giữ 3 chỗ `.env`; bản đồ file nào thuộc stack nào đã ở `OPERATIONS.md` §1. Không gộp: gộp dễ làm dev trỏ nhầm DB production | rotate credential lần tới |
 | D8 | Không thêm dải low/high. Chart v3 vẽ avg + volume; dải là thông tin thêm, không phải lỗi | owner muốn thấy độ rộng giá |
 | D10 | Không thêm `samples` vào footer. Dữ liệu 1 ngày chưa đủ để quyết ngưỡng "ít mẫu" | có ngày built từ 1 poll mà người dùng thật đọc |
-| D11 | Không surface giờ sync catalogue. Rename item chưa gây nhầm lẫn nào được báo | có báo cáo nhầm do catalogue cũ |
 | D12 | Giữ budget 5/phút chung. `/graph` đã rẻ hơn sau v3 (cache 10/phút) | log `[RATE]` cho thấy `/graph` chặn lệnh khác |
 | D15 | **Giữ 30 ngày (a).** Đo 2026-11-25: `price_snapshots` **353 MB** (193 heap + 160 idx), **2 393 710 dòng**, **80 B/dòng** heap ⇒ ~148 B/dòng cả index; 452 458 dòng/ngày ≈ **67 MB/ngày**, trần 30 ngày ≈ **2,0 GB**, một năm churn ≈ **24 GB** (+ WAL) trên đĩa còn **206 GB**. Archive sang B2 (b) và hạ 14 ngày (c) không mua gì; mất 16 ngày audit | DB > 1 GB hoặc dump > 64 MB |
 | D17 | Không áp Prettier. Sẽ là một commit reformat toàn repo, phải đứng riêng | muốn khoá style |
@@ -148,7 +143,7 @@ with the exact strings. Undo (channel sync, test messages) afterwards and say wh
 ```
 Work the tech-debt table in docs/DEFERRED.md §3 top to bottom, one item per commit, tests
 before/after, and move each finished row into the ROADMAP changelog. Start with D1 if we are
-planning more than one bot instance, otherwise D2 at the query boundary.
+planning more than one bot instance, otherwise D6 or D8.
 ```
 
 **Market Insights (mở T11/D20):**

@@ -240,9 +240,9 @@ export class InsightStore {
 
   /** Drop queued findings that did not earn a slot within a day. */
   static async expire(): Promise<number> {
-    const res = (await query(
+    const res = await query(
       `DELETE FROM insights WHERE status = 'queued' AND fired_at < NOW() - INTERVAL '${QUEUE_TTL}'`
-    )) as { rowCount: number | null };
+    );
     return res.rowCount ?? 0;
   }
 

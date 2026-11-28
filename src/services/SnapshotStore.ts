@@ -119,14 +119,14 @@ export class SnapshotStore {
     const histories = new Map<number, number[]>();
     if (itemIds.length === 0) return histories;
 
-    const res = (await query(
+    const res = await query<{ item_id: number; ask: string | number }>(
       `SELECT item_id, ask FROM price_snapshots
        WHERE item_id = ANY($1) AND captured_at >= $2 AND ask IS NOT NULL
        ORDER BY item_id, captured_at ASC`,
       [itemIds, since]
-    )) as { rows: Array<{ item_id: number; ask: string | number }> };
+    );
 
-    for (const row of res.rows ?? []) {
+    for (const row of res.rows) {
       const prices = histories.get(row.item_id);
       if (prices) prices.push(Number(row.ask));
       else histories.set(row.item_id, [Number(row.ask)]);
@@ -144,29 +144,29 @@ export class SnapshotStore {
    * being reported with a stale price.
    */
   static async recentlySeenItemIds(): Promise<Set<number>> {
-    const res = (await query(
+    const res = await query<{ item_id: number }>(
       `WITH recent_polls AS (
          SELECT DISTINCT captured_at FROM price_snapshots ORDER BY captured_at DESC LIMIT 2
        )
        SELECT DISTINCT item_id FROM price_snapshots
        WHERE captured_at >= (SELECT MIN(captured_at) FROM recent_polls)`
-    )) as { rows: Array<{ item_id: number }> };
+    );
 
-    return new Set((res.rows ?? []).map((row) => row.item_id));
+    return new Set(res.rows.map((row) => row.item_id));
   }
 
   /**
    * Return the newest quote of every item that has a snapshot.
    */
   static async latestQuotes(): Promise<Map<number, MarketQuote>> {
-    const res = (await query(
+    const res = await query<SnapshotRow>(
       `SELECT DISTINCT ON (item_id) item_id, ask, bid, ask_volume, bid_volume
        FROM price_snapshots
        ORDER BY item_id, captured_at DESC`
-    )) as { rows: SnapshotRow[] };
+    );
 
     const quotes = new Map<number, MarketQuote>();
-    for (const row of res.rows ?? []) {
+    for (const row of res.rows) {
       quotes.set(row.item_id, {
         itemId: row.item_id,
         ask: toNumber(row.ask),
@@ -186,16 +186,16 @@ export class SnapshotStore {
    * which is the whole cost a command that names one item should pay.
    */
   static async latestQuote(itemId: number): Promise<MarketQuote | null> {
-    const res = (await query(
+    const res = await query<SnapshotRow>(
       `SELECT item_id, ask, bid, ask_volume, bid_volume
        FROM price_snapshots
        WHERE item_id = $1
        ORDER BY captured_at DESC
        LIMIT 1`,
       [itemId]
-    )) as { rows: SnapshotRow[] };
+    );
 
-    const row = res.rows?.[0];
+    const row = res.rows[0];
     if (!row) return null;
 
     return {
@@ -215,12 +215,12 @@ export class SnapshotStore {
    * otherwise claim a capture time up to two polls fresher than its price.
    */
   static async latestQuoteAt(itemId: number): Promise<Date | null> {
-    const res = await query(
+    const res = await query<{ captured_at: Date | null }>(
       `SELECT MAX(captured_at) AS captured_at FROM price_snapshots WHERE item_id = $1`,
       [itemId]
-    ) as { rows?: Array<{ captured_at: Date | null }> };
+    );
 
-    const at = res.rows?.[0]?.captured_at ?? null;
+    const at = res.rows[0]?.captured_at ?? null;
     return at === null ? null : new Date(at);
   }
 
@@ -231,12 +231,12 @@ export class SnapshotStore {
    * answer cannot replace a full snapshot with a partial one.
    */
   static async latestPollSize(): Promise<number> {
-    const res = await query(
+    const res = await query<{ size: number }>(
       `SELECT count(*)::int AS size FROM price_snapshots
        WHERE captured_at = (SELECT MAX(captured_at) FROM price_snapshots)`
-    ) as { rows?: Array<{ size: number }> };
+    );
 
-    return res.rows?.[0]?.size ?? 0;
+    return res.rows[0]?.size ?? 0;
   }
 
   /**
@@ -247,14 +247,14 @@ export class SnapshotStore {
    * present an old price as the current one.
    */
   static async latestAskAt(itemId: number): Promise<Date | null> {
-    const res = (await query(
+    const res = await query<{ captured_at: Date | null }>(
       `SELECT MAX(captured_at) AS captured_at
        FROM price_snapshots
        WHERE item_id = $1 AND ask IS NOT NULL AND ask > 0`,
       [itemId]
-    )) as { rows?: Array<{ captured_at: Date | null }> };
+    );
 
-    const at = res.rows?.[0]?.captured_at ?? null;
+    const at = res.rows[0]?.captured_at ?? null;
     return at === null ? null : new Date(at);
   }
 
@@ -265,11 +265,11 @@ export class SnapshotStore {
    * feed that stopped hours ago.
    */
   static async latestSnapshotAt(): Promise<Date | null> {
-    const res = (await query('SELECT MAX(captured_at) AS captured_at FROM price_snapshots')) as {
-      rows?: Array<{ captured_at: Date | null }>;
-    };
+    const res = await query<{ captured_at: Date | null }>(
+      'SELECT MAX(captured_at) AS captured_at FROM price_snapshots'
+    );
 
-    const at = res.rows?.[0]?.captured_at ?? null;
+    const at = res.rows[0]?.captured_at ?? null;
     return at === null ? null : new Date(at);
   }
 
@@ -285,7 +285,7 @@ export class SnapshotStore {
    * is order-book depth, not trade volume, so it is not summed into the day.
    */
   static async rollupCompleteDays(days: number): Promise<number> {
-    const res = (await query(
+    const res = await query(
       `INSERT INTO price_daily (item_id, day, open, close, low, high, samples,
                                bid_open, bid_close, bid_low, bid_high, bid_samples)
        SELECT s.item_id,
@@ -312,7 +312,7 @@ export class SnapshotStore {
        GROUP BY 1, 2
        ON CONFLICT (item_id, day) DO NOTHING`,
       [days]
-    )) as { rowCount: number | null };
+    );
 
     const rolled = res.rowCount ?? 0;
     if (rolled > 0) logger.info('price days rolled up', { rows: rolled, windowDays: days });
@@ -329,7 +329,15 @@ export class SnapshotStore {
    * once it has closed.
    */
   static async dailyHistory(itemId: number, days: number): Promise<DailyPrice[]> {
-    const res = (await query(
+    const res = await query<{
+      day: Date | string;
+      open: string | number | null;
+      close: string | number | null;
+      low: string | number | null;
+      high: string | number | null;
+      bid_close: string | number | null;
+      samples: number;
+    }>(
       `SELECT day, open, close, low, high, bid_close, samples
        FROM price_daily
        WHERE item_id = $1
@@ -337,19 +345,9 @@ export class SnapshotStore {
          AND day < (now() AT TIME ZONE 'UTC')::date
        ORDER BY day ASC`,
       [itemId, days]
-    )) as {
-      rows: Array<{
-        day: Date | string;
-        open: string | number | null;
-        close: string | number | null;
-        low: string | number | null;
-        high: string | number | null;
-        bid_close: string | number | null;
-        samples: number;
-      }>;
-    };
+    );
 
-    return (res.rows ?? []).map((row) => ({
+    return res.rows.map((row) => ({
       day: toUtcDay(row.day),
       open: toNumber(row.open),
       close: toNumber(row.close),
@@ -365,7 +363,7 @@ export class SnapshotStore {
    * removed.
    */
   static async pruneOlderThan(cutoff: Date): Promise<number> {
-    const res = (await query(
+    const res = await query(
       `DELETE FROM price_snapshots s
        WHERE s.captured_at < $1
          AND EXISTS (
@@ -373,9 +371,7 @@ export class SnapshotStore {
                WHERE d.day = (s.captured_at AT TIME ZONE 'UTC')::date
              )`,
       [cutoff]
-    )) as {
-      rowCount: number | null;
-    };
+    );
 
     const deleted = res.rowCount ?? 0;
     logger.info('price snapshots pruned', { deleted, cutoff: cutoff.toISOString() });

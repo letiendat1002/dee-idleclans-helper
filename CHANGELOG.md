@@ -41,10 +41,18 @@ referenced here; it keeps its own history.
 - A vault line no longer prints a count marker in front of a currency: gold reads
   `**6,969,696 Gold**`, while items keep theirs (`**5x Shark tooth**`).
 
+### Internal
+
+- Postgres rows now arrive typed from `query<Row>` at all 44 call sites; the `as { rows, rowCount }`
+  assertions are gone (`docs/DEFERRED.md` D2).
+- `/help` names the time the catalogue was last checked against the game build, so an item renamed
+  in the last 30 minutes is not read as a stale bot (D11).
+
 Docs: `docs/GUIDE.md` and `docs/DISCORD-TESTING.md` for the two `/price` buttons and the
-muted-card rule, `docs/CONVENTIONS.md` for what `ui/share.ts` now holds, `docs/DEFERRED.md`
-D24 (thin-item floor, closed with its measurement), `docs/ROADMAP.md` row for this release,
-`docs/UI-DESIGN.md` and `docs/VOICE.md` for the insight card wording.
+muted-card rule, `docs/CONVENTIONS.md` for what `ui/share.ts` now holds and for §9 now pointing
+at `DEFERRED.md` instead of repeating it, `docs/DEFERRED.md` (D2 and D11 closed, D24 closed with
+its measurement, G6 untracked as out of scope, G7 corrected), `docs/ROADMAP.md` row for this
+release, `docs/UI-DESIGN.md` and `docs/VOICE.md` for the insight card wording.
 
 ## [1.7.0] - 2026-11-27
 

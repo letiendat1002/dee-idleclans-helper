@@ -12,7 +12,8 @@ import {
 import { formatUnexpectedError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { safeReply } from '../ui/reply.js';
-import { COLORS, ICONS, brandAuthor } from '../ui/theme.js';
+import { COLORS, ICONS, brandAuthor, formatUtcClock } from '../ui/theme.js';
+import { ItemCatalogue } from '../services/ItemCatalogue.js';
 
 const logger = createLogger('HELP');
 
@@ -34,6 +35,17 @@ const POLICY_URL = 'https://letiendat1002.github.io/dee-idleclans-helper';
  * A donation unlocks nothing: every feature is free.
  */
 const SPONSOR_URL = 'https://ko-fi.com/letiendat1002';
+
+/**
+ * The catalogue freshness, when this process has checked it.
+ *
+ * A renamed item shows an old name until the next sync, so the one line that
+ * costs nothing to say keeps a stale name from reading like a bot bug.
+ */
+function catalogueLine(): string {
+  const at = ItemCatalogue.lastSyncedAt;
+  return at === null ? '' : ` · catalogue ${formatUtcClock(at)} UTC`;
+}
 
 /** The invite URL of the bot, built from the client id of the environment. */
 function inviteUrl(): string {
@@ -103,7 +115,9 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
       // showed as literal brackets. The links live in the field; the footer is
       // one plain line.
       .setFooter({
-        text: 'Made by HRDDee · 5 uses per minute (except /help) · digest, insights and vault post publicly',
+        text:
+          'Made by HRDDee · 5 uses per minute (except /help) · digest, insights and vault post publicly' +
+          catalogueLine(),
       });
 
     await safeReply(interaction, { embeds: [embed], flags: 64 });

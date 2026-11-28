@@ -73,7 +73,7 @@ export class BookRollup {
       [from, lastClosed]
     );
 
-    const rows = (res as { rowCount: number | null }).rowCount ?? 0;
+    const rows = res.rowCount ?? 0;
     logger.info('book rollup written', { hours, rows });
     return { done: true, hours };
   }

@@ -125,10 +125,10 @@ export class DigestSettings {
    * of the caller's business.
    */
   static async removeChannel(guildId: string, channelId: string): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM digest_channels WHERE guild_id = $1 AND channel_id = $2',
       [guildId, channelId]
-    )) as { rowCount: number | null };
+    );
 
     return res.rowCount ?? 0;
   }
@@ -137,14 +137,14 @@ export class DigestSettings {
    * Return the subscribed channels of a guild.
    */
   static async listChannels(guildId: string): Promise<DigestChannel[]> {
-    const res = (await query(
+    const res = await query<DigestChannelDbRow>(
       `SELECT guild_id, channel_id, created_by, created_at, last_sent_at
        FROM digest_channels WHERE guild_id = $1
        ORDER BY created_at, channel_id`,
       [guildId]
-    )) as { rows: DigestChannelDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toChannel);
+    return res.rows.map(toChannel);
   }
 
   /**
@@ -154,15 +154,15 @@ export class DigestSettings {
    * with the row instead of costing a second query per guild.
    */
   static async listSubscriptions(): Promise<DigestSubscription[]> {
-    const res = (await query(
+    const res = await query<DigestSubscriptionDbRow>(
       `SELECT dc.guild_id, dc.channel_id, dc.created_by, dc.created_at, dc.last_sent_at,
               COALESCE(gs.digest_interval_min, $1) AS interval_min
        FROM digest_channels dc
        LEFT JOIN guild_settings gs ON gs.guild_id = dc.guild_id`,
       [DEFAULT_INTERVAL_MIN]
-    )) as { rows: DigestSubscriptionDbRow[] };
+    );
 
-    return (res.rows ?? []).map((row) => ({
+    return res.rows.map((row) => ({
       ...toChannel(row),
       intervalMin: Number(row.interval_min ?? DEFAULT_INTERVAL_MIN),
     }));
@@ -197,12 +197,12 @@ export class DigestSettings {
    * Return the cadence of a guild, or the default when it never chose one.
    */
   static async readIntervalMinutes(guildId: string): Promise<number> {
-    const res = (await query(
+    const res = await query<{ digest_interval_min: string | number | null }>(
       'SELECT digest_interval_min FROM guild_settings WHERE guild_id = $1',
       [guildId]
-    )) as { rows: Array<{ digest_interval_min: string | number | null }> };
+    );
 
-    const row = (res.rows ?? [])[0];
+    const row = res.rows[0];
     if (!row) return DEFAULT_INTERVAL_MIN;
 
     return Number(row.digest_interval_min ?? DEFAULT_INTERVAL_MIN);
@@ -228,9 +228,7 @@ export class DigestSettings {
    * A channel id is unique on Discord, so one delete takes every row with it.
    */
   static async removeChannelById(channelId: string): Promise<number> {
-    const res = (await query('DELETE FROM digest_channels WHERE channel_id = $1', [channelId])) as {
-      rowCount: number | null;
-    };
+    const res = await query('DELETE FROM digest_channels WHERE channel_id = $1', [channelId]);
 
     return res.rowCount ?? 0;
   }
@@ -239,12 +237,12 @@ export class DigestSettings {
    * Read one row of the table, or an empty list when it is gone.
    */
   private static async readChannel(guildId: string, channelId: string): Promise<DigestChannel[]> {
-    const res = (await query(
+    const res = await query<DigestChannelDbRow>(
       `SELECT guild_id, channel_id, created_by, created_at, last_sent_at
        FROM digest_channels WHERE guild_id = $1 AND channel_id = $2`,
       [guildId, channelId]
-    )) as { rows: DigestChannelDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toChannel);
+    return res.rows.map(toChannel);
   }
 }
