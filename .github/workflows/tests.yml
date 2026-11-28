@@ -79,6 +79,11 @@ jobs:
       - name: Dev stack guards behave
         run: bash scripts/dev-stack.test.sh
 
+      # A backup that quietly writes nothing is only discovered the day a restore
+      # is needed, and by then the older copies have aged out of the window.
+      - name: Backup failure paths behave
+        run: bash scripts/backup-db.test.sh
+
       - run: npm ci
 
       # Before the database work: a leaked credential or an operator path must
