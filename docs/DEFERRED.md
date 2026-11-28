@@ -93,6 +93,7 @@ riêng**; mỗi mục có trigger rõ để quay lại, và số đo đủ để
 | D15 | **Giữ 30 ngày (a).** Đo 2026-11-25: `price_snapshots` **353 MB** (193 heap + 160 idx), **2 393 710 dòng**, **80 B/dòng** heap ⇒ ~148 B/dòng cả index; 452 458 dòng/ngày ≈ **67 MB/ngày**, trần 30 ngày ≈ **2,0 GB**, một năm churn ≈ **24 GB** (+ WAL) trên đĩa còn **206 GB**. Archive sang B2 (b) và hạ 14 ngày (c) không mua gì; mất 16 ngày audit | DB > 1 GB hoặc dump > 64 MB |
 | D17 | Không áp Prettier. Sẽ là một commit reformat toàn repo, phải đứng riêng | muốn khoá style |
 | D18 | Không thêm `app_id`. Ràng buộc "1 bot / guild" đã ghi và đang đúng | bot thứ hai vào cùng guild |
+| D24 | **Không lọc item thanh khoản thấp khỏi insight** — engine không có sàn volume, nên một item bán được 3 unit/tuần vẫn có thể chiếm một stanza nếu sell side khô 24h. Đo 2026-11-28 trên production: hai item trong card thật đều có giao dịch thật (`Elite hammer` 64 unit ask / 297 995 679 bid trong 7 ngày, `Superior club` 12 ask / 149 000 bid), nên chưa có bằng chứng card đang báo item rác | thấp | đóng khi: (a) một card toàn item có <10 unit giao dịch/tuần, hoặc (b) người đọc trong channel phản hồi rằng item vô nghĩa. Trước khi thêm sàn, đo lại `accepted/ngày` (hiện 0,88) vì sàn làm card thưa hơn — dưới 1 card/ngày thì phải nới `DRY_MIN_HOURS` cùng lúc |
 
 Đã đóng trong đợt 2026-11-17 (giữ lại để không mở lại): v1 tables (migration 010, cả hai DB),
 `dist` cũ ship nhầm (build xoá `dist` trước), 4 bản copy permission check → `canPost`, pool thiếu
