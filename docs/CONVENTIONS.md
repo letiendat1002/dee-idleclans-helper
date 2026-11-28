@@ -148,7 +148,8 @@ src/
   ui/chartHistory.ts       trade history → the 900×260 raster, drawn in-process; null under two points
   ui/reply.ts              safeReply — the one way to answer an interaction that may have expired
   ui/channel.ts            canPost — the one View+Send check every posting surface uses
-  ui/share.ts              the `Post to channel` control: cooldown, attribution line
+  ui/share.ts              the card buttons: `Post to channel` (cooldown, attribution line)
+                           and `Watch price` (opens the /watch form on that item)
   events/MessageHandler.ts @mention → public showcase embed (Task 9)
   jobs/
     MarketDigest.ts        per-guild scheduled digest post

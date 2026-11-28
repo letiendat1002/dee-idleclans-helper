@@ -18,7 +18,8 @@ referenced here; it keeps its own history.
 
 - `/price` carries a **Watch price** button beside **Post to channel**. It opens the
   `/watch` form already pointed at that item with its current sell price filled in, so
-  setting an alert no longer means retyping the item name.
+  setting an alert no longer means retyping the item name. A card with nothing to quote
+  keeps no buttons at all: nothing to post, no price to alert on.
 
 ### Changed
 
@@ -40,9 +41,10 @@ referenced here; it keeps its own history.
 - A vault line no longer prints a count marker in front of a currency: gold reads
   `**6,969,696 Gold**`, while items keep theirs (`**5x Shark tooth**`).
 
-Docs: `docs/DEFERRED.md` D24 (thin-item floor, closed with its measurement),
-`docs/ROADMAP.md` row for this release, `docs/UI-DESIGN.md` and `docs/VOICE.md` for the
-insight card wording.
+Docs: `docs/GUIDE.md` and `docs/DISCORD-TESTING.md` for the two `/price` buttons and the
+muted-card rule, `docs/CONVENTIONS.md` for what `ui/share.ts` now holds, `docs/DEFERRED.md`
+D24 (thin-item floor, closed with its measurement), `docs/ROADMAP.md` row for this release,
+`docs/UI-DESIGN.md` and `docs/VOICE.md` for the insight card wording.
 
 ## [1.7.0] - 2026-11-27
 

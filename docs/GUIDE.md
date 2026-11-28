@@ -81,10 +81,14 @@ upstream API; a normal session never meets it.
 ```
 
 Shows sell price with depth, best buy order, and the 1 d / 7 d / 30 d trade
-average. A share button posts the card to the channel.
+average. Two buttons sit under the card: `Post to channel` posts it, and
+`Watch price` opens `/watch` already filled in with this item and its sell
+price, so arming an alert is one click and a threshold.
 
 - `price` accepts an item name or an id.
-- No sell order and no buy order prints a plain sentence instead of a card.
+- No sell order and no buy order prints a plain sentence instead of a card, and
+  that muted card carries no buttons — there is nothing to post and no price to
+  alert on.
 
 ### `/graph` — trend
 
