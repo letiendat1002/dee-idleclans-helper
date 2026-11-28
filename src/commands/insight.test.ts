@@ -8,6 +8,7 @@ const {
   listChannelsMock,
   setIntervalMinutesMock,
   canPostMock,
+  queuedCountMock,
 } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   addChannelMock: vi.fn(),
@@ -15,10 +16,12 @@ const {
   listChannelsMock: vi.fn(),
   setIntervalMinutesMock: vi.fn(),
   canPostMock: vi.fn(),
+  queuedCountMock: vi.fn(),
 }));
 
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check: checkMock } }));
 vi.mock('../ui/channel.js', () => ({ canPost: canPostMock }));
+vi.mock('../services/InsightStore.js', () => ({ InsightStore: { queuedCount: queuedCountMock } }));
 vi.mock('../services/InsightSettings.js', () => ({
   MAX_CHANNELS_PER_GUILD: 1,
   InsightSettings: {
@@ -94,6 +97,7 @@ beforeEach(() => {
   addChannelMock.mockResolvedValue({ ...SUBSCRIBED, channelId: '21' });
   removeChannelMock.mockResolvedValue(1);
   setIntervalMinutesMock.mockResolvedValue(360);
+  queuedCountMock.mockResolvedValue(0);
 });
 
 describe('/insight add', () => {
@@ -103,7 +107,12 @@ describe('/insight add', () => {
     await handle(call);
 
     expect(addChannelMock).toHaveBeenCalledWith('10', CHANNEL_ID, '30');
-    expect(await repliedText(call)).toContain('Insights on');
+    const text = await repliedText(call);
+    expect(text).toContain('Insights on');
+    expect(text).toContain('Insights post in #insights');
+    expect(text).toContain('at most every 4 hours');
+    expect(text).not.toContain('Book states');
+    expect(text).not.toContain('create one first');
   });
 
   it('refuses a channel the bot cannot see', async () => {
@@ -172,6 +181,7 @@ describe('/insight list', () => {
     listChannelsMock.mockResolvedValue([
       { ...SUBSCRIBED, lastSentAt: new Date('2026-11-27T04:05:00Z') },
     ]);
+    queuedCountMock.mockResolvedValue(2);
     const call = interaction('list');
 
     await handle(call);
@@ -180,6 +190,16 @@ describe('/insight list', () => {
     expect(text).toContain('#insights');
     expect(text).toContain('every 4 hours');
     expect(text).toContain('last post 27 Nov');
+    expect(text).toContain('2 findings waiting');
+  });
+
+  it('says the queue is empty', async () => {
+    listChannelsMock.mockResolvedValue([SUBSCRIBED]);
+    const call = interaction('list');
+
+    await handle(call);
+
+    expect(await repliedText(call)).toContain('0 findings waiting');
   });
 
   it('says that nothing was posted yet', async () => {

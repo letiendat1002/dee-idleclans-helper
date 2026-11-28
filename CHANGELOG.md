@@ -10,6 +10,16 @@ the health gate has passed; the tag is `v` plus the version in `package.json`.
 
 ## [Unreleased]
 
+### Changed
+
+- The insight card leads with the fact a reader wants — `No sell orders for 3 days · Elite hammer`
+  — instead of the internal state name `Off the board`, and its second line is the last sell order
+  with its price, units and UTC timestamp (`last sell order 500,000g · 64 units · 23 Nov, 22:00 UTC`).
+  A `-#` scope line says what the card is and how often it may post, and the footer carries
+  provenance only. `/insight add` no longer calls the finding a "book state" and no longer tells a
+  reader who just subscribed to create a channel first; `/insight list` shows how many findings are
+  waiting.
+
 ## [1.7.0] - 2026-11-27
 
 ### Added
