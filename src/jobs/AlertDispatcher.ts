@@ -157,8 +157,8 @@ export class AlertDispatcher {
       return result;
     }
 
-    const quotes = await SnapshotStore.latestQuotes();
     const itemIds = [...new Set(rows.map((row) => row.itemId))];
+    const quotes = await SnapshotStore.latestQuotesFor(itemIds);
     const histories = await SnapshotStore.askHistories(itemIds, new Date(now.getTime() - WINDOW_MS));
 
     let names: Map<number, string> | null = null;

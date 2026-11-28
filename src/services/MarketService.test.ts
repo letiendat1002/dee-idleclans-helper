@@ -398,6 +398,41 @@ describe('SnapshotStore.latestQuotes', () => {
   });
 });
 
+describe('SnapshotStore.latestQuotesFor', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('reads only the items it is handed', async () => {
+    queryMock.mockResolvedValue({
+      rows: [{ item_id: 46, ask: '66', bid: '55', ask_volume: '21450', bid_volume: '610630' }],
+      rowCount: 1,
+    });
+
+    const quotes = await SnapshotStore.latestQuotesFor([46, 12]);
+
+    expect(quotes.get(46)).toEqual({
+      itemId: 46,
+      ask: 66,
+      bid: 55,
+      askVolume: 21_450,
+      bidVolume: 610_630,
+    });
+    const call = sqlCalls()[0];
+    // one index lookup per id: the `DISTINCT ON` form sorted 86 ms worth of rows
+    expect(call.sql).toContain('unnest($1::int[])');
+    expect(call.sql).toContain('ORDER BY captured_at DESC');
+    expect(call.params).toEqual([[46, 12]]);
+  });
+
+  it('asks the database nothing when no item is watched', async () => {
+    const quotes = await SnapshotStore.latestQuotesFor([]);
+
+    expect(quotes.size).toBe(0);
+    expect(sqlCalls()).toHaveLength(0);
+  });
+});
+
 describe('SnapshotStore.pruneOlderThan', () => {
   beforeEach(() => {
     vi.resetAllMocks();

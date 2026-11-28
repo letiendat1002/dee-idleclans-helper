@@ -88,7 +88,7 @@ function install(scenario: {
       return { rows: [{ captured_at: scenario.snapshotAt === undefined ? new Date() : scenario.snapshotAt }] };
     }
     if (/FROM watchlists ORDER BY id/.test(sql)) return { rows: scenario.rows };
-    if (/DISTINCT ON \(item_id\)/.test(sql)) {
+    if (/unnest\(\$1::int\[\]\)/.test(sql)) {
       return {
         rows: scenario.quotes.map((quote) => ({
           item_id: quote.itemId,
@@ -151,6 +151,24 @@ describe('AlertDispatcher.run', () => {
     expect(updates[0].sql).toMatch(/armed = FALSE, last_fired_at = \$2, delivered = \$3/);
     expect(updates[0].params[1]).toBeInstanceOf(Date);
     expect(updates[0].params[2]).toBe(true);
+  });
+
+  it('reads the watched items, not every quoted item', async () => {
+    install({
+      rows: [
+        watch({ itemId: 46, direction: 'below', threshold: 3_200, armed: true }),
+        watch({ itemId: 46, direction: 'above', threshold: 4_000, armed: true }),
+        watch({ itemId: 12, direction: 'below', threshold: 90, armed: true }),
+      ],
+      quotes: [{ itemId: 46, ask: 3_300 }, { itemId: 12, ask: 95 }],
+    });
+    const { client } = fakeClient();
+
+    await AlertDispatcher.run(client, { pacingMs: 0 });
+
+    const call = queryMock.mock.calls.find(([sql]) => String(sql).includes('unnest($1::int[])'));
+    expect(call).toBeDefined();
+    expect(call?.[1]).toEqual([[46, 12]]);
   });
 
   it('does not fire again while the price stays below the threshold', async () => {
