@@ -128,8 +128,11 @@ Sell prices · snapshot 12:49 UTC
 Only you can see this
 ```
 
-The card carries a `Post to channel` button unless it is muted (nothing to quote), and that button
-behaves as it does on `/graph item` -- see the controls note there.
+The card carries two buttons unless it is muted (nothing to quote): `Post to channel`, which
+behaves as it does on `/graph item` -- see the controls note there -- and `Watch price`, which
+opens the `/watch` form on that item with its current sell price filled in. The share button
+spends the `/price` bucket; the watch button spends the `/watch` bucket (5 a minute each). A
+muted card carries neither, because there is nothing to post and no price to compare against.
 
 `sell price` is the ask and `buy order` is the bid; the unit count beside each is the depth on
 that side. A side with no order prints `No sell order right now.` / `No buy order right now.`,
@@ -187,6 +190,16 @@ short history is visible instead of implied.
 | `/graph item Teak log` | send | `Teak log — 24h`, select reading `24 hours`, `Post to channel` |
 | `/graph item` | pick `7 days` | same message re-rendered: `Teak log — 7d`, `(edited)`, one chart, no second message |
 | `/graph item` | click the button | `Posted in general.` + public card `requested by @HRD Dee` |
+
+**Watch price button — added 2026-11-28, not yet driven live.** The ca below has not been run;
+the payload was only proved by sending the component row through the dev bot and reading it back.
+
+| Surface | Action | Expected |
+|---|---|---|
+| `/price Teak log` | click `Watch price` | the `/watch` form opens titled `Teak log`, sell price filled with the card's ask, nothing posted |
+| `/price` | save the form with a lower threshold | ephemeral confirmation for `Teak log`; the same item appears in `/watchlist` |
+| `/price` on an item with no quote | send | `No sell order and no buy order right now.`, **no** buttons |
+| `/price` | click `Watch price` six times in a minute | sixth answers `Slow down.` ephemerally, no form |
 
 One `/graph item` invocation at 11:09 failed with `Unknown interaction` (10062) because the ack
 arrived after the 3 s window — the composer was still mid-autocomplete when Enter landed. Re-sent
