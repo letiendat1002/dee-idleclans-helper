@@ -179,11 +179,23 @@ export async function handleWatchButton(interaction: ButtonInteraction): Promise
     return;
   }
 
-  const quotes = await SnapshotStore.latestQuotes();
-  const ask = quotes.get(item.itemId)?.ask ?? null;
+  // the modal has to open inside Discord's 3 s budget and cannot be deferred, so
+  // this reads one item: `latestQuotes()` scans every item and measured 2.9 s on a
+  // 2.8 M-row dev table, which is exactly the timeout this handler must avoid.
+  const quote = await SnapshotStore.latestQuote(item.itemId);
 
-  // a deferred interaction cannot open a modal, so the click answers with it directly
-  await interaction.showModal(buildModal(item.itemId, item.name, ask));
+  try {
+    await interaction.showModal(buildModal(item.itemId, item.name, quote?.ask ?? null));
+  } catch (err) {
+    // A card outlives the 3 s interaction token: a click on an old card, or a
+    // second one, fails here with 10062. discord.js raises that rejection as an
+    // unhandled Client 'error', which killed the process on the dev stack, so
+    // the miss is logged and dropped instead of propagating.
+    logger.warn('watch modal could not open', {
+      itemId: item.itemId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 }
 
 /** The share button: post the same card to the channel, then say where it went. */

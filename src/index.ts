@@ -93,6 +93,13 @@ const client = new Client({
   rest: { invalidRequestWarningInterval: 100 },
 });
 
+// discord.js turns a failed interaction response into a Client 'error' event,
+// and an event with no listener is thrown by node: one expired Watch click took
+// the whole process down. Log it and stay up.
+client.on('error', (err) => {
+  logger.error('Client error', { error: err instanceof Error ? err.message : String(err) });
+});
+
 const messageHandler = new MessageHandler(client);
 client.on('messageCreate', (message) => {
   void messageHandler.handleMessage(message);

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { logger, safeReply, check, getById, search, latestQuotes, latestSnapshotAt, add } = vi.hoisted(() => ({
+const { logger, safeReply, check, getById, search, latestQuote, latestSnapshotAt, add } = vi.hoisted(() => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   safeReply: vi.fn(),
   check: vi.fn(),
   getById: vi.fn(),
   search: vi.fn(),
-  latestQuotes: vi.fn(),
+  latestQuote: vi.fn(),
   latestSnapshotAt: vi.fn(),
   add: vi.fn(),
 }));
@@ -16,7 +16,7 @@ vi.mock('../ui/reply.js', () => ({ safeReply }));
 import { ICONS } from '../ui/theme.js';
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getById, search } }));
-vi.mock('../services/SnapshotStore.js', () => ({ SnapshotStore: { latestQuotes, latestSnapshotAt } }));
+vi.mock('../services/SnapshotStore.js', () => ({ SnapshotStore: { latestQuote, latestSnapshotAt } }));
 vi.mock('../services/WatchlistService.js', () => ({ WatchlistService: { add } }));
 
 import type { ChatInputCommandInteraction, ModalSubmitInteraction } from 'discord.js';
@@ -56,7 +56,7 @@ beforeEach(() => {
   check.mockResolvedValue(undefined);
   getById.mockResolvedValue(ITEM);
   search.mockResolvedValue([ITEM]);
-  latestQuotes.mockResolvedValue(new Map([[46, { itemId: 46, ask: 3_389 }]]));
+  latestQuote.mockResolvedValue({ itemId: 46, ask: 3_389 });
   add.mockResolvedValue({ id: 7 });
 });
 
@@ -99,7 +99,7 @@ describe('/watch handle', () => {
   });
 
   it('leaves the threshold empty when the item has no ask', async () => {
-    latestQuotes.mockResolvedValueOnce(new Map([[46, { itemId: 46, ask: 0 }]]));
+    latestQuote.mockResolvedValueOnce({ itemId: 46, ask: 0 });
     const interaction = commandInteraction();
 
     await handle(interaction);
