@@ -487,17 +487,14 @@ Deferred findings live in `docs/DEFERRED.md` (owner blockers, verification gaps,
 marketing). Current state, re-checked 2026-11-23 after the public-repo and release work — anything
 also listed in `DEFERRED.md` follows that file:
 
-- The graphify index is derived and its community labels are partly hub-named (43 saved labels for
-  76 communities) because no LLM backend key is configured on this machine. `graphify label .
-  --missing-only` with a key names the rest.
-- Backups run from `dee-idleclans-backup.timer` (hourly tick, one dump per UTC day,
-  `Persistent=true`) and `dee-idleclans-watchdog.timer` restarts a dead container. Both are
-  installed and active since 2026-11-22; user cron is no longer part of the path.
+`DEFERRED.md` is the only ledger; the two facts below are not duplicates of it but constraints an
+agent must know before touching a release:
+
 - The deploy check runs from its own checkout on the host, outside the workspace, not from this
   working tree: `deploy.sh` detaches its checkout, so pointing it at the dev tree
   would move `develop`. `dee-idleclans-deploy.timer` is **disabled**: on 2026-11-23 it deployed a
   freshly published commit on its own, which is not what a timer should decide. Releases are manual
-  (`. /8.3`).
+  (§8.3). Backups and the watchdog are host timers described in the private ops notes.
 - `develop`'s gate is `.github/workflows/tests.yml` on a hosted runner with Postgres and Redis
   services. It reproduces the suite, but it is not the host's docker stack: a failure that needs
   the container image (Dockerfile drift, alpine differences) will only show at deploy time.

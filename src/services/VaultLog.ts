@@ -307,10 +307,10 @@ export class VaultLog {
    * the caller's business.
    */
   static async unsubscribe(guildId: string, channelId: string, clanName: string): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM vault_channels WHERE guild_id = $1 AND channel_id = $2 AND clan_name = $3',
       [guildId, channelId, clanName]
-    )) as { rowCount: number | null };
+    );
 
     return res.rowCount ?? 0;
   }
@@ -323,54 +323,54 @@ export class VaultLog {
    * deleted by mistake.
    */
   static async removeChannel(guildId: string, channelId: string): Promise<number> {
-    const res = (await query(
+    const res = await query(
       'DELETE FROM vault_channels WHERE guild_id = $1 AND channel_id = $2',
       [guildId, channelId]
-    )) as { rowCount: number | null };
+    );
 
     return res.rowCount ?? 0;
   }
 
   /** Remove every row of a channel, whatever guild or clan it belonged to. */
   static async removeChannelById(channelId: string): Promise<number> {
-    const res = (await query('DELETE FROM vault_channels WHERE channel_id = $1', [
+    const res = await query('DELETE FROM vault_channels WHERE channel_id = $1', [
       channelId,
-    ])) as { rowCount: number | null };
+    ]);
 
     return res.rowCount ?? 0;
   }
 
   /** Return the channels of a guild that follow a clan vault. */
   static async listSubscriptions(guildId: string): Promise<VaultSubscription[]> {
-    const res = (await query(
+    const res = await query<VaultChannelDbRow>(
       `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels WHERE guild_id = $1
        ORDER BY clan_name, created_at, channel_id`,
       [guildId]
-    )) as { rows: VaultChannelDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toSubscription);
+    return res.rows.map(toSubscription);
   }
 
   /** Return the names of every clan a guild or a channel follows. */
   static async listClans(): Promise<string[]> {
-    const res = (await query(
+    const res = await query<{ clan_name: string }>(
       'SELECT DISTINCT clan_name FROM vault_channels ORDER BY clan_name'
-    )) as { rows: Array<{ clan_name: string }> };
+    );
 
-    return (res.rows ?? []).map((row) => row.clan_name);
+    return res.rows.map((row) => row.clan_name);
   }
 
   /** Return every channel that follows the vault of one clan. */
   static async listTargetsForClan(clanName: string): Promise<VaultSubscription[]> {
-    const res = (await query(
+    const res = await query<VaultChannelDbRow>(
       `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels WHERE clan_name = $1
        ORDER BY guild_id, channel_id`,
       [clanName]
-    )) as { rows: VaultChannelDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toSubscription);
+    return res.rows.map(toSubscription);
   }
 
   /**
@@ -405,7 +405,7 @@ export class VaultLog {
 
     if (events.length === 0) return [];
 
-    const res = (await query(
+    const res = await query<VaultEventDbRow>(
       `INSERT INTO vault_events (clan_name, event_key, member_username, message, kind, item_name, quantity, happened_at)
        SELECT $1, t.event_key, t.member_username, t.message, t.kind, t.item_name, t.quantity, t.happened_at
        FROM unnest($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::int[], $8::timestamptz[])
@@ -422,9 +422,9 @@ export class VaultLog {
         events.map((event) => event.quantity),
         events.map((event) => event.happenedAt),
       ]
-    )) as { rows: VaultEventDbRow[] };
+    );
 
-    return (res.rows ?? [])
+    return res.rows
       .map(toEvent)
       .sort((left, right) => left.happenedAt.getTime() - right.happenedAt.getTime());
   }
@@ -444,14 +444,14 @@ export class VaultLog {
    * to the game.
    */
   static async recentFor(clanName: string, limit: number): Promise<VaultEvent[]> {
-    const res = (await query(
+    const res = await query<VaultEventDbRow>(
       `SELECT clan_name, event_key, member_username, message, kind, item_name, quantity, happened_at
        FROM vault_events
        WHERE clan_name = $1
        ORDER BY happened_at DESC, event_key DESC
        LIMIT $2`,
       [clanName, limit]
-    )) as { rows: VaultEventDbRow[] };
+    );
 
     return res.rows.map(toEvent).reverse();
   }
@@ -464,23 +464,23 @@ export class VaultLog {
    * holds and the caller labels the block with it.
    */
   static async rollup(clanName: string): Promise<VaultRollup> {
-    // shortcut: aggregate in TS over the 14-day table, move to a SQL GROUP BY
-    // with tier columns if a clan routinely holds thousands of rows.
-    const res = (await query(
+    // Measured 2026-11-28: production held 49 rows / 9 KB for the only clan, and
+    // tiers live in the message text rather than in columns, so a SQL GROUP BY
+    // would need a migration to buy nothing. Revisit with tier columns if a clan
+    // ever holds thousands of rows.
+    const res = await query<{
+      message: string | null;
+      kind: string;
+      item_name: string | null;
+      quantity: number | null;
+      happened_at: Date | string;
+    }>(
       `SELECT message, kind, item_name, quantity, happened_at
        FROM vault_events WHERE clan_name = $1 ORDER BY happened_at ASC`,
       [clanName]
-    )) as {
-      rows: Array<{
-        message: string | null;
-        kind: string;
-        item_name: string | null;
-        quantity: number | null;
-        happened_at: Date | string;
-      }>;
-    };
+    );
 
-    const rows = res.rows ?? [];
+    const rows = res.rows;
     if (rows.length === 0) return { since: null, tiers: [] };
 
     const byTier = new Map<number, Map<string, number>>();
@@ -540,7 +540,7 @@ export class VaultLog {
     channelId: string,
     since: Date
   ): Promise<VaultEvent[]> {
-    const res = (await query(
+    const res = await query<VaultEventDbRow>(
       `SELECT e.clan_name, e.event_key, e.member_username, e.message, e.kind, e.item_name, e.quantity, e.happened_at
        FROM vault_events e
        WHERE e.clan_name = $1
@@ -551,7 +551,7 @@ export class VaultLog {
          )
        ORDER BY e.happened_at, e.event_key`,
       [clanName, since, channelId]
-    )) as { rows: VaultEventDbRow[] };
+    );
 
     return res.rows.map(toEvent);
   }
@@ -584,10 +584,10 @@ export class VaultLog {
   }
 
   static async pruneOlderThanDays(days: number): Promise<number> {
-    const res = (await query(
+    const res = await query(
       "DELETE FROM vault_events WHERE happened_at < NOW() - ($1::int * INTERVAL '1 day')",
       [days]
-    )) as { rowCount: number | null };
+    );
 
     await query(
       `DELETE FROM vault_deliveries d
@@ -609,13 +609,13 @@ export class VaultLog {
     channelId: string,
     clanName: string
   ): Promise<VaultSubscription[]> {
-    const res = (await query(
+    const res = await query<VaultChannelDbRow>(
       `SELECT guild_id, channel_id, clan_name, created_by, created_at, last_post_at
        FROM vault_channels
        WHERE guild_id = $1 AND channel_id = $2 AND clan_name = $3`,
       [guildId, channelId, clanName]
-    )) as { rows: VaultChannelDbRow[] };
+    );
 
-    return (res.rows ?? []).map(toSubscription);
+    return res.rows.map(toSubscription);
   }
 }

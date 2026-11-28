@@ -181,6 +181,12 @@ export class ItemCatalogue {
   private static syncing = false;
 
   /**
+   * When the catalogue last matched the game build, or null before the first
+   * check. `/help` prints it so a renamed item is not blamed on a stale bot.
+   */
+  static lastSyncedAt: Date | null = null;
+
+  /**
    * Start the catalogue sync: one sync now, then one per interval.
    *
    * The sync reads the build version first, so a tick with no new build costs
@@ -237,16 +243,14 @@ export class ItemCatalogue {
    * Widen to `captured_at > NOW() - INTERVAL '1 day'` if that ever happens.
    */
   private static async syncIfPricedItemIsMissing(): Promise<void> {
-    const res = await query(
+    const res = await query<{ item_id?: number | string }>(
       `SELECT DISTINCT s.item_id
          FROM price_snapshots s
         WHERE s.captured_at = (SELECT MAX(captured_at) FROM price_snapshots)
           AND NOT EXISTS (SELECT 1 FROM items i WHERE i.item_id = s.item_id)`,
       []
     );
-    const missing = ((res as { rows?: Array<{ item_id?: number | string }> }).rows ?? []).map((r) =>
-      Number(r.item_id)
-    );
+    const missing = res.rows.map((r) => Number(r.item_id));
     if (missing.length === 0) return;
 
     logger.warn('priced items are not in the catalogue, forcing a sync', {
@@ -271,12 +275,16 @@ export class ItemCatalogue {
   static async sync(force = false): Promise<{ changed: boolean; version: string; items: number }> {
     const { latestBuildVersion } = await getBuildVersions();
 
-    const stored = await query('SELECT value FROM catalogue_meta WHERE key = $1', [VERSION_KEY]);
-    const storedVersion = (stored as { rows?: Array<{ value?: string | null }> })?.rows?.[0]?.value ?? null;
+    const stored = await query<{ value?: string | null }>(
+      'SELECT value FROM catalogue_meta WHERE key = $1',
+      [VERSION_KEY]
+    );
+    const storedVersion = stored.rows[0]?.value ?? null;
 
     if (!force && storedVersion === latestBuildVersion) {
-      const countRes = await query('SELECT COUNT(*)::int AS c FROM items', []);
-      const count = (countRes as { rows?: Array<{ c?: number }> })?.rows?.[0]?.c ?? 0;
+      const countRes = await query<{ c?: number }>('SELECT COUNT(*)::int AS c FROM items', []);
+      const count = countRes.rows[0]?.c ?? 0;
+      ItemCatalogue.lastSyncedAt = new Date();
       return { changed: false, version: latestBuildVersion, items: count };
     }
 
@@ -366,6 +374,7 @@ export class ItemCatalogue {
 
     await cacheService.del(CacheKeys.catalogueIndex);
 
+    ItemCatalogue.lastSyncedAt = new Date();
     return { changed: true, version: latestBuildVersion, items: gameItems.length };
   }
 
@@ -453,12 +462,12 @@ export class ItemCatalogue {
     const rows = new Map<number, ItemRow>();
     if (itemIds.length === 0) return rows;
 
-    const res = (await query(
+    const res = await query<ItemDbRow>(
       'SELECT item_id, name, loc_key, tradeable, base_value, skill_id, category, has_recipe, recipes FROM items WHERE item_id = ANY($1)',
       [itemIds]
-    )    ) as { rows: ItemDbRow[] };
+    );
 
-    for (const row of (res.rows ?? []).map(rowToItem)) {
+    for (const row of res.rows.map(rowToItem)) {
       rows.set(row.itemId, row);
     }
 

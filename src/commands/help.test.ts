@@ -25,6 +25,7 @@ import { ICONS } from '../ui/theme.js';
 
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { handle } from './help.js';
+import { ItemCatalogue } from '../services/ItemCatalogue.js';
 
 /** The options of the first safeReply call. */
 function sent(callIndex = 0): ReplyOptions {
@@ -34,9 +35,25 @@ function sent(callIndex = 0): ReplyOptions {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.DISCORD_CLIENT_ID = '1234567890';
+  ItemCatalogue.lastSyncedAt = null;
 });
 
 describe('/help', () => {
+  it('says when the catalogue was last checked, and says nothing before that', async () => {
+    const interaction = {
+      user: { id: 'user-1' },
+      client: { user: { displayAvatarURL: () => 'https://cdn.example/avatar.png' } },
+    } as unknown as ChatInputCommandInteraction;
+
+    ItemCatalogue.lastSyncedAt = null;
+    await handle(interaction);
+    expect(sent().embeds?.[0].toJSON().footer?.text).not.toContain('catalogue');
+
+    ItemCatalogue.lastSyncedAt = new Date('2026-11-28T12:40:00Z');
+    await handle(interaction);
+    expect(sent(1).embeds?.[0].toJSON().footer?.text).toContain('catalogue 12:40 UTC');
+  });
+
   it('answers ephemerally with every command, the invite and the rate-limit footer', async () => {
     const interaction = {
       user: { id: 'user-1' },
