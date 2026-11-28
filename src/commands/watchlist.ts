@@ -90,7 +90,7 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    const quotes = await SnapshotStore.latestQuotes();
+    const quotes = await SnapshotStore.latestQuotesFor(rows.map((row) => row.itemId));
     const items = await ItemCatalogue.getByIds(rows.map((row) => row.itemId));
 
     const note =

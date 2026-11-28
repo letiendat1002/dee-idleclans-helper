@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { logger, safeReply, check, list, latestQuotes, latestSnapshotAt, getByIds, removeById } = vi.hoisted(() => ({
+const { logger, safeReply, check, list, latestQuotesFor, latestSnapshotAt, getByIds, removeById } = vi.hoisted(() => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   safeReply: vi.fn(),
   check: vi.fn(),
   list: vi.fn(),
-  latestQuotes: vi.fn(),
+  latestQuotesFor: vi.fn(),
   latestSnapshotAt: vi.fn(),
   getByIds: vi.fn(),
   removeById: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('../ui/reply.js', () => ({ safeReply }));
 import { ICONS } from '../ui/theme.js';
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getByIds } }));
-vi.mock('../services/SnapshotStore.js', () => ({ SnapshotStore: { latestQuotes, latestSnapshotAt } }));
+vi.mock('../services/SnapshotStore.js', () => ({ SnapshotStore: { latestQuotesFor, latestSnapshotAt } }));
 vi.mock('../services/WatchlistService.js', () => ({ WatchlistService: { list, removeById } }));
 
 import { MessageFlags, type ChatInputCommandInteraction, type StringSelectMenuInteraction } from 'discord.js';
@@ -74,7 +74,7 @@ beforeEach(() => {
   latestSnapshotAt.mockResolvedValue(new Date('2026-11-14T05:56:00Z'));
   check.mockResolvedValue(undefined);
   list.mockResolvedValue([]);
-  latestQuotes.mockResolvedValue(new Map([[46, { itemId: 46, ask: 3_389 }]]));
+  latestQuotesFor.mockResolvedValue(new Map([[46, { itemId: 46, ask: 3_389 }]]));
   getByIds.mockResolvedValue(new Map([[46, { itemId: 46, name: 'Titanium bar' }]]));
   removeById.mockResolvedValue(1);
 });
@@ -122,7 +122,7 @@ describe('/watchlist handle', () => {
 
   it('renders "no sell order" when the market has no ask', async () => {
     list.mockResolvedValueOnce([row()]);
-    latestQuotes.mockResolvedValueOnce(new Map([[46, { itemId: 46, ask: 0 }]]));
+    latestQuotesFor.mockResolvedValueOnce(new Map([[46, { itemId: 46, ask: 0 }]]));
     const { interaction, editReply } = fakeHandle();
 
     await handle(interaction);

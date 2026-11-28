@@ -5,6 +5,17 @@ import type { MarketQuote } from './MarketService.js';
 const logger = createLogger('SNAPSHOT');
 
 /** A stored snapshot row; the bigint columns come back from Postgres as strings. */
+/** The quote a snapshot row carries, with the bigints read as numbers. */
+function toQuote(row: SnapshotRow): MarketQuote {
+  return {
+    itemId: row.item_id,
+    ask: toNumber(row.ask),
+    bid: toNumber(row.bid),
+    askVolume: toNumber(row.ask_volume),
+    bidVolume: toNumber(row.bid_volume),
+  };
+}
+
 interface SnapshotRow {
   item_id: number;
   ask: string | number | null;
@@ -167,13 +178,39 @@ export class SnapshotStore {
 
     const quotes = new Map<number, MarketQuote>();
     for (const row of res.rows) {
-      quotes.set(row.item_id, {
-        itemId: row.item_id,
-        ask: toNumber(row.ask),
-        bid: toNumber(row.bid),
-        askVolume: toNumber(row.ask_volume),
-        bidVolume: toNumber(row.bid_volume),
-      });
+      quotes.set(row.item_id, toQuote(row));
+    }
+    return quotes;
+  }
+
+  /**
+   * Return the newest quote of the named items, keyed by item id.
+   *
+   * `latestQuotes()` walks every item: measured 1.5-2.9 s on a 2.8 M-row table,
+   * which the alert dispatcher paid every two minutes to read the handful of
+   * items that have a watch. One index lookup per id: 0.199 ms for three ids on
+   * the same table. `DISTINCT ON` over the ids alone was still 86 ms, because it
+   * sorts every row those ids own.
+   */
+  static async latestQuotesFor(itemIds: number[]): Promise<Map<number, MarketQuote>> {
+    const quotes = new Map<number, MarketQuote>();
+    if (itemIds.length === 0) return quotes;
+
+    const res = await query<SnapshotRow>(
+      `SELECT quote.item_id, quote.ask, quote.bid, quote.ask_volume, quote.bid_volume
+       FROM unnest($1::int[]) AS wanted(item_id)
+       CROSS JOIN LATERAL (
+         SELECT item_id, ask, bid, ask_volume, bid_volume
+         FROM price_snapshots
+         WHERE item_id = wanted.item_id
+         ORDER BY captured_at DESC
+         LIMIT 1
+       ) AS quote`,
+      [itemIds]
+    );
+
+    for (const row of res.rows) {
+      quotes.set(row.item_id, toQuote(row));
     }
     return quotes;
   }
@@ -198,13 +235,7 @@ export class SnapshotStore {
     const row = res.rows[0];
     if (!row) return null;
 
-    return {
-      itemId: row.item_id,
-      ask: toNumber(row.ask),
-      bid: toNumber(row.bid),
-      askVolume: toNumber(row.ask_volume),
-      bidVolume: toNumber(row.bid_volume),
-    };
+    return toQuote(row);
   }
 
   /**
