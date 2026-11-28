@@ -57,6 +57,12 @@ referenced here; it keeps its own history.
 - `/help` names the time the catalogue was last checked against the game build, so an item renamed
   in the last 30 minutes is not read as a stale bot (D11).
 - A failed interaction reply is logged as a client error instead of ending the process.
+- The alert dispatcher and `/watchlist` read only the items that have a watch (about 0.2 ms for
+  three items) instead of every quoted item (1.5-2.9 s on the production table).
+- `npm run dev:stack` passes the dev env file and stack prefix itself, and refuses to start when
+  that file carries the production application.
+- `scripts/backup-db.sh` failure paths are driven in CI: a failing dump, the retention window, the
+  monthly archive, rclone missing, and a dead-man ping that does not land.
 
 Docs: `docs/GUIDE.md` and `docs/DISCORD-TESTING.md` for the two `/price` buttons and the
 muted-card rule, `docs/CONVENTIONS.md` for what `ui/share.ts` now holds and for §9 now pointing
