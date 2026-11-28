@@ -116,6 +116,23 @@ describe('InsightStore.produce', () => {
     expect(inserts()).toHaveLength(0);
   });
 
+  it('skips a dry item nobody offers, whose card is not news', async () => {
+    route({
+      rows: [
+        // Dry, but the whole week brings 12 units: too thin to be worth a post.
+        ...span(1, 48, (i) => (i < 30 ? '0' : '1')),
+        ...day(2, () => '1000'),
+      ],
+      names: [
+        { item_id: 1, name: 'Superior club' },
+        { item_id: 2, name: 'Grapes' },
+      ],
+    });
+
+    await expect(InsightStore.produce(NOW)).resolves.toEqual({ scanned: true, queued: 0 });
+    expect(inserts()).toHaveLength(0);
+  });
+
   it('queues a dry sell side with the impact rank of its volume', async () => {
     route({
       rows: [

@@ -33,6 +33,15 @@ export interface ChannelCard {
   files?: AttachmentBuilder[];
 }
 
+export function watchButton(itemId: number): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`price:watch:${itemId}`)
+      .setLabel('Watch price')
+      .setStyle(ButtonStyle.Primary)
+  );
+}
+
 export function shareButton(customId: string): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()

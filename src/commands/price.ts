@@ -7,6 +7,8 @@
  * how the sell price got here; this command shows where it stands.
  */
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
   SlashCommandBuilder,
   EmbedBuilder,
   MessageFlags,
@@ -22,7 +24,8 @@ import { ErrCodes, DeeError, formatUnexpectedError, userError } from '../utils/e
 import { createLogger } from '../utils/logger.js';
 import { safeReply } from '../ui/reply.js';
 import { COLORS, brandAuthor, formatMoney, priceFooter, tradeAverageText } from '../ui/theme.js';
-import { postToChannel, selfAvatar, shareButton, type ChannelCard } from '../ui/share.js';
+import { postToChannel, selfAvatar, shareButton, watchButton, type ChannelCard } from '../ui/share.js';
+import { buildModal } from './watch.js';
 
 const logger = createLogger('PRICE');
 
@@ -136,13 +139,51 @@ export async function handle(interaction: ChatInputCommandInteraction): Promise<
     const { card, onMarket } = await renderPriceCard(item, selfAvatar(interaction));
     await interaction.editReply({
       ...card,
-      // A muted card says the snapshot holds nothing to quote: there is nothing to post.
-      components: onMarket ? [shareButton(`price:share:${item.itemId}`)] : [],
+      // A muted card says the snapshot holds nothing to quote: there is nothing to post
+      // and nothing to alert on either.
+      components: onMarket
+        ? [
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+              ...shareButton(`price:share:${item.itemId}`).components,
+              ...watchButton(item.itemId).components
+            ),
+          ]
+        : [],
     });
   } catch (err) {
     logger.error('/price failed', { userId, error: err });
     await interaction.editReply({ content: formatUnexpectedError('/price', err) });
   }
+}
+
+/** The watch button: open the `/watch` modal already pointed at this item. */
+export async function handleWatchButton(interaction: ButtonInteraction): Promise<void> {
+  const itemId = Number(interaction.customId.split(':')[2]);
+
+  try {
+    await rateLimiter.check(interaction.user.id, 'watch');
+  } catch (err) {
+    if (err instanceof DeeError) {
+      await interaction.reply({ content: err.message, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    throw err;
+  }
+
+  const item = Number.isInteger(itemId) ? await ItemCatalogue.getById(itemId) : null;
+  if (!item) {
+    await interaction.reply({
+      content: 'That item is gone from the catalogue.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  const quotes = await SnapshotStore.latestQuotes();
+  const ask = quotes.get(item.itemId)?.ask ?? null;
+
+  // a deferred interaction cannot open a modal, so the click answers with it directly
+  await interaction.showModal(buildModal(item.itemId, item.name, ask));
 }
 
 /** The share button: post the same card to the channel, then say where it went. */

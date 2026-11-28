@@ -288,8 +288,8 @@ describe('VaultNotifier.runClan', () => {
     expect(result).toEqual({ channels: 1, events: 1 });
     const embed = sentEmbed(sends.get('channel-1') as ReturnType<typeof vi.fn>);
     expect(embed.title).toContain('AOE');
-    expect(embed.description).toContain('7x Gold');
-    expect(embed.description).not.toContain('5x Gold');
+    expect(embed.description).toContain('7 Gold');
+    expect(embed.description).not.toContain('5 Gold');
   });
 
   it('does not backfill when a channel subscribes', async () => {
@@ -496,7 +496,7 @@ describe('vaultDescription', () => {
     const description = vaultDescription(events, { since: null, tiers: [] });
 
     expect(description).toContain('**12** new entries · 10:00–10:11 UTC');
-    expect(description).toContain('12x Gold');
+    expect(description).toContain('12 Gold');
     expect(description).toContain('**In · 12**');
   });
 
@@ -506,7 +506,7 @@ describe('vaultDescription', () => {
         clanName: 'AOE',
         eventKey: 'key-1',
         memberUsername: 'USERNAME',
-        message: 'USERNAME added 5x Gold.',
+        message: 'USERNAME added 5 Gold.',
         kind: 'deposit' as const,
         itemName: 'Gold',
         quantity: 5,
@@ -518,7 +518,7 @@ describe('vaultDescription', () => {
         clanName: 'AOE',
         eventKey: 'key-2',
         memberUsername: 'USERNAME',
-        message: 'USERNAME withdrew 2x Gold from tier 1.',
+        message: 'USERNAME withdrew 2 Gold from tier 1.',
         kind: 'withdraw' as const,
         itemName: 'Gold',
         quantity: 2,
@@ -530,7 +530,7 @@ describe('vaultDescription', () => {
         clanName: 'AOE',
         eventKey: 'key-3',
         memberUsername: 'USERNAME',
-        message: 'USERNAME moved 1x Gold from tier 1 to tier 2.',
+        message: 'USERNAME moved 1 Gold from tier 1 to tier 2.',
         kind: 'move' as const,
         itemName: 'Gold',
         quantity: 1,
@@ -554,7 +554,7 @@ describe('vaultDescription', () => {
         clanName: 'AOE',
         eventKey: 'key-1',
         memberUsername: 'USERNAME',
-        message: 'USERNAME added 5x Gold (tier 1).',
+        message: 'USERNAME added 5 Gold (tier 1).',
         kind: 'deposit' as const,
         itemName: 'Gold',
         quantity: 5,
@@ -627,23 +627,23 @@ const event = (
 
 describe('formatVaultLine', () => {
   it('reads a deposit and a withdrawal with the same vault wording', () => {
-    expect(formatVaultLine(event('deposit', 'USERNAME added 69x Gold (tier 1).', 69, null, 1))).toBe(
-      '`11-25 04:35` USERNAME added **69x Gold** to vault 1'
+    expect(formatVaultLine(event('deposit', 'USERNAME added 69 Gold (tier 1).', 69, null, 1))).toBe(
+      '`11-25 04:35` USERNAME added **69 Gold** to vault 1'
     );
     expect(
-      formatVaultLine(event('withdraw', 'USERNAME withdrew 67x Gold from tier 1.', 67, 1, null))
-    ).toBe('`11-25 04:35` USERNAME withdrew **67x Gold** from vault 1');
+      formatVaultLine(event('withdraw', 'USERNAME withdrew 67 Gold from tier 1.', 67, 1, null))
+    ).toBe('`11-25 04:35` USERNAME withdrew **67 Gold** from vault 1');
   });
 
   it('names both vaults of a move', () => {
     expect(
-      formatVaultLine(event('move', 'USERNAME moved 5x Gold from tier 1 to tier 2.', 5, 1, 2))
-    ).toBe('`11-25 04:35` USERNAME moved **5x Gold** from vault 1 to vault 2');
+      formatVaultLine(event('move', 'USERNAME moved 5 Gold from tier 1 to tier 2.', 5, 1, 2))
+    ).toBe('`11-25 04:35` USERNAME moved **5 Gold** from vault 1 to vault 2');
   });
 
   it('leaves the location out when the game named none', () => {
-    expect(formatVaultLine(event('deposit', 'USERNAME added 5x Gold.', 5))).toBe(
-      '`11-25 04:35` USERNAME added **5x Gold**'
+    expect(formatVaultLine(event('deposit', 'USERNAME added 5 Gold.', 5))).toBe(
+      '`11-25 04:35` USERNAME added **5 Gold**'
     );
   });
 });

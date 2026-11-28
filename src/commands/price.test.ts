@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { logger, safeReply, check, getById, latestQuote, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds, getPriceAverages } = vi.hoisted(
+const { logger, safeReply, check, getById, latestQuote, latestQuotes, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds, getPriceAverages } = vi.hoisted(
   () => ({
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     safeReply: vi.fn(),
     check: vi.fn(),
     getById: vi.fn(),
     latestQuote: vi.fn(),
+    latestQuotes: vi.fn(),
     latestSnapshotAt: vi.fn(),
     latestQuoteAt: vi.fn(),
     recentlySeenItemIds: vi.fn(),
@@ -19,7 +20,7 @@ vi.mock('../ui/reply.js', () => ({ safeReply }));
 vi.mock('../utils/RateLimiter.js', () => ({ rateLimiter: { check } }));
 vi.mock('../services/ItemCatalogue.js', () => ({ ItemCatalogue: { getById } }));
 vi.mock('../services/SnapshotStore.js', () => ({
-  SnapshotStore: { latestQuote, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds },
+  SnapshotStore: { latestQuote, latestQuotes, latestSnapshotAt, latestQuoteAt, recentlySeenItemIds },
 }));
 vi.mock('../services/IdleClansApi.js', () => ({ getPriceAveragesCached: getPriceAverages }));
 
@@ -30,7 +31,7 @@ import {
 } from 'discord.js';
 import { DeeError, ErrCodes } from '../utils/errors.js';
 import { COLORS } from '../ui/theme.js';
-import { handle, handleShareButton } from './price.js';
+import { handle, handleShareButton, handleWatchButton } from './price.js';
 
 interface EmbedJson {
   title?: string;
@@ -272,6 +273,7 @@ describe('/price share', () => {
     const lastReply = editReply.mock.calls.at(-1)?.[0] as unknown as { components?: CardRow[] } | undefined;
     const shared = lastReply?.components?.[0]?.toJSON();
     expect(shared?.components[0]?.custom_id).toBe('price:share:46');
+    expect(shared?.components[1]?.custom_id).toBe('price:watch:46');
   });
 
   it('puts no share button on a card that quotes nothing', async () => {
@@ -339,5 +341,59 @@ describe('/price data reliability', () => {
     await handle(interaction);
 
     expect(lastEmbed(editReply).footer?.text).toBe('Sell prices · snapshot 11:40 UTC');
+  });
+});
+
+describe('/price watch button', () => {
+  function fakeClick(customId: string): {
+    interaction: ButtonInteraction;
+    showModal: ReturnType<typeof vi.fn>;
+    reply: ReturnType<typeof vi.fn>;
+  } {
+    const showModal = vi.fn(async () => undefined);
+    const reply = vi.fn(async () => undefined);
+
+    return {
+      showModal,
+      reply,
+      interaction: { customId, user: { id: 'user-1' }, showModal, reply } as unknown as ButtonInteraction,
+    };
+  }
+
+  it('opens the watch modal on this item, pre-filled with its sell price', async () => {
+    latestQuotes.mockResolvedValue(new Map([[46, { ask: 148 }]]));
+    const { interaction, showModal } = fakeClick('price:watch:46');
+
+    await handleWatchButton(interaction);
+
+    expect(showModal).toHaveBeenCalledTimes(1);
+    const modal = showModal.mock.calls[0][0] as unknown as {
+      toJSON(): { custom_id: string; components: Array<{ components: Array<{ custom_id: string; value?: string }> }> };
+    };
+    const json = modal.toJSON();
+    expect(json.custom_id).toBe('watch:46');
+    expect(json.components[1].components[0].value).toBe('148');
+  });
+
+  it('answers ephemerally when the item left the catalogue', async () => {
+    getById.mockResolvedValue(null);
+    const { interaction, reply, showModal } = fakeClick('price:watch:999');
+
+    await handleWatchButton(interaction);
+
+    expect(showModal).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'That item is gone from the catalogue.' })
+    );
+  });
+
+  it('does not open a modal when the rate limiter refuses the click', async () => {
+    check.mockRejectedValue(new DeeError('Slow down.', 'E1', ErrCodes.RATE_LIMIT));
+    const { interaction, reply, showModal } = fakeClick('price:watch:46');
+
+    await handleWatchButton(interaction);
+
+    expect(showModal).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledWith(expect.objectContaining({ content: 'Slow down.' }));
   });
 });
