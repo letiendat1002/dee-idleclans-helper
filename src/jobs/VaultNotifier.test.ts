@@ -641,6 +641,15 @@ describe('formatVaultLine', () => {
     ).toBe('`11-25 04:35` USERNAME moved **5 Gold** from vault 1 to vault 2');
   });
 
+  it('keeps the count marker on an item and drops it on a currency', () => {
+    const shark = { ...event('deposit', 'USERNAME added 5x Shark tooth.', 5), itemName: 'Shark tooth' };
+
+    expect(formatVaultLine(shark)).toBe('`11-25 04:35` USERNAME added **5x Shark tooth**');
+    // the rule reads the name, not the casing the game happened to use
+    const lower = { ...event('deposit', 'USERNAME added 5x gold.', 5), itemName: 'gold' };
+    expect(formatVaultLine(lower)).toBe('`11-25 04:35` USERNAME added **5 gold**');
+  });
+
   it('leaves the location out when the game named none', () => {
     expect(formatVaultLine(event('deposit', 'USERNAME added 5 Gold.', 5))).toBe(
       '`11-25 04:35` USERNAME added **5 Gold**'
